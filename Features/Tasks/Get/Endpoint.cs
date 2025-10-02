@@ -14,7 +14,8 @@ namespace WebBoard.Features.Tasks.Get
 			Description(b => b
 				.WithName("GetTaskById")
 				.Produces<TaskResponse>(200)
-				.ProducesProblemFE(404));
+				.ProducesProblemFE(404)
+				.ProducesProblemFE(400));
 		}
 
 		public override async Task HandleAsync(GetTaskRequest req, CancellationToken ct)

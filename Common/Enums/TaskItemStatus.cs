@@ -1,4 +1,4 @@
-﻿namespace WebBoard.Common.Enums
+namespace WebBoard.Common.Enums
 {
 	public enum TaskItemStatus
 	{

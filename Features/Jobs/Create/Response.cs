@@ -1,6 +1,4 @@
 ﻿namespace WebBoard.Features.Jobs.Create
 {
-	public class Response
-	{
-	}
+	public record JobResponse(Guid Id, string JobType, string Status, DateTime CreatedAt);
 }
