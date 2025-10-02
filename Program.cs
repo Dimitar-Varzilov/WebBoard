@@ -1,3 +1,8 @@
+using FastEndpoints;
+using FastEndpoints.Swagger;
+using Microsoft.EntityFrameworkCore;
+using WebBoard.Data;
+using WebBoard.Services;
 
 namespace WebBoard
 {
@@ -13,6 +18,9 @@ namespace WebBoard
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();
             builder.Services.AddSwaggerGen();
+			builder.Services.SwaggerDocument();
+			builder.Services.AddFastEndpoints();
+
 
             var app = builder.Build();
 
@@ -23,12 +31,12 @@ namespace WebBoard
                 app.UseSwaggerUI();
             }
 
+			app.UseFastEndpoints();
+			app.UseSwaggerGen();
+
             app.UseHttpsRedirection();
 
             app.UseAuthorization();
-
-
-            app.MapControllers();
 
             app.Run();
         }
