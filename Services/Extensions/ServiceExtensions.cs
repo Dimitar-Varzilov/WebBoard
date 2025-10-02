@@ -1,7 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using WebBoard.Data;
-using WebBoard.Services;
 
 namespace WebBoard.Services.Extensions
 {
