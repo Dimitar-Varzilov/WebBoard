@@ -18,7 +18,7 @@ namespace WebBoard.Services.Jobs
 
 			// Prepare phase
 			logger.LogInformation("Starting prepare phase for job {JobId}", jobId);
-			var job = await dbContext.Jobs.FindAsync([jobId], ct);
+			var job = await dbContext.Jobs.FindAsync(jobId, ct);
 			if (job == null)
 			{
 				logger.LogError("Job {JobId} not found", jobId);

@@ -2,7 +2,7 @@
 {
 	public interface IBackgroundService
 	{
-		public Task ExecuteAsync(CancellationToken stoppingToken);
+		Task ExecuteAsync(CancellationToken stoppingToken);
 
 	}
 }
