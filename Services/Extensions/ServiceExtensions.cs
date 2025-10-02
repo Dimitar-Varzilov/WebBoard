@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using WebBoard.Data;
+using WebBoard.Services;
 
 namespace WebBoard.Services.Extensions
 {
@@ -8,9 +9,9 @@ namespace WebBoard.Services.Extensions
 	{
 		public static IServiceCollection ConfigureServices(this IServiceCollection services, IConfiguration configuration)
 		{
-			// Add DbContext
+			// Add DbContext with PostgreSQL
 			services.AddDbContext<AppDbContext>(options =>
-				options.UseInMemoryDatabase("WebBoardDb")); // For demo purposes, use InMemoryDatabase
+				options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
 			// Configure Quartz
 			services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);
