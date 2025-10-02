@@ -4,6 +4,7 @@ using WebBoard.Common;
 using WebBoard.Common.Enums;
 using WebBoard.Common.Models;
 using WebBoard.Data;
+using WebBoard.Features.Jobs.GetById;
 using WebBoard.Services.Jobs;
 
 namespace WebBoard.Features.Jobs.Create
@@ -42,10 +43,10 @@ namespace WebBoard.Features.Jobs.Create
 
 			await scheduler.ScheduleJob(jobDetail, trigger, ct);
 
-			// Send created response with location header
 			var response = new JobResponse(job.Id, job.JobType, job.Status.ToString(), job.CreatedAt);
-			await Send.CreatedAtAsync(
-				Constants.ApiRoutes.JobById.Replace("{id:guid}", job.Id.ToString()),
+
+			await Send.CreatedAtAsync<GetJobByIdEndpoint>(
+				new { id = job.Id },
 				response,
 				cancellation: ct);
 		}

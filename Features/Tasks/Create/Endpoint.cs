@@ -3,6 +3,7 @@ using WebBoard.Common;
 using WebBoard.Common.Enums;
 using WebBoard.Common.Models;
 using WebBoard.Data;
+using WebBoard.Features.Tasks.Get;
 
 namespace WebBoard.Features.Tasks.Create
 {
@@ -26,10 +27,10 @@ namespace WebBoard.Features.Tasks.Create
 			db.Tasks.Add(task);
 			await db.SaveChangesAsync(ct);
 
-			// Send created response with location header
 			var response = new TaskResponse(task.Id, task.Title, task.Description, task.Status, task.CreatedAt);
-			await Send.CreatedAtAsync(
-				Constants.ApiRoutes.TaskById.Replace("{id:guid}", task.Id.ToString()),
+
+			await Send.CreatedAtAsync<GetTaskByIdEndpoint>(
+				new { id = task.Id },
 				response,
 				cancellation: ct);
 		}
