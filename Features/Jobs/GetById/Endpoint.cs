@@ -6,7 +6,7 @@ using WebBoard.Features.Jobs.Create;
 
 namespace WebBoard.Features.Jobs.GetById
 {
-	public class GetJobByIdEndpoint(AppDbContext db) : EndpointWithoutRequest<JobResponse>
+	public class GetJobByIdEndpoint(AppDbContext db) : Endpoint<GetJobByIdRequest, JobResponse>
 	{
 		public override void Configure()
 		{
@@ -24,11 +24,9 @@ namespace WebBoard.Features.Jobs.GetById
 			});
 		}
 
-		public override async Task HandleAsync(CancellationToken ct)
+		public override async Task HandleAsync(GetJobByIdRequest req, CancellationToken ct)
 		{
-			var id = Route<Guid>("id");
-
-			var job = await db.Jobs.FirstOrDefaultAsync(j => j.Id == id, ct);
+			var job = await db.Jobs.FirstOrDefaultAsync(j => j.Id == req.Id, ct);
 
 			if (job == null)
 			{

@@ -18,6 +18,13 @@ namespace WebBoard.Features.Tasks.Create
 				.WithName("CreateTask")
 				.Produces<TaskResponse>(201)
 				.ProducesProblemFE(400));
+			Summary(s =>
+			{
+				s.Summary = "Create a new task";
+				s.Description = "Creates a new task with a title and description.";
+				s.Response<TaskResponse>(201, "Task created successfully.");
+				s.Response(400, "Invalid request format.");
+			});
 		}
 
 		public override async Task HandleAsync(CreateTaskRequest req, CancellationToken ct)
@@ -30,7 +37,7 @@ namespace WebBoard.Features.Tasks.Create
 			var response = new TaskResponse(task.Id, task.Title, task.Description, task.Status, task.CreatedAt);
 
 			await Send.CreatedAtAsync<GetTaskByIdEndpoint>(
-				new { id = task.Id },
+				new GetTaskByIdRequest(task.Id),
 				response,
 				cancellation: ct);
 		}

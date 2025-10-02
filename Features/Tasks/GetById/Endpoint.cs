@@ -6,7 +6,7 @@ using WebBoard.Features.Tasks.Create;
 
 namespace WebBoard.Features.Tasks.Get
 {
-	public class GetTaskByIdEndpoint(AppDbContext db) : EndpointWithoutRequest<TaskResponse>
+	public class GetTaskByIdEndpoint(AppDbContext db) : Endpoint<GetTaskByIdRequest, TaskResponse>
 	{
 		public override void Configure()
 		{
@@ -24,11 +24,9 @@ namespace WebBoard.Features.Tasks.Get
 			});
 		}
 
-		public override async Task HandleAsync(CancellationToken ct)
+		public override async Task HandleAsync(GetTaskByIdRequest req, CancellationToken ct)
 		{
-			var id = Route<Guid>("id");
-
-			var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == id, ct);
+			var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == req.Id, ct);
 
 			if (task == null)
 			{

@@ -16,10 +16,13 @@ namespace WebBoard.Features.Jobs.Create
 			Post(Constants.ApiRoutes.Jobs);
 			AllowAnonymous();
 			Tags(Constants.SwaggerTags.Jobs); // Add tag for grouping
-			Description(b => b
-				.WithName("CreateJob")
-				.Produces<JobResponse>(201)
-				.ProducesProblemFE(400));
+			Summary(s =>
+			{
+				s.Summary = "Create a new background job";
+				s.Description = "Creates and queues a new background job of a specified type.";
+				s.Response<JobResponse>(201, "Job created and queued successfully.");
+				s.Response(400, "Invalid request format or unknown job type.");
+			});
 		}
 
 		public override async Task HandleAsync(CreateJobRequest req, CancellationToken ct)
@@ -46,7 +49,7 @@ namespace WebBoard.Features.Jobs.Create
 			var response = new JobResponse(job.Id, job.JobType, job.Status.ToString(), job.CreatedAt);
 
 			await Send.CreatedAtAsync<GetJobByIdEndpoint>(
-				new { id = job.Id },
+				new GetJobByIdRequest(job.Id),
 				response,
 				cancellation: ct);
 		}

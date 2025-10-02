@@ -13,9 +13,12 @@ namespace WebBoard.Features.Tasks.GetAll
 			Get(Constants.ApiRoutes.Tasks);
 			AllowAnonymous();
 			Tags(Constants.SwaggerTags.Tasks); // Add tag for grouping
-			Description(b => b
-				.WithName("GetAllTasks")
-				.Produces<List<TaskResponse>>(200));
+			Summary(s =>
+			{
+				s.Summary = "Get all tasks";
+				s.Description = "Retrieves a list of all tasks.";
+				s.Response<List<TaskResponse>>(200, "Tasks retrieved successfully.");
+			});
 		}
 
 		public override async Task HandleAsync(CancellationToken ct)
