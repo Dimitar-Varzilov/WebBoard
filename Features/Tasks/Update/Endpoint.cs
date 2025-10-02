@@ -1,6 +1,8 @@
 ﻿using FastEndpoints;
+using Microsoft.AspNetCore.Http;
 using Microsoft.EntityFrameworkCore;
 using WebBoard.Common;
+using WebBoard.Common.Enums;
 using WebBoard.Data;
 
 namespace WebBoard.Features.Tasks.Update
@@ -15,10 +17,11 @@ namespace WebBoard.Features.Tasks.Update
             Summary(s =>
             {
                 s.Summary = "Update a task by ID";
-                s.Description = "Updates a specific task by its unique identifier.";
+                s.Description = "Updates a specific task by its unique identifier. A task cannot be updated if it is currently being processed by a job (status is InProgress).";
                 s.Params["id"] = "The unique identifier of the task to update.";
                 s.Response<UpdateTaskResponse>(200, "Task updated successfully.");
                 s.Response(404, "Task not found.");
+                s.Response<ErrorResponse>(409, "The task is currently being processed and cannot be edited.");
             });
         }
 
@@ -29,6 +32,12 @@ namespace WebBoard.Features.Tasks.Update
             if (task == null)
             {
                 await Send.NotFoundAsync(ct);
+                return;
+            }
+
+            if (task.Status == TaskItemStatus.InProgress)
+            {
+                ThrowError("The task is currently being processed and cannot be edited.", StatusCodes.Status409Conflict);
                 return;
             }
 
