@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
+using WebBoard.Common;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 
@@ -10,7 +11,7 @@ namespace WebBoard.Services.Jobs
 	{
 		public async Task Execute(IJobExecutionContext context)
 		{
-			var jobId = context.MergedJobDataMap.GetGuid("JobId");
+			var jobId = context.MergedJobDataMap.GetGuid(Constants.JobDataKeys.JobId);
 			var ct = context.CancellationToken;
 
 			using var scope = serviceProvider.CreateScope();

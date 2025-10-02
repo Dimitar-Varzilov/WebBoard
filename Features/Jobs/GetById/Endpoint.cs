@@ -1,26 +1,34 @@
 using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using WebBoard.Common;
 using WebBoard.Data;
 using WebBoard.Features.Jobs.Create;
 
 namespace WebBoard.Features.Jobs.GetById
 {
-	public class GetJobByIdEndpoint(AppDbContext db) : Endpoint<GetJobByIdRequest, JobResponse>
+	public class GetJobByIdEndpoint(AppDbContext db) : EndpointWithoutRequest<JobResponse>
 	{
 		public override void Configure()
 		{
-			Get("/api/jobs/{id:guid}");
+			Get(Constants.ApiRoutes.JobById);
 			AllowAnonymous();
-			Description(b => b
-				.WithName("GetJobById")
-				.Produces<JobResponse>(200)
-				.ProducesProblemFE(404)
-				.ProducesProblemFE(400));
+			Tags(Constants.SwaggerTags.Jobs); // Add tag for grouping
+			Summary(s =>
+			{
+				s.Summary = "Get a job by ID";
+				s.Description = "Retrieves a specific job by its unique identifier";
+				s.Params["id"] = "The unique identifier (GUID) of the job";
+				s.Response<JobResponse>(200, "Job found successfully");
+				s.Response(404, "Job not found");
+				s.Response(400, "Invalid job ID format");
+			});
 		}
 
-		public override async Task HandleAsync(GetJobByIdRequest req, CancellationToken ct)
+		public override async Task HandleAsync(CancellationToken ct)
 		{
-			var job = await db.Jobs.FirstOrDefaultAsync(j => j.Id == req.Id, ct);
+			var id = Route<Guid>("id");
+
+			var job = await db.Jobs.FirstOrDefaultAsync(j => j.Id == id, ct);
 
 			if (job == null)
 			{

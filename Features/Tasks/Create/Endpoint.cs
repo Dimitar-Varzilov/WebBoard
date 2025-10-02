@@ -1,8 +1,8 @@
 ﻿using FastEndpoints;
+using WebBoard.Common;
 using WebBoard.Common.Enums;
 using WebBoard.Common.Models;
 using WebBoard.Data;
-using WebBoard.Features.Tasks.Get;
 
 namespace WebBoard.Features.Tasks.Create
 {
@@ -10,8 +10,9 @@ namespace WebBoard.Features.Tasks.Create
 	{
 		public override void Configure()
 		{
-			Post("/api/tasks");
+			Post(Constants.ApiRoutes.Tasks);
 			AllowAnonymous();
+			Tags(Constants.SwaggerTags.Tasks); // Add tag for grouping
 			Description(b => b
 				.WithName("CreateTask")
 				.Produces<TaskResponse>(201)
@@ -25,9 +26,11 @@ namespace WebBoard.Features.Tasks.Create
 			db.Tasks.Add(task);
 			await db.SaveChangesAsync(ct);
 
-			await Send.CreatedAtAsync<GetTaskByIdEndpoint>(
-				new { id = task.Id },
-				new TaskResponse(task.Id, task.Title, task.Description, task.Status, task.CreatedAt),
+			// Send created response with location header
+			var response = new TaskResponse(task.Id, task.Title, task.Description, task.Status, task.CreatedAt);
+			await Send.CreatedAtAsync(
+				Constants.ApiRoutes.TaskById.Replace("{id:guid}", task.Id.ToString()),
+				response,
 				cancellation: ct);
 		}
 	}

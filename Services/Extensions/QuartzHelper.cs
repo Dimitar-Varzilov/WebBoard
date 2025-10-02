@@ -1,4 +1,5 @@
 using Quartz;
+using WebBoard.Common;
 using WebBoard.Services.Jobs;
 
 namespace WebBoard.Services.Extensions
@@ -9,33 +10,33 @@ namespace WebBoard.Services.Extensions
 		{
 			// Register job classes
 			q.AddJob<MarkTasksAsCompletedJob>(opts => opts
-				.WithIdentity("MarkTasksAsCompleted")
+				.WithIdentity(Constants.JobTypes.MarkTasksAsCompleted)
 				.StoreDurably());
 
 			q.AddJob<GenerateTaskListJob>(opts => opts
-				.WithIdentity("GenerateTaskList")
+				.WithIdentity(Constants.JobTypes.GenerateTaskList)
 				.StoreDurably());
 
 			// Create triggers for MarkTasksAsCompleted
 			q.AddTrigger(opts => opts
-				.ForJob("MarkTasksAsCompleted")
-				.WithIdentity("MarkTasksAsCompleted-8AM")
+				.ForJob(Constants.JobTypes.MarkTasksAsCompleted)
+				.WithIdentity($"{Constants.JobTypes.MarkTasksAsCompleted}-8AM")
 				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(8, 0)));
 
 			q.AddTrigger(opts => opts
-				.ForJob("MarkTasksAsCompleted")
-				.WithIdentity("MarkTasksAsCompleted-2PM")
+				.ForJob(Constants.JobTypes.MarkTasksAsCompleted)
+				.WithIdentity($"{Constants.JobTypes.MarkTasksAsCompleted}-2PM")
 				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(14, 0)));
 
 			// Create triggers for GenerateTaskList
 			q.AddTrigger(opts => opts
-				.ForJob("GenerateTaskList")
-				.WithIdentity("GenerateTaskList-8AM")
+				.ForJob(Constants.JobTypes.GenerateTaskList)
+				.WithIdentity($"{Constants.JobTypes.GenerateTaskList}-8AM")
 				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(8, 0)));
 
 			q.AddTrigger(opts => opts
-				.ForJob("GenerateTaskList")
-				.WithIdentity("GenerateTaskList-2PM")
+				.ForJob(Constants.JobTypes.GenerateTaskList)
+				.WithIdentity($"{Constants.JobTypes.GenerateTaskList}-2PM")
 				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(14, 0)));
 
 			// Configure other job settings

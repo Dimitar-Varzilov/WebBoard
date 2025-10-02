@@ -1,5 +1,6 @@
 ﻿using FastEndpoints;
 using Microsoft.EntityFrameworkCore;
+using WebBoard.Common;
 using WebBoard.Data;
 using WebBoard.Features.Tasks.Create;
 
@@ -9,8 +10,9 @@ namespace WebBoard.Features.Tasks.GetAll
 	{
 		public override void Configure()
 		{
-			Get("/api/tasks");
+			Get(Constants.ApiRoutes.Tasks);
 			AllowAnonymous();
+			Tags(Constants.SwaggerTags.Tasks); // Add tag for grouping
 			Description(b => b
 				.WithName("GetAllTasks")
 				.Produces<List<TaskResponse>>(200));

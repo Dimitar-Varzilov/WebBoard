@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using WebBoard.Common;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 
@@ -45,10 +46,10 @@ namespace WebBoard.Services
 			{
 				switch (queuedJob.JobType)
 				{
-					case "MarkTasksAsCompleted":
+					case Constants.JobTypes.MarkTasksAsCompleted:
 						await MarkAllTasksAsCompletedAsync(dbContext, stoppingToken);
 						break;
-					case "GenerateTaskList":
+					case Constants.JobTypes.GenerateTaskList:
 						await GenerateTaskListFileAsync(dbContext, stoppingToken);
 						break;
 				}
@@ -87,7 +88,6 @@ namespace WebBoard.Services
 			var filePath = Path.Combine(Directory.GetCurrentDirectory(), "TaskLists", fileName);
 
 			Directory.CreateDirectory(Path.GetDirectoryName(filePath)!);
-
 			var taskList = tasks.Select(t => $"Task: {t.Title}, Status: {t.Status}, Created: {t.CreatedAt}");
 			await File.WriteAllLinesAsync(filePath, taskList, stoppingToken);
 		}

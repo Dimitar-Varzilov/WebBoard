@@ -1,5 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
+using WebBoard.Common;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 
@@ -10,7 +11,7 @@ namespace WebBoard.Services.Jobs
 	{
 		public async Task Execute(IJobExecutionContext context)
 		{
-			var jobId = context.MergedJobDataMap.GetGuid("JobId");
+			var jobId = context.MergedJobDataMap.GetGuid(Constants.JobDataKeys.JobId);
 			var ct = context.CancellationToken;
 
 			using var scope = serviceProvider.CreateScope();
@@ -37,10 +38,10 @@ namespace WebBoard.Services.Jobs
 				.Where(t => t.Status != TaskItemStatus.Completed)
 				.ToListAsync(ct);
 
-			var updatedTasks = pendingTasks.Select(t => t with { Status = TaskItemStatus.Completed });
-			foreach (var (oldTask, newTask) in pendingTasks.Zip(updatedTasks))
+			foreach (var task in pendingTasks)
 			{
-				dbContext.Entry(oldTask).CurrentValues.SetValues(newTask);
+				var updatedTask = task with { Status = TaskItemStatus.Completed };
+				dbContext.Entry(task).CurrentValues.SetValues(updatedTask);
 			}
 			await dbContext.SaveChangesAsync(ct);
 
