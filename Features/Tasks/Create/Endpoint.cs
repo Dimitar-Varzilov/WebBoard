@@ -29,7 +29,7 @@ namespace WebBoard.Features.Tasks.Create
 
 		public override async Task HandleAsync(CreateTaskRequest req, CancellationToken ct)
 		{
-			var task = new TaskItem(Guid.NewGuid(), DateTime.UtcNow, req.Title, req.Description, TaskItemStatus.Pending);
+			var task = new TaskItem(Guid.NewGuid(), DateTime.UtcNow, req.Title, req.Description, TaskItemStatus.Pending, null);
 
 			db.Tasks.Add(task);
 			await db.SaveChangesAsync(ct);

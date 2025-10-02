@@ -22,6 +22,12 @@ namespace WebBoard.Data.Configurations
 
 			builder.Property(x => x.CreatedAt)
 				.IsRequired();
+
+			builder
+				.HasOne(x => x.Job)
+				.WithMany(x => x.Tasks)
+				.HasForeignKey(x => x.JobId)
+				.OnDelete(DeleteBehavior.SetNull);
 		}
 	}
 }

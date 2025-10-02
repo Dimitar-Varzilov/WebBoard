@@ -1,4 +1,5 @@
 ﻿using FastEndpoints;
+using Microsoft.EntityFrameworkCore;
 using Quartz;
 using WebBoard.Common;
 using WebBoard.Common.Enums;
@@ -9,59 +10,71 @@ using WebBoard.Services.Jobs;
 
 namespace WebBoard.Features.Jobs.Create
 {
-	public class CreateJobEndpoint(AppDbContext db, IScheduler scheduler) : Endpoint<CreateJobRequest, JobResponse>
-	{
-		public override void Configure()
-		{
-			Post(Constants.ApiRoutes.Jobs);
-			AllowAnonymous();
-			Tags(Constants.SwaggerTags.Jobs); // Add tag for grouping
-			Summary(s =>
-			{
-				s.Summary = "Create a new background job";
-				s.Description = "Creates and queues a new background job of a specified type.";
-				s.Response<JobResponse>(201, "Job created and queued successfully.");
-				s.Response(400, "Invalid request format or unknown job type.");
-			});
-		}
+    public class CreateJobEndpoint(AppDbContext db, IScheduler scheduler) : Endpoint<CreateJobRequest, JobResponse>
+    {
+        public override void Configure()
+        {
+            Post(Constants.ApiRoutes.Jobs);
+            AllowAnonymous();
+            Tags(Constants.SwaggerTags.Jobs);
+            Summary(s =>
+            {
+                s.Summary = "Create a new background job";
+                s.Description = "Creates and queues a new background job for a specified list of tasks.";
+                s.Response<JobResponse>(201, "Job created and queued successfully.");
+                s.Response(400, "Invalid request format or unknown job type.");
+            });
+        }
 
-		public override async Task HandleAsync(CreateJobRequest req, CancellationToken ct)
-		{
-			// Create job record in database
-			var job = new Job(Guid.NewGuid(), req.JobType, JobStatus.Queued, DateTime.UtcNow);
+        public override async Task HandleAsync(CreateJobRequest req, CancellationToken ct)
+        {
+            var tasks = await db.Tasks
+                .Where(t => req.TaskIds.Contains(t.Id))
+                .ToListAsync(ct);
 
-			db.Jobs.Add(job);
-			await db.SaveChangesAsync(ct);
+            if (tasks.Count != req.TaskIds.Count)
+            {
+                ThrowError("One or more specified tasks were not found.", StatusCodes.Status400BadRequest);
+                return;
+            }
 
-			// Schedule the job in Quartz
-			var jobDetail = JobBuilder.Create(GetJobType(req.JobType))
-				.WithIdentity($"{req.JobType}-{job.Id}")
-				.UsingJobData(Constants.JobDataKeys.JobId, job.Id.ToString())
-				.Build();
+            var job = new Job(Guid.NewGuid(), req.JobType, JobStatus.Queued, DateTime.UtcNow)
+            {
+                Tasks = tasks
+            };
 
-			var trigger = TriggerBuilder.Create()
-				.WithIdentity($"{req.JobType}-trigger-{job.Id}")
-				.StartNow()
-				.Build();
+            db.Jobs.Add(job);
+            await db.SaveChangesAsync(ct);
 
-			await scheduler.ScheduleJob(jobDetail, trigger, ct);
+            // Schedule the job in Quartz
+            var jobDetail = JobBuilder.Create(GetJobType(req.JobType))
+                .WithIdentity($"{req.JobType}-{job.Id}")
+                .UsingJobData(Constants.JobDataKeys.JobId, job.Id.ToString())
+                .Build();
 
-			var response = new JobResponse(job.Id, job.JobType, job.Status.ToString(), job.CreatedAt);
+            var trigger = TriggerBuilder.Create()
+                .WithIdentity($"{req.JobType}-trigger-{job.Id}")
+                .StartNow()
+                .Build();
 
-			await Send.CreatedAtAsync<GetJobByIdEndpoint>(
-				new GetJobByIdRequest(job.Id),
-				response,
-				cancellation: ct);
-		}
+            await scheduler.ScheduleJob(jobDetail, trigger, ct);
 
-		private static Type GetJobType(string jobType)
-		{
-			return jobType switch
-			{
-				Constants.JobTypes.MarkTasksAsCompleted => typeof(MarkTasksAsCompletedJob),
-				Constants.JobTypes.GenerateTaskList => typeof(GenerateTaskListJob),
-				_ => throw new ArgumentException($"Unknown job type: {jobType}")
-			};
-		}
-	}
+            var response = new JobResponse(job.Id, job.JobType, job.Status.ToString(), job.CreatedAt);
+
+            await Send.CreatedAtAsync<GetJobByIdEndpoint>(
+                new GetJobByIdRequest(job.Id),
+                response,
+                cancellation: ct);
+        }
+
+        private static Type GetJobType(string jobType)
+        {
+            return jobType switch
+            {
+                Constants.JobTypes.MarkTasksAsCompleted => typeof(MarkTasksAsCompletedJob),
+                Constants.JobTypes.GenerateTaskList => typeof(GenerateTaskListJob),
+                _ => throw new ArgumentException($"Unknown job type: {jobType}")
+            };
+        }
+    }
 }
