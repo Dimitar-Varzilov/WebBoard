@@ -5,7 +5,7 @@ using WebBoard.Features.Tasks.Create;
 
 namespace WebBoard.Features.Tasks.Get
 {
-	public class GetTaskEndpoint(AppDbContext db) : Endpoint<GetTaskRequest, TaskResponse>
+	public class GetTaskByIdEndpoint(AppDbContext db) : Endpoint<GetTaskByIdRequest, TaskResponse>
 	{
 		public override void Configure()
 		{
@@ -18,7 +18,7 @@ namespace WebBoard.Features.Tasks.Get
 				.ProducesProblemFE(400));
 		}
 
-		public override async Task HandleAsync(GetTaskRequest req, CancellationToken ct)
+		public override async Task HandleAsync(GetTaskByIdRequest req, CancellationToken ct)
 		{
 			var task = await db.Tasks.FirstOrDefaultAsync(t => t.Id == req.Id, ct);
 

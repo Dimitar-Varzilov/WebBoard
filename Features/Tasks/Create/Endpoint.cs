@@ -25,7 +25,7 @@ namespace WebBoard.Features.Tasks.Create
 			db.Tasks.Add(task);
 			await db.SaveChangesAsync(ct);
 
-			await Send.CreatedAtAsync<GetTaskEndpoint>(
+			await Send.CreatedAtAsync<GetTaskByIdEndpoint>(
 				new { id = task.Id },
 				new TaskResponse(task.Id, task.Title, task.Description, task.Status, task.CreatedAt),
 				cancellation: ct);
