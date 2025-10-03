@@ -33,24 +33,24 @@ namespace WebBoard.Services.Jobs
 
 			// Execute phase
 			logger.LogInformation("Starting execute phase for job {JobId}", jobId);
-			await Task.Delay(TimeSpan.FromMinutes(3), ct);
 			var pendingTasks = await dbContext.Tasks
-				.Where(t => t.Status != TaskItemStatus.Completed)
+				.Where(t => t.Status == TaskItemStatus.Pending)
 				.ToListAsync(ct);
 
 			foreach (var task in pendingTasks)
 			{
-				var updatedTask = task with { Status = TaskItemStatus.Completed };
+				var updatedTask = task with { Status = TaskItemStatus.InProgress };
 				dbContext.Entry(task).CurrentValues.SetValues(updatedTask);
 			}
 			await dbContext.SaveChangesAsync(ct);
+			await Task.Delay(TimeSpan.FromMinutes(3), ct);
 
 			// Complete phase
 			logger.LogInformation("Starting complete phase for job {JobId}", jobId);
-			await Task.Delay(TimeSpan.FromMinutes(3), ct);
 			var completedJob = runningJob with { Status = JobStatus.Completed };
 			dbContext.Entry(runningJob).CurrentValues.SetValues(completedJob);
 			await dbContext.SaveChangesAsync(ct);
+			await Task.Delay(TimeSpan.FromMinutes(3), ct);
 		}
 	}
 }
