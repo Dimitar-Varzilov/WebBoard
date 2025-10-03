@@ -33,11 +33,30 @@ export class JobCreateComponent implements OnInit {
   ) {
     this.jobForm = this.fb.group({
       jobType: ['', Validators.required],
+      runImmediately: [true],
+      scheduledAt: [{ value: '', disabled: true }],
     });
   }
 
   ngOnInit(): void {
     this.setupJobTypes();
+    this.setupSchedulingWatcher();
+  }
+
+  private setupSchedulingWatcher(): void {
+    this.jobForm
+      .get('runImmediately')
+      ?.valueChanges.subscribe((runImmediately) => {
+        const scheduledAtControl = this.jobForm.get('scheduledAt');
+        if (runImmediately) {
+          scheduledAtControl?.disable();
+          scheduledAtControl?.clearValidators();
+        } else {
+          scheduledAtControl?.enable();
+          scheduledAtControl?.setValidators([Validators.required]);
+        }
+        scheduledAtControl?.updateValueAndValidity();
+      });
   }
 
   private setupJobTypes(): void {
@@ -59,13 +78,31 @@ export class JobCreateComponent implements OnInit {
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
+  get isScheduled(): boolean {
+    return !this.jobForm.get('runImmediately')?.value;
+  }
+
+  get minDateTime(): string {
+    const now = new Date();
+    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
+    return now.toISOString().slice(0, 16);
+  }
+
   onSubmit(): void {
     if (this.jobForm.valid) {
       this.creating = true;
 
-      const jobType = this.jobForm.value.jobType;
+      const formValue = this.jobForm.value;
+      const createRequest: any = {
+        jobType: formValue.jobType,
+        runImmediately: formValue.runImmediately,
+      };
 
-      this.jobService.createJob({ jobType }).subscribe({
+      if (!formValue.runImmediately && formValue.scheduledAt) {
+        createRequest.scheduledAt = new Date(formValue.scheduledAt);
+      }
+
+      this.jobService.createJob(createRequest).subscribe({
         next: (job) => {
           this.creating = false;
           // Navigate to jobs list and show success message

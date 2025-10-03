@@ -32,7 +32,8 @@ namespace WebBoard.Services
 			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
 			var queuedJob = await dbContext.Jobs
-				.FirstOrDefaultAsync(j => j.Status == JobStatus.Queued, stoppingToken);
+				.FirstOrDefaultAsync(j => j.Status == JobStatus.Queued &&
+					(j.ScheduledAt == null || j.ScheduledAt <= DateTime.UtcNow), stoppingToken);
 
 			if (queuedJob == null)
 				return;

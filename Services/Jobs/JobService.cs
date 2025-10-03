@@ -14,30 +14,32 @@ namespace WebBoard.Services.Jobs
 								.OrderByDescending(j => j.CreatedAt)
 								.ToListAsync();
 
-			return jobs.Select(job => new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt));
+			return jobs.Select(job => new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt, job.ScheduledAt));
 		}
 
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
 		{
+			var scheduledAt = createJobRequest.RunImmediately ? null : createJobRequest.ScheduledAt;
+
 			var job = new Job(
 				Guid.NewGuid(),
 				createJobRequest.JobType,
 				JobStatus.Queued,
-				DateTime.UtcNow
+				DateTime.UtcNow,
+				scheduledAt
 			);
 
 			db.Jobs.Add(job);
 			await db.SaveChangesAsync();
 
-			return new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt);
+			return new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt, job.ScheduledAt);
 		}
-
 		public async Task<JobDto?> GetJobByIdAsync(Guid id)
 		{
 			var job = await db.Jobs.AsNoTracking()
 								.FirstOrDefaultAsync(j => j.Id == id);
 
-			return job == null ? null : new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt);
+			return job == null ? null : new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt, job.ScheduledAt);
 		}
 	}
 }

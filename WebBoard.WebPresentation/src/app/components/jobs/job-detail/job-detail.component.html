@@ -126,10 +126,17 @@
                   >
                 </div>
 
-                <div class="mb-0">
+                <div class="mb-3">
                   <small class="text-muted d-block">Created</small>
                   <span class="small">{{
                     job.createdAt | date : "medium"
+                  }}</span>
+                </div>
+
+                <div class="mb-0" *ngIf="job.scheduledAt">
+                  <small class="text-muted d-block">Scheduled</small>
+                  <span class="small">{{
+                    job.scheduledAt | date : "medium"
                   }}</span>
                 </div>
               </div>

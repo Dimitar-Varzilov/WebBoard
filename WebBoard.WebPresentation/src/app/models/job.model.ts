@@ -10,8 +10,11 @@ export interface JobDto {
   jobType: string;
   status: JobStatus;
   createdAt: Date;
+  scheduledAt?: Date;
 }
 
 export interface CreateJobRequestDto {
   jobType: string;
+  runImmediately?: boolean;
+  scheduledAt?: Date;
 }
