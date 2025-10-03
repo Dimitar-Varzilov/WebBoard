@@ -21,11 +21,19 @@ namespace WebBoard.Services.Extensions
 		}
 
 		/// <summary>
-		/// Extension method to clean up a completed job
+		/// Extension method to clean up a completed job (preserves database record by default)
 		/// </summary>
 		public static async Task CleanupIfCompleted(this Guid jobId, IJobCleanupService jobCleanupService)
 		{
 			await jobCleanupService.CleanupCompletedJobAsync(jobId);
+		}
+
+		/// <summary>
+		/// Extension method to safely clean up job from scheduler only (preserves database record)
+		/// </summary>
+		public static async Task CleanupFromSchedulerOnly(this Guid jobId, IJobCleanupService jobCleanupService)
+		{
+			await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
 		}
 	}
 }

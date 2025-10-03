@@ -22,7 +22,7 @@ namespace WebBoard.Services.Jobs
 		private static async Task MarkAllTasksAsCompletedAsync(AppDbContext dbContext, CancellationToken ct)
 		{
 			var pendingTasks = await dbContext.Tasks
-				.Where(t => t.Status != TaskItemStatus.Completed)
+				.Where(t => t.Status == TaskItemStatus.Pending)
 				.ToListAsync(ct);
 
 			var updatedTasks = pendingTasks.Select(t => t with { Status = TaskItemStatus.Completed });

@@ -1,6 +1,6 @@
+using Quartz;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
-using Quartz;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 
@@ -10,6 +10,7 @@ namespace WebBoard.Services.Jobs
 	{
 		Task CleanupCompletedJobAsync(Guid jobId);
 		Task CleanupAllCompletedJobsAsync();
+		Task CleanupFromSchedulerOnlyAsync(Guid jobId);
 	}
 
 	public class JobCleanupService(
@@ -50,20 +51,41 @@ namespace WebBoard.Services.Jobs
 					cleanupTasks.Add(CleanupFromScheduler(jobId));
 				}
 
-				// Remove from database if configured
+				// IMPORTANT: Database removal is controlled by configuration
+				// By default, we preserve jobs in database for audit trail
 				if (_cleanupOptions.RemoveFromDatabase)
 				{
+					logger.LogWarning("Database cleanup is enabled - removing job {JobId} from database", jobId);
 					cleanupTasks.Add(CleanupFromDatabase(dbContext, job));
+				}
+				else
+				{
+					logger.LogInformation("Database cleanup is disabled - preserving job {JobId} in database for audit trail", jobId);
 				}
 
 				// Execute cleanup tasks
 				await Task.WhenAll(cleanupTasks);
 
-				logger.LogInformation("Successfully cleaned up completed job {JobId} of type {JobType}", jobId, job.JobType);
+				logger.LogInformation("Successfully cleaned up completed job {JobId} of type {JobType} (Scheduler: {SchedulerCleanup}, Database: {DatabaseCleanup})", 
+					jobId, job.JobType, _cleanupOptions.RemoveFromScheduler, _cleanupOptions.RemoveFromDatabase);
 			}
 			catch (Exception ex)
 			{
 				logger.LogError(ex, "Error cleaning up job {JobId}", jobId);
+				throw;
+			}
+		}
+
+		public async Task CleanupFromSchedulerOnlyAsync(Guid jobId)
+		{
+			try
+			{
+				await CleanupFromScheduler(jobId);
+				logger.LogInformation("Removed job {JobId} from scheduler only (database preserved)", jobId);
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Error cleaning up job {JobId} from scheduler", jobId);
 				throw;
 			}
 		}
@@ -86,9 +108,11 @@ namespace WebBoard.Services.Jobs
 					return;
 				}
 
-				logger.LogInformation("Found {JobCount} completed jobs to cleanup", completedJobs.Count);
+				logger.LogInformation("Found {JobCount} completed jobs to cleanup (Scheduler: {SchedulerCleanup}, Database: {DatabaseCleanup})", 
+					completedJobs.Count, _cleanupOptions.RemoveFromScheduler, _cleanupOptions.RemoveFromDatabase);
 
-				var successCount = 0;
+				var schedulerCleanupCount = 0;
+				var databaseCleanupCount = 0;
 				var failureCount = 0;
 
 				foreach (var job in completedJobs)
@@ -102,16 +126,16 @@ namespace WebBoard.Services.Jobs
 							if (await scheduler.CheckExists(jobKey))
 							{
 								await scheduler.DeleteJob(jobKey);
+								schedulerCleanupCount++;
 							}
 						}
 
-						// Remove from database if configured
+						// Remove from database if configured (WARNING: This removes audit trail)
 						if (_cleanupOptions.RemoveFromDatabase)
 						{
 							dbContext.Jobs.Remove(job);
+							databaseCleanupCount++;
 						}
-
-						successCount++;
 					}
 					catch (Exception ex)
 					{
@@ -120,13 +144,15 @@ namespace WebBoard.Services.Jobs
 					}
 				}
 
-				// Save all changes at once for better performance
-				if (_cleanupOptions.RemoveFromDatabase && successCount > 0)
+				// Save all database changes at once for better performance
+				if (_cleanupOptions.RemoveFromDatabase && databaseCleanupCount > 0)
 				{
 					await dbContext.SaveChangesAsync();
+					logger.LogWarning("Removed {DatabaseCleanupCount} completed jobs from database - audit trail lost", databaseCleanupCount);
 				}
 
-				logger.LogInformation("Cleanup completed: {SuccessCount} jobs cleaned up, {FailureCount} failures", successCount, failureCount);
+				logger.LogInformation("Cleanup completed: {SchedulerCleanupCount} jobs removed from scheduler, {DatabaseCleanupCount} jobs removed from database, {FailureCount} failures", 
+					schedulerCleanupCount, databaseCleanupCount, failureCount);
 			}
 			catch (Exception ex)
 			{
@@ -160,7 +186,7 @@ namespace WebBoard.Services.Jobs
 		{
 			dbContext.Jobs.Remove(job);
 			await dbContext.SaveChangesAsync();
-			logger.LogInformation("Removed job {JobId} from database", job.Id);
+			logger.LogWarning("Removed job {JobId} from database - audit trail lost for this job", job.Id);
 		}
 	}
 }
