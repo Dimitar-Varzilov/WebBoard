@@ -1,5 +1,5 @@
 using Quartz;
-using WebBoard.Common;
+using WebBoard.Common.Cionstants;
 using WebBoard.Services.Jobs;
 
 namespace WebBoard.Services.Extensions

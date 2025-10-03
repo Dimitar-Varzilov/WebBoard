@@ -1,6 +1,6 @@
-using FastEndpoints;
-using FastEndpoints.Swagger;
 using WebBoard.Services.Extensions;
+using WebBoard.Services.Jobs;
+using WebBoard.Services.Tasks;
 
 namespace WebBoard
 {
@@ -15,16 +15,14 @@ namespace WebBoard
 
 			// Add framework services
 			builder.Services.AddControllers();
-			builder.Services.AddFastEndpoints();
-			builder.Services.SwaggerDocument(o =>
+			builder.Services.AddEndpointsApiExplorer();
+			builder.Services.AddSwaggerGen(o =>
 			{
-				o.DocumentSettings = s =>
-				{
-					s.Title = "Task Management API";
-					s.Version = "v1";
-					s.Description = "API for managing tasks using FastEndpoints.";
-				};
+				o.SwaggerDoc("v1", new() { Title = "Task Management API", Version = "v1" });
 			});
+
+			builder.Services.AddScoped<ITaskService, TaskService>();
+			builder.Services.AddScoped<IJobService, JobService>();
 
 			var app = builder.Build();
 
@@ -34,18 +32,13 @@ namespace WebBoard
 			// Configure the HTTP request pipeline.
 			if (app.Environment.IsDevelopment())
 			{
-				app.UseOpenApi();
-				app.UseSwaggerUi(c =>
-				{
-					c.DocumentTitle = "Task API Documentation";
-					c.DocExpansion = "list";
-				});
+				app.UseSwagger();
+				app.UseSwaggerUI();
 			}
-
-			app.UseFastEndpoints();
 
 			app.UseHttpsRedirection();
 			app.UseAuthorization();
+			app.MapControllers();
 
 			await app.RunAsync();
 		}

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common;
+using WebBoard.Common.Cionstants;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 

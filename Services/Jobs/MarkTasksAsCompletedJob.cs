@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
-using WebBoard.Common;
+using WebBoard.Common.Cionstants;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 
