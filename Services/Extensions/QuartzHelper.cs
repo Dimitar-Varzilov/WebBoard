@@ -1,6 +1,4 @@
 using Quartz;
-using WebBoard.Common.Constants;
-using WebBoard.Services.Jobs;
 
 namespace WebBoard.Services.Extensions
 {
@@ -8,27 +6,12 @@ namespace WebBoard.Services.Extensions
 	{
 		public static void ConfigureQuartzJobs(IServiceCollectionQuartzConfigurator q)
 		{
-			// Register job classes
-			q.AddJob<MarkTasksAsCompletedJob>(opts => opts
-				.WithIdentity(Constants.JobTypes.MarkAllTasksAsDone)
-				.StoreDurably());
-
-			q.AddJob<GenerateTaskListJob>(opts => opts
-				.WithIdentity(Constants.JobTypes.GenerateTaskReport)
-				.StoreDurably());
-
-			// Configure other job settings
+			// Configure Quartz settings for database-driven job scheduling
 			q.UseSimpleTypeLoader();
 			q.UseInMemoryStore();
-		}
-
-		public static void RegisterScheduler(IServiceCollection services)
-		{
-			// Register IScheduler for dependency injection
-			services.AddSingleton(provider =>
+			q.UseDefaultThreadPool(tp =>
 			{
-				var schedulerFactory = provider.GetRequiredService<ISchedulerFactory>();
-				return schedulerFactory.GetScheduler().Result;
+				tp.MaxConcurrency = 10; // Allow multiple jobs to run concurrently
 			});
 		}
 	}

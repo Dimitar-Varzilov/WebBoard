@@ -16,40 +16,52 @@ namespace WebBoard.Services.Jobs
 			using var scope = serviceProvider.CreateScope();
 			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
-			// Prepare phase
-			logger.LogInformation("Starting prepare phase for job {JobId}", jobId);
-			var job = await dbContext.Jobs.FindAsync(jobId, ct);
-			if (job == null)
+			try
 			{
-				logger.LogError("Job {JobId} not found", jobId);
-				return;
+				// Update job status to Running
+				var job = await dbContext.Jobs.FindAsync(jobId, ct);
+				if (job == null)
+				{
+					logger.LogError("Job {JobId} not found", jobId);
+					return;
+				}
+
+				var runningJob = job with { Status = JobStatus.Running };
+				dbContext.Entry(job).CurrentValues.SetValues(runningJob);
+				await dbContext.SaveChangesAsync(ct);
+
+				logger.LogInformation("Starting mark tasks as completed for job {JobId}", jobId);
+
+				// Mark all tasks as completed
+				await MarkAllTasksAsCompletedAsync(dbContext, ct);
+
+				// Update job status to Completed
+				var completedJob = runningJob with { Status = JobStatus.Completed };
+				dbContext.Entry(runningJob).CurrentValues.SetValues(completedJob);
+				await dbContext.SaveChangesAsync(ct);
+
+				logger.LogInformation("Mark tasks as completed finished for job {JobId}", jobId);
 			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Error processing job {JobId}", jobId);
+				throw;
+			}
+		}
 
-			var runningJob = job with { Status = JobStatus.Running };
-			dbContext.Entry(job).CurrentValues.SetValues(runningJob);
-			await dbContext.SaveChangesAsync(ct);
-			await Task.Delay(TimeSpan.FromMinutes(3), ct);
-
-			// Execute phase
-			logger.LogInformation("Starting execute phase for job {JobId}", jobId);
+		private static async Task MarkAllTasksAsCompletedAsync(AppDbContext dbContext, CancellationToken ct)
+		{
 			var pendingTasks = await dbContext.Tasks
-				.Where(t => t.Status == TaskItemStatus.Pending)
+				.Where(t => t.Status != TaskItemStatus.Completed)
 				.ToListAsync(ct);
 
-			foreach (var task in pendingTasks)
+			var updatedTasks = pendingTasks.Select(t => t with { Status = TaskItemStatus.Completed });
+			foreach (var (oldTask, newTask) in pendingTasks.Zip(updatedTasks))
 			{
-				var updatedTask = task with { Status = TaskItemStatus.InProgress };
-				dbContext.Entry(task).CurrentValues.SetValues(updatedTask);
+				dbContext.Entry(oldTask).CurrentValues.SetValues(newTask);
 			}
-			await dbContext.SaveChangesAsync(ct);
-			await Task.Delay(TimeSpan.FromMinutes(3), ct);
 
-			// Complete phase
-			logger.LogInformation("Starting complete phase for job {JobId}", jobId);
-			var completedJob = runningJob with { Status = JobStatus.Completed };
-			dbContext.Entry(runningJob).CurrentValues.SetValues(completedJob);
 			await dbContext.SaveChangesAsync(ct);
-			await Task.Delay(TimeSpan.FromMinutes(3), ct);
 		}
 	}
 }

@@ -16,10 +16,9 @@ namespace WebBoard.Services.Extensions
 
 			services.AddScoped<ITaskService, TaskService>();
 			services.AddScoped<IJobService, JobService>();
+			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
 
-			services.AddSingleton<IBackgroundService, BackgroundService>();
-
-			// Configure Quartz
+			// Configure Quartz for database-driven job scheduling
 			services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);
 
 			// Add Quartz hosted service
@@ -29,8 +28,11 @@ namespace WebBoard.Services.Extensions
 			});
 
 			// Register IScheduler for dependency injection
-			QuartzHelper.RegisterScheduler(services);
-
+			services.AddSingleton(provider =>
+			{
+				var schedulerFactory = provider.GetRequiredService<ISchedulerFactory>();
+				return schedulerFactory.GetScheduler().Result;
+			});
 
 			return services;
 		}
