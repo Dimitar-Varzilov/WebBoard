@@ -5,7 +5,7 @@ namespace WebBoard.Common.Constants
 		public static class JobTypes
 		{
 			public const string MarkAllTasksAsDone = "MarkAllTasksAsDone";
-			public const string GenerateTaskReport = "GenerateTaskList";
+			public const string GenerateTaskReport = "GenerateTaskReport";
 
 		}
 
