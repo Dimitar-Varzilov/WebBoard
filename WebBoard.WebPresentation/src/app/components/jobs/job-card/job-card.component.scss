@@ -1,0 +1,41 @@
+.job-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #dfe1e6;
+  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+    border-color: #0052cc;
+  }
+}
+
+.card-title {
+  font-weight: 600;
+  color: #172b4d;
+}
+
+.progress {
+  background-color: #f4f5f7;
+}
+
+.btn-group .btn {
+  border: 1px solid #dfe1e6;
+
+  &:hover {
+    transform: none;
+  }
+}
+
+.fa-spin {
+  animation: fa-spin 1s infinite linear;
+}
+
+@keyframes fa-spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}

@@ -1,0 +1,253 @@
+<div class="container-fluid">
+  <!-- Welcome Header -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card bg-primary text-white">
+        <div class="card-body">
+          <div class="row align-items-center">
+            <div class="col-md-8">
+              <h2 class="mb-1">
+                <i class="fas fa-tachometer-alt me-2"></i>WebBoard Dashboard
+              </h2>
+              <p class="mb-0 opacity-75">
+                Manage your tasks and monitor background jobs efficiently
+              </p>
+            </div>
+            <div class="col-md-4 text-end">
+              <div class="d-flex justify-content-end gap-2">
+                <button class="btn btn-light" routerLink="/tasks">
+                  <i class="fas fa-list-ul me-1"></i>View Tasks
+                </button>
+                <button class="btn btn-outline-light" routerLink="/jobs">
+                  <i class="fas fa-cogs me-1"></i>View Jobs
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Statistics Cards -->
+  <div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h2 class="mb-0 text-primary">{{ taskStats.total }}</h2>
+              <p class="text-muted mb-0">Total Tasks</p>
+            </div>
+            <i class="fas fa-tasks fa-2x text-primary opacity-25"></i>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div class="progress-bar bg-primary" [style.width.%]="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h2 class="mb-0 text-warning">{{ taskStats.inProgress }}</h2>
+              <p class="text-muted mb-0">In Progress</p>
+            </div>
+            <i class="fas fa-spinner fa-2x text-warning opacity-25"></i>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div
+              class="progress-bar bg-warning"
+              [style.width.%]="
+                getPercentage(taskStats.inProgress, taskStats.total)
+              "
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h2 class="mb-0 text-success">{{ taskStats.completed }}</h2>
+              <p class="text-muted mb-0">Completed</p>
+            </div>
+            <i class="fas fa-check fa-2x text-success opacity-25"></i>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div
+              class="progress-bar bg-success"
+              [style.width.%]="
+                getPercentage(taskStats.completed, taskStats.total)
+              "
+            ></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-3 col-md-6 mb-3">
+      <div class="card h-100">
+        <div class="card-body text-center">
+          <div class="d-flex justify-content-between align-items-start mb-2">
+            <div>
+              <h2 class="mb-0 text-info">{{ jobStats.total }}</h2>
+              <p class="text-muted mb-0">Total Jobs</p>
+            </div>
+            <i class="fas fa-cogs fa-2x text-info opacity-25"></i>
+          </div>
+          <div class="progress" style="height: 4px">
+            <div class="progress-bar bg-info" [style.width.%]="100"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions -->
+  <div class="row mb-4">
+    <div class="col-12">
+      <div class="card">
+        <div class="card-header">
+          <h5 class="mb-0"><i class="fas fa-bolt me-2"></i>Quick Actions</h5>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-3 mb-3">
+              <button
+                class="btn btn-outline-primary w-100"
+                (click)="createNewTask()"
+              >
+                <i class="fas fa-plus fa-2x d-block mb-2"></i>
+                <span>Create Task</span>
+              </button>
+            </div>
+            <div class="col-md-3 mb-3">
+              <button
+                class="btn btn-outline-success w-100"
+                (click)="markAllTasksDone()"
+              >
+                <i class="fas fa-check-double fa-2x d-block mb-2"></i>
+                <span>Mark All Done</span>
+              </button>
+            </div>
+            <div class="col-md-3 mb-3">
+              <button
+                class="btn btn-outline-info w-100"
+                (click)="generateReport()"
+              >
+                <i class="fas fa-file-alt fa-2x d-block mb-2"></i>
+                <span>Generate Report</span>
+              </button>
+            </div>
+            <div class="col-md-3 mb-3">
+              <button
+                class="btn btn-outline-secondary w-100"
+                (click)="refreshData()"
+              >
+                <i
+                  class="fas fa-sync-alt fa-2x d-block mb-2"
+                  [class.fa-spin]="loading"
+                ></i>
+                <span>Refresh Data</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent Activity -->
+  <div class="row">
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Tasks</h5>
+          <a routerLink="/tasks" class="btn btn-sm btn-outline-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div
+            *ngIf="recentTasks.length === 0"
+            class="text-center text-muted py-4"
+          >
+            <i class="fas fa-tasks fa-3x mb-3 opacity-25"></i>
+            <p>No tasks yet</p>
+            <button class="btn btn-primary btn-sm" (click)="createNewTask()">
+              <i class="fas fa-plus me-1"></i>Create First Task
+            </button>
+          </div>
+          <div
+            *ngFor="let task of recentTasks | slice : 0 : 5"
+            class="d-flex justify-content-between align-items-center py-2 border-bottom"
+          >
+            <div class="flex-grow-1">
+              <h6 class="mb-1">{{ task.title }}</h6>
+              <small class="text-muted">{{
+                task.createdAt | date : "short"
+              }}</small>
+            </div>
+            <span
+              class="status-badge ms-2"
+              [ngClass]="getTaskStatusClass(task.status)"
+              >{{ getTaskStatusText(task.status) }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-md-6 mb-4">
+      <div class="card h-100">
+        <div
+          class="card-header d-flex justify-content-between align-items-center"
+        >
+          <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Recent Jobs</h5>
+          <a routerLink="/jobs" class="btn btn-sm btn-outline-primary"
+            >View All</a
+          >
+        </div>
+        <div class="card-body">
+          <div
+            *ngIf="recentJobs.length === 0"
+            class="text-center text-muted py-4"
+          >
+            <i class="fas fa-cogs fa-3x mb-3 opacity-25"></i>
+            <p>No jobs yet</p>
+            <button class="btn btn-success btn-sm" (click)="markAllTasksDone()">
+              <i class="fas fa-check-double me-1"></i>Create Job
+            </button>
+          </div>
+          <div
+            *ngFor="let job of recentJobs | slice : 0 : 5"
+            class="d-flex justify-content-between align-items-center py-2 border-bottom"
+          >
+            <div class="flex-grow-1">
+              <h6 class="mb-1">
+                <i class="fas fa-cog me-1"></i>{{ job.jobType }}
+              </h6>
+              <small class="text-muted">{{
+                job.createdAt | date : "short"
+              }}</small>
+            </div>
+            <span
+              class="status-badge ms-2"
+              [ngClass]="getJobStatusClass(job.status)"
+              >{{ getJobStatusText(job.status) }}</span
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

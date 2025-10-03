@@ -1,0 +1,24 @@
+.step {
+  opacity: 0.3;
+  transition: opacity 0.3s ease;
+
+  &.active {
+    opacity: 1;
+  }
+
+  i {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+  }
+}
+
+.progress {
+  background-color: #f4f5f7;
+}
+
+.status-badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.25rem 0.5rem;
+  border-radius: 12px;
+}

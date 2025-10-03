@@ -1,0 +1,28 @@
+.task-card {
+  transition: all 0.2s ease-in-out;
+  border: 1px solid #dfe1e6;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+    border-color: #0052cc;
+  }
+}
+
+.card-title {
+  font-weight: 600;
+  color: #172b4d;
+}
+
+.btn-group .btn {
+  border: 1px solid #dfe1e6;
+
+  &:hover {
+    transform: none;
+  }
+}
+
+.status-badge {
+  white-space: nowrap;
+  font-size: 0.7rem;
+}

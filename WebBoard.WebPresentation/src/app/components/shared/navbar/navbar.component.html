@@ -1,0 +1,42 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="#">
+      <i class="fas fa-tasks me-2"></i>WebBoard
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#navbarNav"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNav">
+      <ul class="navbar-nav me-auto">
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
+            <i class="fas fa-tachometer-alt me-1"></i>Dashboard
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/tasks" routerLinkActive="active">
+            <i class="fas fa-list-ul me-1"></i>Tasks
+          </a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" routerLink="/jobs" routerLinkActive="active">
+            <i class="fas fa-cogs me-1"></i>Jobs
+          </a>
+        </li>
+      </ul>
+
+      <div class="navbar-nav">
+        <button class="btn btn-outline-light btn-sm" routerLink="/tasks/new">
+          <i class="fas fa-plus me-1"></i>New Task
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>

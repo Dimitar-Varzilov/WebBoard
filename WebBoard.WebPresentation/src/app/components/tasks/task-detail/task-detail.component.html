@@ -1,0 +1,70 @@
+<div
+  class="modal d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-eye me-2"></i>Task Details</h5>
+        <button type="button" class="btn-close" (click)="onClose()"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="task">
+        <div class="row">
+          <div class="col-md-8">
+            <h4 class="mb-3">{{ task.title }}</h4>
+            <div class="mb-4">
+              <h6 class="text-muted mb-2">Description</h6>
+              <p class="border p-3 bg-light rounded">{{ task.description }}</p>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-info-circle me-1"></i>Information
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <small class="text-muted d-block">Status</small>
+                  <span
+                    class="status-badge"
+                    [ngClass]="getStatusClass(task.status)"
+                    >{{ getStatusText(task.status) }}</span
+                  >
+                </div>
+
+                <div class="mb-3">
+                  <small class="text-muted d-block">Task ID</small>
+                  <code class="small">{{ task.id }}</code>
+                </div>
+
+                <div class="mb-0">
+                  <small class="text-muted d-block">Created</small>
+                  <span class="small">{{
+                    task.createdAt | date : "medium"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          <i class="fas fa-times me-1"></i>Close
+        </button>
+        <button type="button" class="btn btn-warning" (click)="onEdit()">
+          <i class="fas fa-edit me-1"></i>Edit Task
+        </button>
+        <button type="button" class="btn btn-danger" (click)="onDelete()">
+          <i class="fas fa-trash me-1"></i>Delete Task
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,117 @@
+<div class="container-fluid">
+  <div class="d-flex justify-content-between align-items-center mb-4">
+    <h2 class="mb-0"><i class="fas fa-list-ul me-2 text-primary"></i>Tasks</h2>
+    <div class="d-flex gap-2">
+      <button class="btn btn-outline-secondary" (click)="refreshTasks()">
+        <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
+        Refresh
+      </button>
+      <button class="btn btn-primary" (click)="createTask()">
+        <i class="fas fa-plus me-1"></i>New Task
+      </button>
+    </div>
+  </div>
+
+  <!-- Task Filters -->
+  <div class="row mb-4">
+    <div class="col-md-4">
+      <div class="input-group">
+        <span class="input-group-text"><i class="fas fa-search"></i></span>
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search tasks..."
+          [(ngModel)]="searchText"
+          (ngModelChange)="filterTasks()"
+        />
+      </div>
+    </div>
+    <div class="col-md-3">
+      <select
+        class="form-select"
+        [(ngModel)]="statusFilter"
+        (ngModelChange)="filterTasks()"
+      >
+        <option value="">All Statuses</option>
+        <option value="0">Not Started</option>
+        <option value="1">In Progress</option>
+        <option value="2">Completed</option>
+        <option value="3">On Hold</option>
+      </select>
+    </div>
+    <div class="col-md-5 text-end">
+      <small class="text-muted">
+        Showing {{ filteredTasks.length }} of {{ tasks.length }} tasks
+      </small>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="text-center py-5">
+    <div class="spinner-border text-primary" role="status">
+      <span class="visually-hidden">Loading...</span>
+    </div>
+    <p class="mt-2 text-muted">Loading tasks...</p>
+  </div>
+
+  <!-- Empty State -->
+  <div *ngIf="!loading && tasks.length === 0" class="text-center py-5">
+    <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No tasks yet</h4>
+    <p class="text-muted">
+      Create your first task to get started with project management.
+    </p>
+    <button class="btn btn-primary" (click)="createTask()">
+      <i class="fas fa-plus me-1"></i>Create First Task
+    </button>
+  </div>
+
+  <!-- Tasks Grid -->
+  <div *ngIf="!loading && filteredTasks.length > 0" class="row">
+    <div
+      class="col-xl-3 col-lg-4 col-md-6 mb-4"
+      *ngFor="let task of filteredTasks; trackBy: trackByTaskId"
+    >
+      <app-task-card
+        [task]="task"
+        (edit)="editTask($event)"
+        (view)="viewTask($event)"
+        (delete)="deleteTask($event)"
+      >
+      </app-task-card>
+    </div>
+  </div>
+
+  <!-- No Results -->
+  <div
+    *ngIf="!loading && tasks.length > 0 && filteredTasks.length === 0"
+    class="text-center py-5"
+  >
+    <i class="fas fa-search fa-3x text-muted mb-3"></i>
+    <h4 class="text-muted">No tasks found</h4>
+    <p class="text-muted">Try adjusting your search criteria or filters.</p>
+    <button class="btn btn-outline-secondary" (click)="clearFilters()">
+      <i class="fas fa-times me-1"></i>Clear Filters
+    </button>
+  </div>
+</div>
+
+<!-- Task Form Modal -->
+<app-task-form
+  *ngIf="showTaskForm"
+  [task]="selectedTask"
+  [isEdit]="isEditMode"
+  (save)="onTaskSaved($event)"
+  (cancel)="onTaskFormCanceled()"
+>
+</app-task-form>
+
+<!-- Task Detail Modal -->
+<app-task-detail
+  *ngIf="showTaskDetail"
+  [task]="selectedTask"
+  (edit)="editTask($event)"
+  (delete)="deleteTask($event)"
+  (close)="onTaskDetailClosed()"
+>
+</app-task-detail>

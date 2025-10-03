@@ -1,0 +1,48 @@
+<div class="card h-100 task-card">
+  <div class="card-body">
+    <div class="d-flex justify-content-between align-items-start mb-2">
+      <h6 class="card-title mb-0 text-truncate" [title]="task.title">
+        {{ task.title }}
+      </h6>
+      <span class="status-badge ms-2" [ngClass]="getStatusClass(task.status)">{{
+        getStatusText(task.status)
+      }}</span>
+    </div>
+
+    <p class="card-text text-muted small mb-3" [title]="task.description">
+      {{ task.description | slice : 0 : 80
+      }}{{ task.description.length > 80 ? "..." : "" }}
+    </p>
+
+    <div class="d-flex justify-content-between align-items-center">
+      <small class="text-muted">
+        <i class="fas fa-calendar me-1"></i>
+        {{ task.createdAt | date : "short" }}
+      </small>
+
+      <div class="btn-group btn-group-sm">
+        <button
+          class="btn btn-outline-primary btn-sm"
+          (click)="onEdit()"
+          [title]="'Edit task'"
+        >
+          <i class="fas fa-edit"></i>
+        </button>
+        <button
+          class="btn btn-outline-info btn-sm"
+          (click)="onView()"
+          [title]="'View details'"
+        >
+          <i class="fas fa-eye"></i>
+        </button>
+        <button
+          class="btn btn-outline-danger btn-sm"
+          (click)="onDelete()"
+          [title]="'Delete task'"
+        >
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,112 @@
+<div
+  class="modal d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">
+          <i class="fas fa-task me-2"></i>
+          {{ isEdit ? "Edit Task" : "Create New Task" }}
+        </h5>
+        <button type="button" class="btn-close" (click)="onCancel()"></button>
+      </div>
+
+      <form [formGroup]="taskForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="row">
+            <div class="col-md-8">
+              <div class="mb-3">
+                <label for="title" class="form-label required">Title</label>
+                <input
+                  type="text"
+                  id="title"
+                  class="form-control"
+                  formControlName="title"
+                  placeholder="Enter task title"
+                  [class.is-invalid]="isFieldInvalid('title')"
+                />
+                <div class="invalid-feedback" *ngIf="isFieldInvalid('title')">
+                  <div *ngIf="taskForm.get('title')?.hasError('required')">
+                    Title is required.
+                  </div>
+                  <div *ngIf="taskForm.get('title')?.hasError('minlength')">
+                    Title must be at least 3 characters long.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="col-md-4" *ngIf="isEdit">
+              <div class="mb-3">
+                <label for="status" class="form-label">Status</label>
+                <select
+                  id="status"
+                  class="form-select"
+                  formControlName="status"
+                >
+                  <option [value]="TaskItemStatus.NotStarted">
+                    Not Started
+                  </option>
+                  <option [value]="TaskItemStatus.InProgress">
+                    In Progress
+                  </option>
+                  <option [value]="TaskItemStatus.Completed">Completed</option>
+                  <option [value]="TaskItemStatus.OnHold">On Hold</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="description" class="form-label required"
+              >Description</label
+            >
+            <textarea
+              id="description"
+              class="form-control"
+              rows="4"
+              formControlName="description"
+              placeholder="Enter task description"
+              [class.is-invalid]="isFieldInvalid('description')"
+            ></textarea>
+            <div class="invalid-feedback" *ngIf="isFieldInvalid('description')">
+              <div *ngIf="taskForm.get('description')?.hasError('required')">
+                Description is required.
+              </div>
+            </div>
+          </div>
+
+          <div class="alert alert-info" *ngIf="!isEdit">
+            <i class="fas fa-info-circle me-2"></i>
+            New tasks will be created with "Not Started" status.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()">
+            <i class="fas fa-times me-1"></i>Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="taskForm.invalid || saving"
+          >
+            <span
+              *ngIf="saving"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+            <i
+              *ngIf="!saving"
+              class="fas me-1"
+              [class.fa-save]="isEdit"
+              [class.fa-plus]="!isEdit"
+            ></i>
+            {{ saving ? "Saving..." : isEdit ? "Update Task" : "Create Task" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

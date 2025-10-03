@@ -1,0 +1,166 @@
+<div
+  class="modal d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-cog me-2"></i>Job Details</h5>
+        <button type="button" class="btn-close" (click)="onClose()"></button>
+      </div>
+
+      <div class="modal-body" *ngIf="job">
+        <div class="row">
+          <div class="col-md-8">
+            <h4 class="mb-3">
+              <i class="fas fa-cog me-2"></i>{{ job.jobType }}
+            </h4>
+
+            <div class="card mb-3">
+              <div
+                class="card-header d-flex justify-content-between align-items-center"
+              >
+                <h6 class="mb-0">Job Progress</h6>
+                <span
+                  class="status-badge"
+                  [ngClass]="getStatusClass(job.status)"
+                  >{{ getStatusText(job.status) }}</span
+                >
+              </div>
+              <div class="card-body">
+                <div class="progress mb-3" style="height: 10px">
+                  <div
+                    class="progress-bar"
+                    [ngClass]="getProgressClass(job.status)"
+                    [style.width.%]="getProgressPercentage(job.status)"
+                  ></div>
+                </div>
+                <div class="row text-center">
+                  <div class="col-3">
+                    <div
+                      class="step"
+                      [class.active]="job.status >= JobStatus.Pending"
+                    >
+                      <i class="fas fa-clock"></i>
+                      <small class="d-block mt-1">Queued</small>
+                    </div>
+                  </div>
+                  <div class="col-3">
+                    <div
+                      class="step"
+                      [class.active]="job.status >= JobStatus.Running"
+                    >
+                      <i class="fas fa-spinner"></i>
+                      <small class="d-block mt-1">Running</small>
+                    </div>
+                  </div>
+                  <div class="col-3">
+                    <div
+                      class="step"
+                      [class.active]="job.status === JobStatus.Completed"
+                    >
+                      <i class="fas fa-check"></i>
+                      <small class="d-block mt-1">Completed</small>
+                    </div>
+                  </div>
+                  <div class="col-3">
+                    <div
+                      class="step"
+                      [class.active]="job.status === JobStatus.Failed"
+                    >
+                      <i class="fas fa-times"></i>
+                      <small class="d-block mt-1">Failed</small>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-list me-1"></i>Job Actions
+                </h6>
+              </div>
+              <div class="card-body">
+                <div *ngIf="job.jobType === 'MarkAllTasksAsDone'">
+                  <p>
+                    <i class="fas fa-check-double me-2 text-success"></i>Mark
+                    all tasks as completed
+                  </p>
+                  <small class="text-muted"
+                    >This job will update the status of all existing tasks to
+                    'Completed'.</small
+                  >
+                </div>
+                <div *ngIf="job.jobType === 'GenerateTaskReport'">
+                  <p>
+                    <i class="fas fa-file-alt me-2 text-info"></i>Generate task
+                    report
+                  </p>
+                  <small class="text-muted"
+                    >This job will create a text file containing a summary of
+                    all tasks.</small
+                  >
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-md-4">
+            <div class="card">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-info-circle me-1"></i>Job Information
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="mb-3">
+                  <small class="text-muted d-block">Job ID</small>
+                  <code class="small">{{ job.id }}</code>
+                </div>
+
+                <div class="mb-3">
+                  <small class="text-muted d-block">Job Type</small>
+                  <span class="small">{{ job.jobType }}</span>
+                </div>
+
+                <div class="mb-3">
+                  <small class="text-muted d-block">Status</small>
+                  <span
+                    class="status-badge small"
+                    [ngClass]="getStatusClass(job.status)"
+                    >{{ getStatusText(job.status) }}</span
+                  >
+                </div>
+
+                <div class="mb-0">
+                  <small class="text-muted d-block">Created</small>
+                  <span class="small">{{
+                    job.createdAt | date : "medium"
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="onClose()">
+          <i class="fas fa-times me-1"></i>Close
+        </button>
+        <button
+          type="button"
+          class="btn btn-outline-primary"
+          (click)="onRefresh()"
+          [disabled]="refreshing"
+        >
+          <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing"></i>
+          Refresh Status
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
