@@ -6,7 +6,10 @@ using WebBoard.Data;
 
 namespace WebBoard.Services.Jobs
 {
-	public class JobService(AppDbContext db, IJobSchedulingService jobSchedulingService) : IJobService
+	public class JobService(
+		AppDbContext db, 
+		IJobSchedulingService jobSchedulingService,
+		IJobTypeRegistry jobTypeRegistry) : IJobService
 	{
 		public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
 		{
@@ -19,6 +22,12 @@ namespace WebBoard.Services.Jobs
 
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
 		{
+			// Validate job type
+			if (!jobTypeRegistry.IsValidJobType(createJobRequest.JobType))
+			{
+				throw new ArgumentException($"Invalid job type: '{createJobRequest.JobType}'. Available types: {string.Join(", ", jobTypeRegistry.GetAllJobTypes())}");
+			}
+
 			var scheduledAt = createJobRequest.RunImmediately ? null : createJobRequest.ScheduledAt;
 
 			var job = new Job(

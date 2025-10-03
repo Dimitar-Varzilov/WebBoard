@@ -9,7 +9,10 @@ namespace WebBoard.Services.Jobs
 		Task ScheduleJobAsync(Job job);
 	}
 
-	public class JobSchedulingService(IScheduler scheduler, ILogger<JobSchedulingService> logger) : IJobSchedulingService
+	public class JobSchedulingService(
+		IScheduler scheduler, 
+		IJobTypeRegistry jobTypeRegistry,
+		ILogger<JobSchedulingService> logger) : IJobSchedulingService
 	{
 		public async Task ScheduleJobAsync(Job job)
 		{
@@ -31,13 +34,8 @@ namespace WebBoard.Services.Jobs
 					[Constants.JobDataKeys.JobId] = job.Id
 				};
 
-				// Determine job type
-				var quartzJobType = job.JobType switch
-				{
-					Constants.JobTypes.MarkAllTasksAsDone => typeof(MarkTasksAsCompletedJob),
-					Constants.JobTypes.GenerateTaskReport => typeof(GenerateTaskListJob),
-					_ => throw new InvalidOperationException($"Unknown job type: {job.JobType}")
-				};
+				// Get job type using the registry
+				var quartzJobType = jobTypeRegistry.GetJobType(job.JobType);
 
 				// Create job detail
 				var jobDetail = JobBuilder.Create(quartzJobType)

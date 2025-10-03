@@ -6,6 +6,7 @@ using WebBoard.Data;
 
 namespace WebBoard.Services.Jobs
 {
+	[JobType(Constants.JobTypes.MarkAllTasksAsDone)]
 	public class MarkTasksAsCompletedJob(IServiceProvider serviceProvider, ILogger<MarkTasksAsCompletedJob> logger) : IJob
 	{
 		public async Task Execute(IJobExecutionContext context)

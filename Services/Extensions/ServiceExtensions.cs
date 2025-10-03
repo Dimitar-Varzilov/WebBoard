@@ -17,6 +17,9 @@ namespace WebBoard.Services.Extensions
 			services.AddScoped<ITaskService, TaskService>();
 			services.AddScoped<IJobService, JobService>();
 			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
+			
+			// Register job type registry as singleton since it's stateless
+			services.AddSingleton<IJobTypeRegistry, JobTypeRegistry>();
 
 			// Configure Quartz for database-driven job scheduling
 			services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);

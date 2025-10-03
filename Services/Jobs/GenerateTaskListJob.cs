@@ -6,6 +6,7 @@ using WebBoard.Data;
 
 namespace WebBoard.Services.Jobs
 {
+	[JobType(Constants.JobTypes.GenerateTaskReport)]
 	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger) : IJob
 	{
 		public async Task Execute(IJobExecutionContext context)
