@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
 using WebBoard.Data;
+using WebBoard.Services.Jobs;
+using WebBoard.Services.Tasks;
 
 namespace WebBoard.Services.Extensions
 {
@@ -12,8 +14,13 @@ namespace WebBoard.Services.Extensions
 			services.AddDbContext<AppDbContext>(options =>
 				options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-			// Configure Quartz
-			services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);
+            services.AddScoped<ITaskService, TaskService>();
+            services.AddScoped<IJobService, JobService>();
+
+			services.AddSingleton<IBackgroundService, BackgroundService>();
+
+            // Configure Quartz
+            services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);
 
 			// Add Quartz hosted service
 			services.AddQuartzHostedService(options =>
@@ -24,8 +31,6 @@ namespace WebBoard.Services.Extensions
 			// Register IScheduler for dependency injection
 			QuartzHelper.RegisterScheduler(services);
 
-			// Register background services
-			services.AddSingleton<IBackgroundService, BackgroundService>();
 
 			return services;
 		}
