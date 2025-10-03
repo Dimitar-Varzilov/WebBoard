@@ -15,10 +15,13 @@
             </div>
             <div class="col-md-4 text-end">
               <div class="d-flex justify-content-end gap-2">
-                <button class="btn btn-light" routerLink="/tasks">
+                <button class="btn btn-light" [routerLink]="routes.TASKS">
                   <i class="fas fa-list-ul me-1"></i>View Tasks
                 </button>
-                <button class="btn btn-outline-light" routerLink="/jobs">
+                <button
+                  class="btn btn-outline-light"
+                  [routerLink]="routes.JOBS"
+                >
                   <i class="fas fa-cogs me-1"></i>View Jobs
                 </button>
               </div>
@@ -163,7 +166,7 @@
           class="card-header d-flex justify-content-between align-items-center"
         >
           <h5 class="mb-0"><i class="fas fa-clock me-2"></i>Recent Tasks</h5>
-          <a routerLink="/tasks" class="btn btn-sm btn-outline-primary"
+          <a [routerLink]="routes.TASKS" class="btn btn-sm btn-outline-primary"
             >View All</a
           >
         </div>
@@ -204,7 +207,7 @@
           class="card-header d-flex justify-content-between align-items-center"
         >
           <h5 class="mb-0"><i class="fas fa-cogs me-2"></i>Recent Jobs</h5>
-          <a routerLink="/jobs" class="btn btn-sm btn-outline-primary"
+          <a [routerLink]="routes.JOBS" class="btn btn-sm btn-outline-primary"
             >View All</a
           >
         </div>

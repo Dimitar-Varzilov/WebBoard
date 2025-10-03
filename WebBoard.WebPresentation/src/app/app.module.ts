@@ -8,6 +8,7 @@ import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { DashboardComponent } from './components/dashboard/dashboard.component';
 import { TaskListComponent } from './components/tasks/task-list/task-list.component';
+import { TaskCreateComponent } from './components/tasks/task-create/task-create.component';
 import { TaskFormComponent } from './components/tasks/task-form/task-form.component';
 import { TaskDetailComponent } from './components/tasks/task-detail/task-detail.component';
 import { JobListComponent } from './components/jobs/job-list/job-list.component';
@@ -23,6 +24,7 @@ import { JobCreateComponent } from './components/jobs/job-create/job-create.comp
     AppComponent,
     DashboardComponent,
     TaskListComponent,
+    TaskCreateComponent,
     TaskFormComponent,
     TaskDetailComponent,
     JobListComponent,

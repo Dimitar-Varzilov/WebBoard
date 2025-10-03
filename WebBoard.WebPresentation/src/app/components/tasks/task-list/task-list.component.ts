@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
+import { Router } from '@angular/router';
 import { TaskDto, TaskItemStatus } from '../../../models';
 import { TaskService } from '../../../services';
+import { ROUTES, TASK_STATUS_OPTIONS } from '../../../constants';
 
 @Component({
   selector: 'app-task-list',
@@ -13,6 +15,7 @@ export class TaskListComponent implements OnInit {
   loading = false;
   searchText = '';
   statusFilter = '';
+  taskStatusOptions = TASK_STATUS_OPTIONS;
 
   // Modal states
   showTaskForm = false;
@@ -20,7 +23,7 @@ export class TaskListComponent implements OnInit {
   selectedTask: TaskDto | null = null;
   isEditMode = false;
 
-  constructor(private taskService: TaskService) {}
+  constructor(private taskService: TaskService, private router: Router) {}
 
   ngOnInit(): void {
     this.loadTasks();
@@ -66,9 +69,7 @@ export class TaskListComponent implements OnInit {
   }
 
   createTask(): void {
-    this.selectedTask = null;
-    this.isEditMode = false;
-    this.showTaskForm = true;
+    this.router.navigate([ROUTES.TASK_CREATE]);
   }
 
   editTask(task: TaskDto): void {

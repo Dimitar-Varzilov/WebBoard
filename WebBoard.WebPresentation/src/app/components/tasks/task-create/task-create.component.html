@@ -1,0 +1,128 @@
+<div class="container-fluid">
+  <div class="row justify-content-center">
+    <div class="col-lg-8 col-xl-6">
+      <div class="card">
+        <div class="card-header bg-primary text-white">
+          <h4 class="mb-0"><i class="fas fa-plus me-2"></i>Create New Task</h4>
+        </div>
+        <div class="card-body">
+          <form [formGroup]="taskForm" (ngSubmit)="onSubmit()">
+            <!-- Title Field -->
+            <div class="mb-3">
+              <label for="title" class="form-label">
+                <i class="fas fa-heading me-1"></i>Title *
+              </label>
+              <input
+                type="text"
+                class="form-control"
+                id="title"
+                formControlName="title"
+                placeholder="Enter task title"
+                [class.is-invalid]="
+                  taskForm.get('title')?.invalid &&
+                  taskForm.get('title')?.touched
+                "
+              />
+              <div class="invalid-feedback">
+                {{ getFieldError("title") }}
+              </div>
+            </div>
+
+            <!-- Description Field -->
+            <div class="mb-3">
+              <label for="description" class="form-label">
+                <i class="fas fa-align-left me-1"></i>Description *
+              </label>
+              <textarea
+                class="form-control"
+                id="description"
+                formControlName="description"
+                rows="4"
+                placeholder="Enter task description"
+                [class.is-invalid]="
+                  taskForm.get('description')?.invalid &&
+                  taskForm.get('description')?.touched
+                "
+              ></textarea>
+              <div class="invalid-feedback">
+                {{ getFieldError("description") }}
+              </div>
+            </div>
+
+            <!-- Status Field -->
+            <div class="mb-4">
+              <label for="status" class="form-label">
+                <i class="fas fa-flag me-1"></i>Initial Status
+              </label>
+              <select
+                class="form-select"
+                id="status"
+                formControlName="status"
+                [class.is-invalid]="
+                  taskForm.get('status')?.invalid &&
+                  taskForm.get('status')?.touched
+                "
+              >
+                <option
+                  *ngFor="let status of taskStatusOptions"
+                  [value]="status.value"
+                >
+                  {{ status.label }}
+                </option>
+              </select>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                New tasks are typically created with "Not Started" status.
+              </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="d-flex justify-content-between">
+              <button
+                type="button"
+                class="btn btn-outline-secondary"
+                (click)="onCancel()"
+                [disabled]="submitting"
+              >
+                <i class="fas fa-times me-1"></i>Cancel
+              </button>
+              <button
+                type="submit"
+                class="btn btn-primary"
+                [disabled]="taskForm.invalid || submitting"
+              >
+                <span
+                  *ngIf="submitting"
+                  class="spinner-border spinner-border-sm me-2"
+                ></span>
+                <i *ngIf="!submitting" class="fas fa-save me-1"></i>
+                {{ submitting ? "Creating..." : "Create Task" }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Help Text -->
+      <div class="mt-3">
+        <div class="alert alert-info">
+          <i class="fas fa-lightbulb me-2"></i>
+          <strong>Tips:</strong>
+          <ul class="mb-0 mt-2">
+            <li>
+              Use clear and descriptive titles for better task organization
+            </li>
+            <li>
+              Provide detailed descriptions to help team members understand the
+              requirements
+            </li>
+            <li>
+              Start with "Not Started" status unless the task is already in
+              progress
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

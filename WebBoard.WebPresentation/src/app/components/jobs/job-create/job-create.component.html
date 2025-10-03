@@ -7,7 +7,10 @@
             <h4 class="mb-0">
               <i class="fas fa-plus me-2 text-primary"></i>Create New Job
             </h4>
-            <button class="btn btn-outline-secondary btn-sm" routerLink="/jobs">
+            <button
+              class="btn btn-outline-secondary btn-sm"
+              [routerLink]="routes.JOBS"
+            >
               <i class="fas fa-arrow-left me-1"></i>Back to Jobs
             </button>
           </div>
@@ -51,7 +54,7 @@
               <button
                 type="button"
                 class="btn btn-outline-secondary"
-                routerLink="/jobs"
+                [routerLink]="routes.JOBS"
                 [disabled]="creating"
               >
                 <i class="fas fa-times me-1"></i>Cancel

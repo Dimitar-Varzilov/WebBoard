@@ -7,6 +7,7 @@ import {
   JOB_TYPE_LABELS,
   JOB_TYPE_DESCRIPTIONS,
   JobType,
+  ROUTES,
 } from '../../../constants';
 
 interface JobTypeOption {
@@ -20,25 +21,23 @@ interface JobTypeOption {
   styleUrls: ['./job-create.component.scss'],
 })
 export class JobCreateComponent implements OnInit {
-  jobForm!: FormGroup;
+  jobForm: FormGroup;
   creating = false;
+  routes = ROUTES;
   availableJobTypes: JobTypeOption[] = [];
 
   constructor(
     private fb: FormBuilder,
     private jobService: JobService,
     private router: Router
-  ) {}
-
-  ngOnInit(): void {
-    this.initializeForm();
-    this.setupJobTypes();
+  ) {
+    this.jobForm = this.fb.group({
+      jobType: ['', Validators.required],
+    });
   }
 
-  private initializeForm(): void {
-    this.jobForm = this.fb.group({
-      jobType: ['', [Validators.required]],
-    });
+  ngOnInit(): void {
+    this.setupJobTypes();
   }
 
   private setupJobTypes(): void {
@@ -70,7 +69,7 @@ export class JobCreateComponent implements OnInit {
         next: (job) => {
           this.creating = false;
           // Navigate to jobs list and show success message
-          this.router.navigate(['/jobs'], {
+          this.router.navigate([ROUTES.JOBS], {
             queryParams: { created: job.id },
           });
         },

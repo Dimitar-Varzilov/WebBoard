@@ -1,16 +1,20 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
 import { JobService } from '../../../services';
-import { TIMING } from '../../../constants';
+import { TIMING, ROUTES } from '../../../constants';
 
 @Component({
   selector: 'app-job-list',
   templateUrl: './job-list.component.html',
   styleUrls: ['./job-list.component.scss'],
 })
-export class JobListComponent implements OnInit, OnDestroy {
+export class JobListComponent implements OnInit {
   jobs: JobDto[] = [];
+  filteredJobs: JobDto[] = [];
   loading = false;
+  searchText = '';
+  statusFilter = '';
+  routes = ROUTES;
   JobStatus = JobStatus;
 
   // Modal states

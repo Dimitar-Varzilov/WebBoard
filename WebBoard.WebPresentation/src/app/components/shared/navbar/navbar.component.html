@@ -16,17 +16,29 @@
     <div class="collapse navbar-collapse" id="navbarNav">
       <ul class="navbar-nav me-auto">
         <li class="nav-item">
-          <a class="nav-link" routerLink="/dashboard" routerLinkActive="active">
+          <a
+            class="nav-link"
+            [routerLink]="routes.DASHBOARD"
+            routerLinkActive="active"
+          >
             <i class="fas fa-tachometer-alt me-1"></i>Dashboard
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/tasks" routerLinkActive="active">
+          <a
+            class="nav-link"
+            [routerLink]="routes.TASKS"
+            routerLinkActive="active"
+          >
             <i class="fas fa-list-ul me-1"></i>Tasks
           </a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" routerLink="/jobs" routerLinkActive="active">
+          <a
+            class="nav-link"
+            [routerLink]="routes.JOBS"
+            routerLinkActive="active"
+          >
             <i class="fas fa-cogs me-1"></i>Jobs
           </a>
         </li>

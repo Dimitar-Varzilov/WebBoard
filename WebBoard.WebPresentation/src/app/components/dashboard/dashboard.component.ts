@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { TaskDto, JobDto, TaskItemStatus, JobStatus } from '../../models';
 import { TaskService, JobService } from '../../services';
-import { JOB_TYPES } from '../../constants';
+import { JOB_TYPES, ROUTES } from '../../constants';
 
 interface TaskStats {
   total: number;
@@ -26,6 +26,7 @@ interface JobStats {
 })
 export class DashboardComponent implements OnInit {
   loading = false;
+  routes = ROUTES;
 
   taskStats: TaskStats = {
     total: 0,
@@ -179,11 +180,11 @@ export class DashboardComponent implements OnInit {
   }
 
   createNewTask(): void {
-    this.router.navigate(['/tasks']);
+    this.router.navigate([ROUTES.TASK_CREATE]);
   }
 
   createJob(): void {
-    this.router.navigate(['/jobs/create']);
+    this.router.navigate([ROUTES.JOB_CREATE]);
   }
 
   refreshData(): void {
