@@ -34,6 +34,9 @@ namespace WebBoard.Services.Extensions
 				return schedulerFactory.GetScheduler().Result;
 			});
 
+			// Register startup service to check for pending jobs on application start
+			services.AddHostedService<JobStartupService>();
+
 			return services;
 		}
 	}

@@ -18,6 +18,13 @@ namespace WebBoard.Services.Jobs
 				var jobKey = new JobKey(job.Id.ToString());
 				var triggerKey = new TriggerKey($"{job.Id}-trigger");
 
+				// Check if job is already scheduled and remove it first
+				if (await scheduler.CheckExists(jobKey))
+				{
+					logger.LogInformation("Job {JobId} already exists in scheduler, removing and rescheduling", job.Id);
+					await scheduler.DeleteJob(jobKey);
+				}
+
 				// Create job data map with job ID
 				var jobDataMap = new JobDataMap
 				{
@@ -50,11 +57,25 @@ namespace WebBoard.Services.Jobs
 				}
 				else
 				{
-					// Schedule for specific time
-					trigger = TriggerBuilder.Create()
-						.WithIdentity(triggerKey)
-						.StartAt(job.ScheduledAt.Value)
-						.Build();
+					// Check if scheduled time is in the past
+					if (job.ScheduledAt.Value <= DateTime.UtcNow)
+					{
+						logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately", 
+							job.Id, job.ScheduledAt.Value);
+						
+						trigger = TriggerBuilder.Create()
+							.WithIdentity(triggerKey)
+							.StartNow()
+							.Build();
+					}
+					else
+					{
+						// Schedule for specific time
+						trigger = TriggerBuilder.Create()
+							.WithIdentity(triggerKey)
+							.StartAt(job.ScheduledAt.Value)
+							.Build();
+					}
 				}
 
 				// Schedule the job
