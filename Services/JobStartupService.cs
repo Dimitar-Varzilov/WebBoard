@@ -44,7 +44,7 @@ namespace WebBoard.Services
 					logger.LogInformation("Waiting for Quartz scheduler to start...");
 					var maxWait = TimeSpan.FromSeconds(30);
 					var startTime = DateTime.UtcNow;
-					
+
 					while (!scheduler.IsStarted && DateTime.UtcNow - startTime < maxWait)
 					{
 						await Task.Delay(TimeSpan.FromMilliseconds(500), cancellationToken);
@@ -82,9 +82,9 @@ namespace WebBoard.Services
 						// Check if the job should have already run (scheduled time has passed)
 						if (job.ScheduledAt.HasValue && job.ScheduledAt.Value <= DateTime.UtcNow)
 						{
-							logger.LogInformation("Job {JobId} was scheduled for {ScheduledTime} but is overdue, scheduling to run immediately", 
+							logger.LogInformation("Job {JobId} was scheduled for {ScheduledTime} but is overdue, scheduling to run immediately",
 								job.Id, job.ScheduledAt.Value);
-							
+
 							// Create a copy with no scheduled time to run immediately
 							var immediateJob = job with { ScheduledAt = null };
 							await jobSchedulingService.ScheduleJobAsync(immediateJob);
@@ -100,12 +100,12 @@ namespace WebBoard.Services
 					catch (Exception ex)
 					{
 						failedCount++;
-						logger.LogError(ex, "Failed to schedule pending job {JobId} of type {JobType}", 
+						logger.LogError(ex, "Failed to schedule pending job {JobId} of type {JobType}",
 							job.Id, job.JobType);
 					}
 				}
 
-				logger.LogInformation("Completed scheduling pending jobs on startup: {ScheduledCount} successful, {FailedCount} failed", 
+				logger.LogInformation("Completed scheduling pending jobs on startup: {ScheduledCount} successful, {FailedCount} failed",
 					scheduledCount, failedCount);
 			}
 			catch (Exception ex)

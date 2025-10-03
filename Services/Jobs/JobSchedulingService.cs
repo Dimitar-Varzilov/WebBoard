@@ -10,7 +10,7 @@ namespace WebBoard.Services.Jobs
 	}
 
 	public class JobSchedulingService(
-		IScheduler scheduler, 
+		IScheduler scheduler,
 		IJobTypeRegistry jobTypeRegistry,
 		ILogger<JobSchedulingService> logger) : IJobSchedulingService
 	{
@@ -58,9 +58,9 @@ namespace WebBoard.Services.Jobs
 					// Check if scheduled time is in the past
 					if (job.ScheduledAt.Value <= DateTime.UtcNow)
 					{
-						logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately", 
+						logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately",
 							job.Id, job.ScheduledAt.Value);
-						
+
 						trigger = TriggerBuilder.Create()
 							.WithIdentity(triggerKey)
 							.StartNow()
@@ -78,8 +78,8 @@ namespace WebBoard.Services.Jobs
 
 				// Schedule the job
 				await scheduler.ScheduleJob(jobDetail, trigger);
-				
-				logger.LogInformation("Scheduled job {JobId} of type {JobType} to run at {ScheduledTime}", 
+
+				logger.LogInformation("Scheduled job {JobId} of type {JobType} to run at {ScheduledTime}",
 					job.Id, job.JobType, job.ScheduledAt?.ToString() ?? "immediately");
 			}
 			catch (Exception ex)

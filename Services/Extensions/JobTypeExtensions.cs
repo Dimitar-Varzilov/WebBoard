@@ -19,5 +19,13 @@ namespace WebBoard.Services.Extensions
 		{
 			return jobTypeRegistry.GetAllJobTypes();
 		}
+
+		/// <summary>
+		/// Extension method to clean up a completed job
+		/// </summary>
+		public static async Task CleanupIfCompleted(this Guid jobId, IJobCleanupService jobCleanupService)
+		{
+			await jobCleanupService.CleanupCompletedJobAsync(jobId);
+		}
 	}
 }

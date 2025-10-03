@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Quartz;
 using WebBoard.Common.Constants;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
@@ -7,47 +6,17 @@ using WebBoard.Data;
 namespace WebBoard.Services.Jobs
 {
 	[JobType(Constants.JobTypes.MarkAllTasksAsDone)]
-	public class MarkTasksAsCompletedJob(IServiceProvider serviceProvider, ILogger<MarkTasksAsCompletedJob> logger) : IJob
+	public class MarkTasksAsCompletedJob(IServiceProvider serviceProvider, ILogger<MarkTasksAsCompletedJob> logger)
+		: BaseJob(serviceProvider, logger)
 	{
-		public async Task Execute(IJobExecutionContext context)
+		protected override async Task ExecuteJobLogic(AppDbContext dbContext, Guid jobId, CancellationToken cancellationToken)
 		{
-			var jobId = context.MergedJobDataMap.GetGuid(Constants.JobDataKeys.JobId);
-			var ct = context.CancellationToken;
+			Logger.LogInformation("Starting mark tasks as completed for job {JobId}", jobId);
 
-			using var scope = serviceProvider.CreateScope();
-			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+			// Mark all tasks as completed
+			await MarkAllTasksAsCompletedAsync(dbContext, cancellationToken);
 
-			try
-			{
-				// Update job status to Running
-				var job = await dbContext.Jobs.FindAsync(jobId, ct);
-				if (job == null)
-				{
-					logger.LogError("Job {JobId} not found", jobId);
-					return;
-				}
-
-				var runningJob = job with { Status = JobStatus.Running };
-				dbContext.Entry(job).CurrentValues.SetValues(runningJob);
-				await dbContext.SaveChangesAsync(ct);
-
-				logger.LogInformation("Starting mark tasks as completed for job {JobId}", jobId);
-
-				// Mark all tasks as completed
-				await MarkAllTasksAsCompletedAsync(dbContext, ct);
-
-				// Update job status to Completed
-				var completedJob = runningJob with { Status = JobStatus.Completed };
-				dbContext.Entry(runningJob).CurrentValues.SetValues(completedJob);
-				await dbContext.SaveChangesAsync(ct);
-
-				logger.LogInformation("Mark tasks as completed finished for job {JobId}", jobId);
-			}
-			catch (Exception ex)
-			{
-				logger.LogError(ex, "Error processing job {JobId}", jobId);
-				throw;
-			}
+			Logger.LogInformation("Mark tasks as completed finished for job {JobId}", jobId);
 		}
 
 		private static async Task MarkAllTasksAsCompletedAsync(AppDbContext dbContext, CancellationToken ct)

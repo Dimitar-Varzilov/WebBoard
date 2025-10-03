@@ -1,5 +1,5 @@
-using System.Reflection;
 using Quartz;
+using System.Reflection;
 using WebBoard.Common.Constants;
 
 namespace WebBoard.Services.Jobs
@@ -22,13 +22,11 @@ namespace WebBoard.Services.Jobs
 
 		public Type GetJobType(string jobTypeName)
 		{
-			if (string.IsNullOrWhiteSpace(jobTypeName))
-				throw new ArgumentException("Job type name cannot be null or empty", nameof(jobTypeName));
-
-			if (!_jobTypeMap.TryGetValue(jobTypeName, out var jobType))
-				throw new InvalidOperationException($"Unknown job type: '{jobTypeName}'. Available types: {string.Join(", ", GetAllJobTypes())}");
-
-			return jobType;
+			return string.IsNullOrWhiteSpace(jobTypeName)
+				? throw new ArgumentException("Job type name cannot be null or empty", nameof(jobTypeName))
+				: !_jobTypeMap.TryGetValue(jobTypeName, out var jobType)
+				? throw new InvalidOperationException($"Unknown job type: '{jobTypeName}'. Available types: {string.Join(", ", GetAllJobTypes())}")
+				: jobType;
 		}
 
 		public bool IsValidJobType(string jobTypeName)

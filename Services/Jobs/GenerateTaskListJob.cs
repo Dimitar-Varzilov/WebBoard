@@ -1,53 +1,21 @@
 using Microsoft.EntityFrameworkCore;
-using Quartz;
 using WebBoard.Common.Constants;
-using WebBoard.Common.Enums;
 using WebBoard.Data;
 
 namespace WebBoard.Services.Jobs
 {
 	[JobType(Constants.JobTypes.GenerateTaskReport)]
-	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger) : IJob
+	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger)
+		: BaseJob(serviceProvider, logger)
 	{
-		public async Task Execute(IJobExecutionContext context)
+		protected override async Task ExecuteJobLogic(AppDbContext dbContext, Guid jobId, CancellationToken cancellationToken)
 		{
-			var jobId = context.MergedJobDataMap.GetGuid(Constants.JobDataKeys.JobId);
-			var ct = context.CancellationToken;
+			Logger.LogInformation("Starting task list generation for job {JobId}", jobId);
 
-			using var scope = serviceProvider.CreateScope();
-			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+			// Generate task list file
+			await GenerateTaskListFileAsync(dbContext, cancellationToken);
 
-			try
-			{
-				// Update job status to Running
-				var job = await dbContext.Jobs.FindAsync(jobId, ct);
-				if (job == null)
-				{
-					logger.LogError("Job {JobId} not found", jobId);
-					return;
-				}
-
-				var runningJob = job with { Status = JobStatus.Running };
-				dbContext.Entry(job).CurrentValues.SetValues(runningJob);
-				await dbContext.SaveChangesAsync(ct);
-
-				logger.LogInformation("Starting task list generation for job {JobId}", jobId);
-
-				// Generate task list file
-				await GenerateTaskListFileAsync(dbContext, ct);
-
-				// Update job status to Completed
-				var completedJob = runningJob with { Status = JobStatus.Completed };
-				dbContext.Entry(runningJob).CurrentValues.SetValues(completedJob);
-				await dbContext.SaveChangesAsync(ct);
-
-				logger.LogInformation("Task list generation completed for job {JobId}", jobId);
-			}
-			catch (Exception ex)
-			{
-				logger.LogError(ex, "Error processing job {JobId}", jobId);
-				throw;
-			}
+			Logger.LogInformation("Task list generation completed for job {JobId}", jobId);
 		}
 
 		private static async Task GenerateTaskListFileAsync(AppDbContext dbContext, CancellationToken ct)

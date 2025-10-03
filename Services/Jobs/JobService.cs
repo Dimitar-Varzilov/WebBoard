@@ -7,7 +7,7 @@ using WebBoard.Data;
 namespace WebBoard.Services.Jobs
 {
 	public class JobService(
-		AppDbContext db, 
+		AppDbContext db,
 		IJobSchedulingService jobSchedulingService,
 		IJobTypeRegistry jobTypeRegistry) : IJobService
 	{
