@@ -6,7 +6,6 @@ using WebBoard.Data;
 
 namespace WebBoard.Services.Jobs
 {
-	[DisallowConcurrentExecution]
 	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger) : IJob
 	{
 		public async Task Execute(IJobExecutionContext context)

@@ -17,28 +17,6 @@ namespace WebBoard.Services.Extensions
 				.WithIdentity(Constants.JobTypes.GenerateTaskReport)
 				.StoreDurably());
 
-			// Create triggers for MarkTasksAsCompleted
-			q.AddTrigger(opts => opts
-				.ForJob(Constants.JobTypes.MarkAllTasksAsDone)
-				.WithIdentity($"{Constants.JobTypes.MarkAllTasksAsDone}-8AM")
-				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(8, 0)));
-
-			q.AddTrigger(opts => opts
-				.ForJob(Constants.JobTypes.MarkAllTasksAsDone)
-				.WithIdentity($"{Constants.JobTypes.MarkAllTasksAsDone}-2PM")
-				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(14, 0)));
-
-			// Create triggers for GenerateTaskList
-			q.AddTrigger(opts => opts
-				.ForJob(Constants.JobTypes.GenerateTaskReport)
-				.WithIdentity($"{Constants.JobTypes.GenerateTaskReport}-8AM")
-				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(8, 0)));
-
-			q.AddTrigger(opts => opts
-				.ForJob(Constants.JobTypes.GenerateTaskReport)
-				.WithIdentity($"{Constants.JobTypes.GenerateTaskReport}-2PM")
-				.WithSchedule(CronScheduleBuilder.DailyAtHourAndMinute(14, 0)));
-
 			// Configure other job settings
 			q.UseSimpleTypeLoader();
 			q.UseInMemoryStore();
