@@ -8,6 +8,15 @@ namespace WebBoard.Services.Jobs
 {
 	public class JobService(AppDbContext db) : IJobService
 	{
+		public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
+		{
+			var jobs = await db.Jobs.AsNoTracking()
+								.OrderByDescending(j => j.CreatedAt)
+								.ToListAsync();
+
+			return jobs.Select(job => new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt));
+		}
+
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
 		{
 			var job = new Job(

@@ -67,18 +67,34 @@ export class DashboardComponent implements OnInit {
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
         );
         this.calculateTaskStats(tasks);
-        this.loading = false;
+        this.checkLoadingComplete();
       },
       error: (error) => {
         console.error('Error loading tasks:', error);
-        this.loading = false;
+        this.checkLoadingComplete();
       },
     });
 
-    // Note: Since we don't have a getAllJobs endpoint, we'll simulate with empty array
-    // In a real implementation, you would load jobs here too
-    this.recentJobs = [];
-    this.calculateJobStats([]);
+    // Load jobs
+    this.jobService.getAllJobs().subscribe({
+      next: (jobs) => {
+        this.recentJobs = jobs.sort(
+          (a, b) =>
+            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        );
+        this.calculateJobStats(jobs);
+        this.checkLoadingComplete();
+      },
+      error: (error) => {
+        console.error('Error loading jobs:', error);
+        this.checkLoadingComplete();
+      },
+    });
+  }
+
+  private checkLoadingComplete(): void {
+    // Set loading to false after both calls complete (success or error)
+    this.loading = false;
   }
 
   private calculateTaskStats(tasks: TaskDto[]): void {

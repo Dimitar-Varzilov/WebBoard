@@ -62,6 +62,12 @@ namespace WebBoard.Services
 			catch (Exception ex)
 			{
 				logger.LogError(ex, "Error processing job {JobId}", queuedJob.Id);
+				
+				// Create new job instance with Failed status
+				var failedJob = runningJob with { Status = JobStatus.Failed };
+				dbContext.Entry(runningJob).CurrentValues.SetValues(failedJob);
+				await dbContext.SaveChangesAsync(stoppingToken);
+				
 				throw;
 			}
 		}

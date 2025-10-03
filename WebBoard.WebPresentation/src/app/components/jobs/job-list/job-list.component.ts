@@ -28,12 +28,16 @@ export class JobListComponent implements OnInit {
 
   loadJobs(): void {
     this.loading = true;
-    // Note: Since we don't have a getAllJobs endpoint, we'll simulate with an empty array
-    // In a real implementation, you would call this.jobService.getAllJobs()
-    setTimeout(() => {
-      this.jobs = [];
-      this.loading = false;
-    }, 500);
+    this.jobService.getAllJobs().subscribe({
+      next: (jobs) => {
+        this.jobs = jobs;
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading jobs:', error);
+        this.loading = false;
+      },
+    });
   }
 
   refreshJobs(silent = false): void {

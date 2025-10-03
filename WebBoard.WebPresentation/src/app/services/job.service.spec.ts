@@ -39,6 +39,59 @@ describe('JobService', () => {
     expect(service).toBeTruthy();
   });
 
+  describe('getAllJobs', () => {
+    it('should return an array of jobs', () => {
+      const mockJobs: JobDto[] = [
+        mockJob,
+        {
+          id: '123e4567-e89b-12d3-a456-426614174001',
+          jobType: 'ReportGeneration',
+          status: JobStatus.Running,
+          createdAt: new Date('2024-01-02T00:00:00Z'),
+        },
+      ];
+
+      service.getAllJobs().subscribe((jobs) => {
+        expect(jobs).toEqual(mockJobs);
+        expect(jobs.length).toBe(2);
+        expect(jobs[0].jobType).toBe('DataProcessing');
+        expect(jobs[1].jobType).toBe('ReportGeneration');
+      });
+
+      const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_ALL);
+      expect(req.request.method).toBe('GET');
+      expect(req.request.url).toBe(JOBS_ENDPOINTS.GET_ALL);
+      req.flush(mockJobs);
+    });
+
+    it('should return empty array when no jobs exist', () => {
+      service.getAllJobs().subscribe((jobs) => {
+        expect(jobs).toEqual([]);
+        expect(jobs.length).toBe(0);
+      });
+
+      const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_ALL);
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+
+    it('should handle HTTP error when getting all jobs', () => {
+      service.getAllJobs().subscribe({
+        next: () => fail('Expected an error, not a successful response'),
+        error: (error) => {
+          expect(error.status).toBe(500);
+          expect(error.statusText).toBe('Internal Server Error');
+        },
+      });
+
+      const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_ALL);
+      req.flush('Server error', {
+        status: 500,
+        statusText: 'Internal Server Error',
+      });
+    });
+  });
+
   describe('getJobById', () => {
     it('should return a job when valid id is provided', () => {
       const jobId = '123e4567-e89b-12d3-a456-426614174000';

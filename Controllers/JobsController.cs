@@ -15,6 +15,14 @@ namespace WebBoard.Controllers
 			_jobService = jobService;
 		}
 
+		[HttpGet]
+		[ProducesResponseType(typeof(IEnumerable<JobDto>), 200)]
+		public async Task<IActionResult> GetAllJobs()
+		{
+			var jobs = await _jobService.GetAllJobsAsync();
+			return Ok(jobs);
+		}
+
 		[HttpGet("{id}")]
 		public async Task<IActionResult> GetJobById(Guid id)
 		{

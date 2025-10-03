@@ -11,6 +11,14 @@ export class JobService {
   constructor(private http: HttpClient) {}
 
   /**
+   * Get all jobs
+   * @returns Observable<JobDto[]>
+   */
+  getAllJobs(): Observable<JobDto[]> {
+    return this.http.get<JobDto[]>(JOBS_ENDPOINTS.GET_ALL);
+  }
+
+  /**
    * Get job by ID
    * @param id Job ID
    * @returns Observable<JobDto>
