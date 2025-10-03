@@ -1,0 +1,36 @@
+.required::after {
+  content: " *";
+  color: #dc3545;
+}
+
+.card {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: none;
+}
+
+.card-header {
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.alert-info {
+  border-left: 4px solid #0dcaf0;
+  background-color: #e7f3ff;
+  border-color: #b8daff;
+  color: #055160;
+}
+
+.form-select:focus {
+  border-color: #0052cc;
+  box-shadow: 0 0 0 0.2rem rgba(0, 82, 204, 0.25);
+}
+
+.btn-primary {
+  background-color: #0052cc;
+  border-color: #0052cc;
+
+  &:hover {
+    background-color: #004bb8;
+    border-color: #004bb8;
+  }
+}

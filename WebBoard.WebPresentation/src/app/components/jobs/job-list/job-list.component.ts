@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
 import { JobService } from '../../../services';
+import { TIMING } from '../../../constants';
 
 @Component({
   selector: 'app-job-list',
@@ -42,30 +43,6 @@ export class JobListComponent implements OnInit, OnDestroy {
 
   refreshJobs(): void {
     this.loadJobs();
-  }
-
-  createMarkAllDoneJob(): void {
-    this.jobService.createJob({ jobType: 'MarkAllTasksAsDone' }).subscribe({
-      next: (job) => {
-        this.jobs.unshift(job);
-      },
-      error: (error) => {
-        console.error('Error creating mark all done job:', error);
-        alert('Failed to create job. Please try again.');
-      },
-    });
-  }
-
-  createGenerateReportJob(): void {
-    this.jobService.createJob({ jobType: 'GenerateTaskReport' }).subscribe({
-      next: (job) => {
-        this.jobs.unshift(job);
-      },
-      error: (error) => {
-        console.error('Error creating generate report job:', error);
-        alert('Failed to create job. Please try again.');
-      },
-    });
   }
 
   viewJob(job: JobDto): void {

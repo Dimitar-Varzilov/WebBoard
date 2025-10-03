@@ -18,7 +18,7 @@ export class JobDetailComponent {
 
   getStatusClass(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 'job-status-pending';
       case JobStatus.Running:
         return 'job-status-running';
@@ -33,29 +33,25 @@ export class JobDetailComponent {
 
   getStatusText(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
-        return 'Pending';
+      case JobStatus.Queued:
+        return 'Queued';
       case JobStatus.Running:
         return 'Running';
       case JobStatus.Completed:
         return 'Completed';
-      case JobStatus.Failed:
-        return 'Failed';
       default:
-        return 'Pending';
+        return 'Queued';
     }
   }
 
   getProgressClass(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 'bg-secondary';
       case JobStatus.Running:
         return 'bg-warning';
       case JobStatus.Completed:
         return 'bg-success';
-      case JobStatus.Failed:
-        return 'bg-danger';
       default:
         return 'bg-secondary';
     }
@@ -63,13 +59,11 @@ export class JobDetailComponent {
 
   getProgressPercentage(status: JobStatus): number {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 25;
       case JobStatus.Running:
         return 75;
       case JobStatus.Completed:
-        return 100;
-      case JobStatus.Failed:
         return 100;
       default:
         return 0;

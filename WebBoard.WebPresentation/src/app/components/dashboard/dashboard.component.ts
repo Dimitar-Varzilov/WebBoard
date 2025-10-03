@@ -1,7 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { TaskDto, JobDto, TaskItemStatus, JobStatus } from '../../models';
 import { TaskService, JobService } from '../../services';
+import { JOB_TYPES } from '../../constants';
 
 interface TaskStats {
   total: number;
@@ -13,10 +14,9 @@ interface TaskStats {
 
 interface JobStats {
   total: number;
-  pending: number;
+  queued: number;
   running: number;
   completed: number;
-  failed: number;
 }
 
 @Component({
@@ -37,10 +37,9 @@ export class DashboardComponent implements OnInit {
 
   jobStats: JobStats = {
     total: 0,
-    pending: 0,
+    queued: 0,
     running: 0,
     completed: 0,
-    failed: 0,
   };
 
   recentTasks: TaskDto[] = [];
@@ -113,10 +112,9 @@ export class DashboardComponent implements OnInit {
   private calculateJobStats(jobs: JobDto[]): void {
     this.jobStats = {
       total: jobs.length,
-      pending: jobs.filter((j) => j.status === JobStatus.Pending).length,
+      queued: jobs.filter((j) => j.status === JobStatus.Queued).length,
       running: jobs.filter((j) => j.status === JobStatus.Running).length,
       completed: jobs.filter((j) => j.status === JobStatus.Completed).length,
-      failed: jobs.filter((j) => j.status === JobStatus.Failed).length,
     };
   }
 
@@ -156,14 +154,12 @@ export class DashboardComponent implements OnInit {
 
   getJobStatusClass(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 'job-status-pending';
       case JobStatus.Running:
         return 'job-status-running';
       case JobStatus.Completed:
         return 'job-status-completed';
-      case JobStatus.Failed:
-        return 'job-status-failed';
       default:
         return 'job-status-pending';
     }
@@ -171,16 +167,14 @@ export class DashboardComponent implements OnInit {
 
   getJobStatusText(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
-        return 'Pending';
+      case JobStatus.Queued:
+        return 'Queued';
       case JobStatus.Running:
         return 'Running';
       case JobStatus.Completed:
         return 'Completed';
-      case JobStatus.Failed:
-        return 'Failed';
       default:
-        return 'Pending';
+        return 'Queued';
     }
   }
 
@@ -188,28 +182,8 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/tasks']);
   }
 
-  markAllTasksDone(): void {
-    this.jobService.createJob({ jobType: 'MarkAllTasksAsDone' }).subscribe({
-      next: (job) => {
-        this.router.navigate(['/jobs']);
-      },
-      error: (error) => {
-        console.error('Error creating job:', error);
-        alert('Failed to create job. Please try again.');
-      },
-    });
-  }
-
-  generateReport(): void {
-    this.jobService.createJob({ jobType: 'GenerateTaskReport' }).subscribe({
-      next: (job) => {
-        this.router.navigate(['/jobs']);
-      },
-      error: (error) => {
-        console.error('Error creating job:', error);
-        alert('Failed to create job. Please try again.');
-      },
-    });
+  createJob(): void {
+    this.router.navigate(['/jobs/create']);
   }
 
   refreshData(): void {

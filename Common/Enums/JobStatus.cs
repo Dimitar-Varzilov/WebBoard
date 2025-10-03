@@ -4,7 +4,6 @@ namespace WebBoard.Common.Enums
 	{
 		Queued,
 		Running,
-		Completed,
-		Failed
+		Completed
 	}
 }

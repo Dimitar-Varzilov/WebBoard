@@ -8,14 +8,9 @@
         <i class="fas fa-sync-alt" [class.fa-spin]="loading"></i>
         Refresh
       </button>
-      <div class="btn-group">
-        <button class="btn btn-success" (click)="createMarkAllDoneJob()">
-          <i class="fas fa-check-double me-1"></i>Mark All Tasks Done
-        </button>
-        <button class="btn btn-info" (click)="createGenerateReportJob()">
-          <i class="fas fa-file-alt me-1"></i>Generate Report
-        </button>
-      </div>
+      <button class="btn btn-primary" routerLink="/jobs/create">
+        <i class="fas fa-plus me-1"></i>Create Job
+      </button>
     </div>
   </div>
 
@@ -25,8 +20,8 @@
       <div class="card bg-light">
         <div class="card-body text-center">
           <i class="fas fa-clock fa-2x text-secondary mb-2"></i>
-          <h5 class="mb-0">{{ getJobCountByStatus(JobStatus.Pending) }}</h5>
-          <small class="text-muted">Pending</small>
+          <h5 class="mb-0">{{ getJobCountByStatus(JobStatus.Queued) }}</h5>
+          <small class="text-muted">Queued</small>
         </div>
       </div>
     </div>
@@ -48,15 +43,6 @@
         </div>
       </div>
     </div>
-    <div class="col-md-3">
-      <div class="card bg-danger bg-opacity-25">
-        <div class="card-body text-center">
-          <i class="fas fa-times fa-2x text-danger mb-2"></i>
-          <h5 class="mb-0">{{ getJobCountByStatus(JobStatus.Failed) }}</h5>
-          <small class="text-muted">Failed</small>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- Loading State -->
@@ -74,14 +60,9 @@
     <p class="text-muted">
       Create background jobs to automate task management.
     </p>
-    <div class="btn-group">
-      <button class="btn btn-success" (click)="createMarkAllDoneJob()">
-        <i class="fas fa-check-double me-1"></i>Mark All Tasks Done
-      </button>
-      <button class="btn btn-info" (click)="createGenerateReportJob()">
-        <i class="fas fa-file-alt me-1"></i>Generate Report
-      </button>
-    </div>
+    <button class="btn btn-primary" routerLink="/jobs/create">
+      <i class="fas fa-plus me-1"></i>Create First Job
+    </button>
   </div>
 
   <!-- Jobs Grid -->

@@ -1,5 +1,5 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.Cionstants;
+using WebBoard.Common.Constants;
 using WebBoard.Common.Enums;
 using WebBoard.Data;
 
@@ -46,10 +46,10 @@ namespace WebBoard.Services
 			{
 				switch (queuedJob.JobType)
 				{
-					case Constants.JobTypes.MarkTasksAsCompleted:
+					case Constants.JobTypes.MarkAllTasksAsDone:
 						await MarkAllTasksAsCompletedAsync(dbContext, stoppingToken);
 						break;
-					case Constants.JobTypes.GenerateTaskList:
+					case Constants.JobTypes.GenerateTaskReport:
 						await GenerateTaskListFileAsync(dbContext, stoppingToken);
 						break;
 				}
@@ -62,12 +62,10 @@ namespace WebBoard.Services
 			catch (Exception ex)
 			{
 				logger.LogError(ex, "Error processing job {JobId}", queuedJob.Id);
-				
-				// Create new job instance with Failed status
-				var failedJob = runningJob with { Status = JobStatus.Failed };
-				dbContext.Entry(runningJob).CurrentValues.SetValues(failedJob);
-				await dbContext.SaveChangesAsync(stoppingToken);
-				
+
+				// Since JobStatus doesn't have Failed, we'll log the error but not change status
+				// The job will remain in Running state for manual intervention
+
 				throw;
 			}
 		}

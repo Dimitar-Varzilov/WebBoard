@@ -14,13 +14,13 @@ namespace WebBoard.Services.Extensions
 			services.AddDbContext<AppDbContext>(options =>
 				options.UseNpgsql(configuration.GetConnectionString("DefaultConnection")));
 
-            services.AddScoped<ITaskService, TaskService>();
-            services.AddScoped<IJobService, JobService>();
+			services.AddScoped<ITaskService, TaskService>();
+			services.AddScoped<IJobService, JobService>();
 
 			services.AddSingleton<IBackgroundService, BackgroundService>();
 
-            // Configure Quartz
-            services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);
+			// Configure Quartz
+			services.AddQuartz(QuartzHelper.ConfigureQuartzJobs);
 
 			// Add Quartz hosted service
 			services.AddQuartzHostedService(options =>

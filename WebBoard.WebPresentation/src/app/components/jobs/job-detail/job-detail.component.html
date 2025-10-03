@@ -37,16 +37,16 @@
                   ></div>
                 </div>
                 <div class="row text-center">
-                  <div class="col-3">
+                  <div class="col-4">
                     <div
                       class="step"
-                      [class.active]="job.status >= JobStatus.Pending"
+                      [class.active]="job.status >= JobStatus.Queued"
                     >
                       <i class="fas fa-clock"></i>
                       <small class="d-block mt-1">Queued</small>
                     </div>
                   </div>
-                  <div class="col-3">
+                  <div class="col-4">
                     <div
                       class="step"
                       [class.active]="job.status >= JobStatus.Running"
@@ -55,22 +55,13 @@
                       <small class="d-block mt-1">Running</small>
                     </div>
                   </div>
-                  <div class="col-3">
+                  <div class="col-4">
                     <div
                       class="step"
                       [class.active]="job.status === JobStatus.Completed"
                     >
                       <i class="fas fa-check"></i>
                       <small class="d-block mt-1">Completed</small>
-                    </div>
-                  </div>
-                  <div class="col-3">
-                    <div
-                      class="step"
-                      [class.active]="job.status === JobStatus.Failed"
-                    >
-                      <i class="fas fa-times"></i>
-                      <small class="d-block mt-1">Failed</small>
                     </div>
                   </div>
                 </div>

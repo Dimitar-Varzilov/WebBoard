@@ -16,6 +16,7 @@ import { JobDetailComponent } from './components/jobs/job-detail/job-detail.comp
 import { NavbarComponent } from './components/shared/navbar/navbar.component';
 import { TaskCardComponent } from './components/tasks/task-card/task-card.component';
 import { JobCardComponent } from './components/jobs/job-card/job-card.component';
+import { JobCreateComponent } from './components/jobs/job-create/job-create.component';
 
 @NgModule({
   declarations: [
@@ -30,6 +31,7 @@ import { JobCardComponent } from './components/jobs/job-card/job-card.component'
     NavbarComponent,
     TaskCardComponent,
     JobCardComponent,
+    JobCreateComponent,
   ],
   imports: [
     BrowserModule,

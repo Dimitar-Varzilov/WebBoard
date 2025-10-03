@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
+import { TIMING } from '../../../constants';
 
 @Component({
   selector: 'app-job-card',
@@ -15,14 +16,12 @@ export class JobCardComponent {
 
   getStatusClass(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 'job-status-pending';
       case JobStatus.Running:
         return 'job-status-running';
       case JobStatus.Completed:
         return 'job-status-completed';
-      case JobStatus.Failed:
-        return 'job-status-failed';
       default:
         return 'job-status-pending';
     }
@@ -30,29 +29,25 @@ export class JobCardComponent {
 
   getStatusText(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
-        return 'Pending';
+      case JobStatus.Queued:
+        return 'Queued';
       case JobStatus.Running:
         return 'Running';
       case JobStatus.Completed:
         return 'Completed';
-      case JobStatus.Failed:
-        return 'Failed';
       default:
-        return 'Pending';
+        return 'Queued';
     }
   }
 
   getProgressClass(status: JobStatus): string {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 'bg-secondary';
       case JobStatus.Running:
         return 'bg-warning';
       case JobStatus.Completed:
         return 'bg-success';
-      case JobStatus.Failed:
-        return 'bg-danger';
       default:
         return 'bg-secondary';
     }
@@ -60,13 +55,11 @@ export class JobCardComponent {
 
   getProgressPercentage(status: JobStatus): number {
     switch (status) {
-      case JobStatus.Pending:
+      case JobStatus.Queued:
         return 0;
       case JobStatus.Running:
         return 50;
       case JobStatus.Completed:
-        return 100;
-      case JobStatus.Failed:
         return 100;
       default:
         return 0;
@@ -84,6 +77,6 @@ export class JobCardComponent {
     // Stop spinning after a short delay
     setTimeout(() => {
       this.isRefreshing = false;
-    }, 1000);
+    }, TIMING.REFRESH_SPINNER_DURATION);
   }
 }

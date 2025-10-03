@@ -14,7 +14,7 @@ describe('JobService', () => {
   const mockJob: JobDto = {
     id: '123e4567-e89b-12d3-a456-426614174000',
     jobType: 'DataProcessing',
-    status: JobStatus.Pending,
+    status: JobStatus.Queued,
     createdAt: new Date('2024-01-01T00:00:00Z'),
   };
 
@@ -100,7 +100,7 @@ describe('JobService', () => {
         expect(job).toEqual(mockJob);
         expect(job.id).toBe(jobId);
         expect(job.jobType).toBe('DataProcessing');
-        expect(job.status).toBe(JobStatus.Pending);
+        expect(job.status).toBe(JobStatus.Queued);
       });
 
       const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_BY_ID(jobId));
@@ -132,7 +132,7 @@ describe('JobService', () => {
       service.createJob(createJobRequest).subscribe((job) => {
         expect(job).toEqual(mockJob);
         expect(job.jobType).toBe(createJobRequest.jobType);
-        expect(job.status).toBe(JobStatus.Pending);
+        expect(job.status).toBe(JobStatus.Queued);
       });
 
       const req = httpMock.expectOne(JOBS_ENDPOINTS.CREATE);
