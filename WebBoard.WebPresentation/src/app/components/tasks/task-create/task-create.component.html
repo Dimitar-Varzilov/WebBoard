@@ -17,14 +17,15 @@
                 class="form-control"
                 id="title"
                 formControlName="title"
-                placeholder="Enter task title"
-                [class.is-invalid]="
-                  taskForm.get('title')?.invalid &&
-                  taskForm.get('title')?.touched
-                "
+                placeholder="Enter task title (minimum 3 characters)"
+                [class.is-invalid]="isFieldInvalid('title')"
               />
               <div class="invalid-feedback">
                 {{ getFieldError("title") }}
+              </div>
+              <div class="form-text">
+                <i class="fas fa-info-circle me-1"></i>
+                Title must be at least 3 characters long
               </div>
             </div>
 
@@ -38,41 +39,23 @@
                 id="description"
                 formControlName="description"
                 rows="4"
-                placeholder="Enter task description"
-                [class.is-invalid]="
-                  taskForm.get('description')?.invalid &&
-                  taskForm.get('description')?.touched
-                "
+                placeholder="Enter task description (minimum 3 characters)"
+                [class.is-invalid]="isFieldInvalid('description')"
               ></textarea>
               <div class="invalid-feedback">
                 {{ getFieldError("description") }}
               </div>
-            </div>
-
-            <!-- Status Field -->
-            <div class="mb-4">
-              <label for="status" class="form-label">
-                <i class="fas fa-flag me-1"></i>Initial Status
-              </label>
-              <select
-                class="form-select"
-                id="status"
-                formControlName="status"
-                [class.is-invalid]="
-                  taskForm.get('status')?.invalid &&
-                  taskForm.get('status')?.touched
-                "
-              >
-                <option
-                  *ngFor="let status of taskStatusOptions"
-                  [value]="status.value"
-                >
-                  {{ status.label }}
-                </option>
-              </select>
               <div class="form-text">
                 <i class="fas fa-info-circle me-1"></i>
-                New tasks are typically created with "Not Started" status.
+                Description must be at least 3 characters long
+              </div>
+            </div>
+
+            <!-- Status Info (read-only) -->
+            <div class="mb-4">
+              <div class="alert alert-info">
+                <i class="fas fa-clock me-2"></i>
+                <strong>Initial Status:</strong> New tasks will automatically be created with <strong>Pending</strong> status.
               </div>
             </div>
 
@@ -105,7 +88,7 @@
 
       <!-- Help Text -->
       <div class="mt-3">
-        <div class="alert alert-info">
+        <div class="alert alert-light">
           <i class="fas fa-lightbulb me-2"></i>
           <strong>Tips:</strong>
           <ul class="mb-0 mt-2">
@@ -113,12 +96,10 @@
               Use clear and descriptive titles for better task organization
             </li>
             <li>
-              Provide detailed descriptions to help team members understand the
-              requirements
+              Provide detailed descriptions to help team members understand the requirements
             </li>
             <li>
-              Start with "Not Started" status unless the task is already in
-              progress
+              All new tasks start with "Pending" status and can be updated later
             </li>
           </ul>
         </div>

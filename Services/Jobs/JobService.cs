@@ -41,7 +41,16 @@ namespace WebBoard.Services.Jobs
 				throw new ArgumentException($"Invalid job type: '{createJobRequest.JobType}'. Available types: {string.Join(", ", jobTypeRegistry.GetAllJobTypes())}");
 			}
 
-			// 2. Validate business rules (e.g., pending tasks requirement)
+			// 2. Validate scheduling time is not in the past
+			if (!createJobRequest.RunImmediately && createJobRequest.ScheduledAt.HasValue)
+			{
+				if (createJobRequest.ScheduledAt.Value <= DateTime.UtcNow)
+				{
+					throw new ArgumentException("Scheduled time cannot be in the past.");
+				}
+			}
+
+			// 3. Validate business rules (e.g., pending tasks requirement)
 			await ValidateJobCreationRequirementsAsync(createJobRequest.JobType);
 
 			var scheduledAt = createJobRequest.RunImmediately ? null : createJobRequest.ScheduledAt;

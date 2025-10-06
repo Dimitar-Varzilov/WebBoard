@@ -2,8 +2,8 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { TaskService } from '../../../services';
-import { CreateTaskRequestDto, TaskItemStatus } from '../../../models';
-import { ROUTES, TASK_STATUS_OPTIONS } from '../../../constants';
+import { CreateTaskRequestDto } from '../../../models';
+import { ROUTES } from '../../../constants';
 
 @Component({
   selector: 'app-task-create',
@@ -13,7 +13,6 @@ import { ROUTES, TASK_STATUS_OPTIONS } from '../../../constants';
 export class TaskCreateComponent implements OnInit {
   taskForm: FormGroup;
   submitting = false;
-  taskStatusOptions = TASK_STATUS_OPTIONS;
 
   constructor(
     private fb: FormBuilder,
@@ -22,8 +21,8 @@ export class TaskCreateComponent implements OnInit {
   ) {
     this.taskForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
-      description: ['', [Validators.required, Validators.minLength(10)]],
-      status: [TaskItemStatus.NotStarted, Validators.required],
+      description: ['', [Validators.required, Validators.minLength(3)]],
+      // Status removed - tasks will automatically get Pending status on creation
     });
   }
 
@@ -32,7 +31,10 @@ export class TaskCreateComponent implements OnInit {
   onSubmit(): void {
     if (this.taskForm.valid) {
       this.submitting = true;
-      const createRequest: CreateTaskRequestDto = this.taskForm.value;
+      const createRequest: CreateTaskRequestDto = {
+        title: this.taskForm.value.title,
+        description: this.taskForm.value.description,
+      };
 
       this.taskService.createTask(createRequest).subscribe({
         next: (task) => {
@@ -42,14 +44,28 @@ export class TaskCreateComponent implements OnInit {
         error: (error) => {
           console.error('Error creating task:', error);
           this.submitting = false;
-          alert('Failed to create task. Please try again.');
+
+          // Handle validation errors from backend
+          if (error.status === 400 && error.error) {
+            const errorMessage = this.extractValidationErrors(error.error);
+            alert(`Failed to create task: ${errorMessage}`);
+          } else {
+            alert('Failed to create task. Please try again.');
+          }
         },
       });
+    } else {
+      this.markFormGroupTouched();
     }
   }
 
   onCancel(): void {
     this.router.navigate([ROUTES.TASKS]);
+  }
+
+  isFieldInvalid(fieldName: string): boolean {
+    const field = this.taskForm.get(fieldName);
+    return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
   getFieldError(fieldName: string): string {
@@ -61,13 +77,44 @@ export class TaskCreateComponent implements OnInit {
         } is required`;
       }
       if (field.errors['minlength']) {
+        const requiredLength = field.errors['minlength'].requiredLength;
         return `${
           fieldName.charAt(0).toUpperCase() + fieldName.slice(1)
-        } must be at least ${
-          field.errors['minlength'].requiredLength
-        } characters`;
+        } must be at least ${requiredLength} characters`;
       }
     }
     return '';
+  }
+
+  private markFormGroupTouched(): void {
+    Object.keys(this.taskForm.controls).forEach((key) => {
+      const control = this.taskForm.get(key);
+      control?.markAsTouched();
+    });
+  }
+
+  private extractValidationErrors(errorResponse: any): string {
+    if (typeof errorResponse === 'string') {
+      return errorResponse;
+    }
+
+    if (errorResponse.message) {
+      return errorResponse.message;
+    }
+
+    if (errorResponse.errors) {
+      const errors: string[] = [];
+      Object.keys(errorResponse.errors).forEach((key) => {
+        const fieldErrors = errorResponse.errors[key];
+        if (Array.isArray(fieldErrors)) {
+          errors.push(...fieldErrors);
+        } else {
+          errors.push(fieldErrors);
+        }
+      });
+      return errors.join(', ');
+    }
+
+    return 'Unknown validation error';
   }
 }

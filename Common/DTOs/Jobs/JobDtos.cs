@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using WebBoard.Common.Attributes;
 using WebBoard.Common.Enums;
 
 namespace WebBoard.Common.DTOs.Jobs
@@ -13,5 +14,10 @@ namespace WebBoard.Common.DTOs.Jobs
 		Guid? ReportId = null,
 		string? ReportFileName = null);
 
-	public record CreateJobRequestDto([Required] string JobType, bool RunImmediately = true, DateTime? ScheduledAt = null);
+	public record CreateJobRequestDto(
+		[Required(ErrorMessage = "Job type is required")]
+		string JobType, 
+		bool RunImmediately = true, 
+		[NotInPast(ErrorMessage = "Scheduled time cannot be in the past")]
+		DateTime? ScheduledAt = null);
 }

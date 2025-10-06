@@ -3,6 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { JobService } from '../../../services';
+import { notInPastValidator } from '../../../validators/datetime.validators';
 import {
   JOB_TYPES,
   JOB_TYPE_LABELS,
@@ -98,7 +99,10 @@ export class JobCreateComponent implements OnInit, OnDestroy {
           scheduledAtControl?.clearValidators();
         } else {
           scheduledAtControl?.enable();
-          scheduledAtControl?.setValidators([Validators.required]);
+          scheduledAtControl?.setValidators([
+            Validators.required,
+            notInPastValidator()
+          ]);
         }
         scheduledAtControl?.updateValueAndValidity();
       });
@@ -151,6 +155,19 @@ export class JobCreateComponent implements OnInit, OnDestroy {
     return !!(field && field.invalid && (field.dirty || field.touched));
   }
 
+  getFieldError(fieldName: string): string {
+    const field = this.jobForm.get(fieldName);
+    if (field?.errors && field?.touched) {
+      if (field.errors['required']) {
+        return `${fieldName.charAt(0).toUpperCase() + fieldName.slice(1)} is required`;
+      }
+      if (field.errors['notInPast']) {
+        return 'Scheduled time cannot be in the past';
+      }
+    }
+    return '';
+  }
+
   get isScheduled(): boolean {
     return !this.jobForm.get('runImmediately')?.value;
   }
@@ -171,6 +188,7 @@ export class JobCreateComponent implements OnInit, OnDestroy {
 
   onSubmit(): void {
     if (!this.jobForm.valid) {
+      this.markFormGroupTouched();
       return;
     }
 
@@ -209,10 +227,47 @@ export class JobCreateComponent implements OnInit, OnDestroy {
           // Handle specific validation error from backend
           if (error.status === 400 && error.error?.message?.includes('No pending tasks')) {
             this.showValidationPopup();
+          } else if (error.status === 400 && error.error?.message?.includes('past')) {
+            alert('Scheduled time cannot be in the past. Please select a future date and time.');
+          } else if (error.status === 400 && error.error) {
+            const errorMessage = this.extractValidationErrors(error.error);
+            alert(`Failed to create job: ${errorMessage}`);
           } else {
             alert('Failed to create job. Please try again.');
           }
         },
       });
+  }
+
+  private markFormGroupTouched(): void {
+    Object.keys(this.jobForm.controls).forEach(key => {
+      const control = this.jobForm.get(key);
+      control?.markAsTouched();
+    });
+  }
+
+  private extractValidationErrors(errorResponse: any): string {
+    if (typeof errorResponse === 'string') {
+      return errorResponse;
+    }
+    
+    if (errorResponse.message) {
+      return errorResponse.message;
+    }
+    
+    if (errorResponse.errors) {
+      const errors: string[] = [];
+      Object.keys(errorResponse.errors).forEach(key => {
+        const fieldErrors = errorResponse.errors[key];
+        if (Array.isArray(fieldErrors)) {
+          errors.push(...fieldErrors);
+        } else {
+          errors.push(fieldErrors);
+        }
+      });
+      return errors.join(', ');
+    }
+    
+    return 'Unknown validation error';
   }
 }
