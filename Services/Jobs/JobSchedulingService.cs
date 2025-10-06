@@ -4,16 +4,11 @@ using WebBoard.Common.Models;
 
 namespace WebBoard.Services.Jobs
 {
-	public interface IJobSchedulingService
-	{
-		Task ScheduleJobAsync(Job job);
-	}
-
 	public class JobSchedulingService(
 		IScheduler scheduler,
 		IJobTypeRegistry jobTypeRegistry,
 		ILogger<JobSchedulingService> logger) : IJobSchedulingService
-	{
+    {
 		public async Task ScheduleJobAsync(Job job)
 		{
 			try

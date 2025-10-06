@@ -4,15 +4,8 @@ using WebBoard.Common.Constants;
 
 namespace WebBoard.Services.Jobs
 {
-	public interface IJobTypeRegistry
-	{
-		Type GetJobType(string jobTypeName);
-		bool IsValidJobType(string jobTypeName);
-		IEnumerable<string> GetAllJobTypes();
-	}
-
 	public class JobTypeRegistry : IJobTypeRegistry
-	{
+    {
 		private readonly Dictionary<string, Type> _jobTypeMap;
 
 		public JobTypeRegistry()

@@ -6,15 +6,7 @@ using WebBoard.Data;
 
 namespace WebBoard.Services.Reports
 {
-	public interface IReportService
-	{
-		Task<Report> CreateReportAsync(Guid jobId, string fileName, string content, string contentType);
-		Task<ReportDownloadDto?> GetReportForDownloadAsync(Guid reportId);
-		Task<ReportDto?> GetReportByJobIdAsync(Guid jobId);
-		Task MarkReportAsDownloadedAsync(Guid reportId);
-	}
-
-	public class ReportService(AppDbContext db, ILogger<ReportService> logger) : IReportService
+	public class ReportService(AppDbContext db, ILogger<ReportService> logger): IReportService
 	{
 		public async Task<Report> CreateReportAsync(Guid jobId, string fileName, string content, string contentType)
 		{
