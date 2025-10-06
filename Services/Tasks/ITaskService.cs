@@ -1,3 +1,4 @@
+using WebBoard.Common.DTOs.Common;
 using WebBoard.Common.DTOs.Tasks;
 using WebBoard.Common.Enums;
 
@@ -5,7 +6,7 @@ namespace WebBoard.Services.Tasks
 {
 	public interface ITaskService
 	{
-		Task<IEnumerable<TaskDto>> GetAllTasksAsync();
+		Task<PagedResult<TaskDto>> GetTasksAsync(TaskQueryParameters parameters);
 		Task<IEnumerable<TaskDto>> GetTasksByStatusAsync(TaskItemStatus status);
 		Task<int> GetTaskCountByStatusAsync(TaskItemStatus status);
 		Task<TaskDto?> GetTaskByIdAsync(Guid id);

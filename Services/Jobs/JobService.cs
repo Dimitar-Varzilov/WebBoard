@@ -1,7 +1,9 @@
 using Microsoft.EntityFrameworkCore;
 using WebBoard.Common.Constants;
+using WebBoard.Common.DTOs.Common;
 using WebBoard.Common.DTOs.Jobs;
 using WebBoard.Common.Enums;
+using WebBoard.Common.Extensions;
 using WebBoard.Common.Models;
 using WebBoard.Data;
 
@@ -12,16 +14,44 @@ namespace WebBoard.Services.Jobs
 		IJobSchedulingService jobSchedulingService,
 		IJobTypeRegistry jobTypeRegistry) : IJobService
 	{
-		public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
+		public async Task<PagedResult<JobDto>> GetJobsAsync(JobQueryParameters parameters)
 		{
-			var jobs = await db.Jobs
+			var query = db.Jobs
 				.AsNoTracking()
 				.Include(j => j.Report)
 				.Include(j => j.Tasks)
-				.OrderByDescending(j => j.CreatedAt)
+				.AsQueryable();
+
+			// Apply filtering
+			if (parameters.Status.HasValue)
+			{
+				query = query.Where(j => (int)j.Status == parameters.Status.Value);
+			}
+
+			if (!string.IsNullOrWhiteSpace(parameters.JobType))
+			{
+				query = query.Where(j => j.JobType == parameters.JobType);
+			}
+
+			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+			{
+				var searchTerm = parameters.SearchTerm.ToLower();
+				query = query.Where(j => j.JobType.ToLower().Contains(searchTerm));
+			}
+
+			// Apply sorting
+			query = query.ApplySort(parameters.SortBy ?? "CreatedAt", parameters.IsAscending);
+
+			// Get total count before pagination
+			var totalCount = await query.CountAsync();
+
+			// Apply pagination
+			var jobs = await query
+				.ApplyPagination(parameters)
 				.ToListAsync();
 
-			return jobs.Select(job => new JobDto(
+			// Project to DTOs
+			var jobDtos = jobs.Select(job => new JobDto(
 				job.Id,
 				job.JobType,
 				job.Status,
@@ -31,8 +61,9 @@ namespace WebBoard.Services.Jobs
 				job.Report?.Id,
 				job.Report?.FileName,
 				job.Tasks.Select(t => t.Id)));
-		}
 
+			return new PagedResult<JobDto>(jobDtos, totalCount, parameters.PageNumber, parameters.PageSize);
+		}
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
 		{
 			// 1. Validate job type exists

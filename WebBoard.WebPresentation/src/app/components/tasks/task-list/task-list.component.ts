@@ -1,7 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { TaskDto, TaskItemStatus } from '../../../models';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+import {
+  TaskDto,
+  TaskItemStatus,
+  TaskQueryParameters,
+  PAGE_SIZES,
+  DEFAULT_PAGE_SIZE,
+} from '../../../models';
 import { TaskService } from '../../../services';
+import { PaginationFactory } from '../../../services/pagination-factory.service';
+import { PaginatedDataService } from '../../../services/paginated-data.service';
 import { ROUTES, TASK_STATUS_OPTIONS } from '../../../constants';
 
 @Component({
@@ -9,13 +19,17 @@ import { ROUTES, TASK_STATUS_OPTIONS } from '../../../constants';
   templateUrl: './task-list.component.html',
   styleUrls: ['./task-list.component.scss'],
 })
-export class TaskListComponent implements OnInit {
-  tasks: TaskDto[] = [];
-  filteredTasks: TaskDto[] = [];
-  loading = false;
+export class TaskListComponent implements OnInit, OnDestroy {
+  // Pagination service
+  paginationService!: PaginatedDataService<TaskDto, TaskQueryParameters>;
+
   searchText = '';
   statusFilter = '';
   taskStatusOptions = TASK_STATUS_OPTIONS;
+  pageSizes = PAGE_SIZES;
+
+  // Expose Math for template
+  Math = Math;
 
   // Modal states
   showTaskForm = false;
@@ -23,49 +37,148 @@ export class TaskListComponent implements OnInit {
   selectedTask: TaskDto | null = null;
   isEditMode = false;
 
-  constructor(private taskService: TaskService, private router: Router) {}
+  private destroy$ = new Subject<void>();
+
+  constructor(
+    private taskService: TaskService,
+    private paginationFactory: PaginationFactory,
+    private router: Router
+  ) {}
 
   ngOnInit(): void {
-    this.loadTasks();
+    // Create pagination service with default params
+    this.paginationService = this.paginationFactory.create<
+      TaskDto,
+      TaskQueryParameters
+    >((params) => this.taskService.getTasks(params), {
+      pageSize: DEFAULT_PAGE_SIZE,
+      sortBy: 'createdAt',
+      sortDirection: 'desc',
+    });
+
+    // Subscribe to state for error handling
+    this.paginationService.state$.pipe(takeUntil(this.destroy$)).subscribe({
+      error: (error) => console.error('Pagination error:', error),
+    });
+
+    // Initial load
+    this.refreshTasks();
   }
 
-  loadTasks(): void {
-    this.loading = true;
-    this.taskService.getAllTasks().subscribe({
-      next: (tasks) => {
-        this.tasks = tasks;
-        this.filterTasks();
-        this.loading = false;
-      },
-      error: (error) => {
-        console.error('Error loading tasks:', error);
-        this.loading = false;
-      },
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
+  // Convenience getters for template
+  get filteredTasks() {
+    return this.paginationService.getData();
+  }
+
+  get loading() {
+    return this.paginationService.isLoading();
+  }
+
+  get paginationMetadata() {
+    return this.paginationService.getMetadata();
+  }
+
+  get currentPage() {
+    return this.paginationService.getCurrentParams().pageNumber || 1;
+  }
+
+  get pageSize() {
+    return (
+      this.paginationService.getCurrentParams().pageSize || DEFAULT_PAGE_SIZE
+    );
+  }
+
+  set pageSize(value: number) {
+    this.onPageSizeChange(value);
   }
 
   refreshTasks(): void {
-    this.loadTasks();
+    this.paginationService.refresh();
   }
 
   filterTasks(): void {
-    this.filteredTasks = this.tasks.filter((task) => {
-      const matchesSearch =
-        !this.searchText ||
-        task.title.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        task.description.toLowerCase().includes(this.searchText.toLowerCase());
-
-      const matchesStatus =
-        !this.statusFilter || task.status.toString() === this.statusFilter;
-
-      return matchesSearch && matchesStatus;
+    this.paginationService.updateParams({
+      searchTerm: this.searchText || undefined,
+      status: this.statusFilter ? parseInt(this.statusFilter) : undefined,
     });
   }
 
   clearFilters(): void {
     this.searchText = '';
     this.statusFilter = '';
-    this.filterTasks();
+    this.paginationService.updateParams({
+      searchTerm: undefined,
+      status: undefined,
+    });
+  }
+
+  // Pagination methods
+  onPageChange(page: number): void {
+    this.paginationService.setPage(page);
+  }
+
+  onPageSizeChange(size: number): void {
+    this.paginationService.setPageSize(size);
+  }
+
+  onSortChange(sortBy: string): void {
+    const currentParams = this.paginationService.getCurrentParams();
+    const newDirection =
+      currentParams.sortBy === sortBy && currentParams.sortDirection === 'asc'
+        ? 'desc'
+        : 'asc';
+    this.paginationService.setSort(sortBy, newDirection);
+  }
+
+  get pages(): number[] {
+    const metadata = this.paginationMetadata;
+    if (!metadata) return [];
+    return Array.from({ length: metadata.totalPages }, (_, i) => i + 1);
+  }
+
+  get visiblePages(): number[] {
+    const metadata = this.paginationMetadata;
+    if (!metadata) return [];
+    const total = metadata.totalPages;
+    const current = metadata.currentPage;
+    const delta = 2; // Pages to show on each side of current page
+
+    const range: number[] = [];
+    for (
+      let i = Math.max(2, current - delta);
+      i <= Math.min(total - 1, current + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+    const pages: number[] = [];
+    if (range.length > 0) {
+      if (range[0] > 2) {
+        pages.push(1, -1); // -1 represents ellipsis
+      } else {
+        pages.push(1);
+      }
+
+      pages.push(...range);
+
+      if (range[range.length - 1] < total - 1) {
+        pages.push(-1, total);
+      } else if (total > 1) {
+        pages.push(total);
+      }
+    } else {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
   }
 
   createTask(): void {
@@ -87,7 +200,7 @@ export class TaskListComponent implements OnInit {
     if (confirm(`Are you sure you want to delete the task "${task.title}"?`)) {
       this.taskService.deleteTask(task.id).subscribe({
         next: () => {
-          this.loadTasks();
+          this.refreshTasks();
         },
         error: (error) => {
           console.error('Error deleting task:', error);
@@ -100,7 +213,7 @@ export class TaskListComponent implements OnInit {
   onTaskSaved(task: TaskDto): void {
     this.showTaskForm = false;
     this.selectedTask = null;
-    this.loadTasks();
+    this.refreshTasks();
   }
 
   onTaskFormCanceled(): void {
@@ -115,26 +228,5 @@ export class TaskListComponent implements OnInit {
 
   trackByTaskId(index: number, task: TaskDto): string {
     return task.id;
-  }
-
-  /**
-   * Get task count by status (now uses computed properties for efficiency)
-   */
-  getTaskCountByStatus(status: TaskItemStatus): number {
-    return this.tasks.filter(task => task.status === status).length;
-  }
-
-  /**
-   * Get recent tasks count (new in last 24 hours)
-   */
-  getRecentTasksCount(): number {
-    return this.tasks.filter(task => task.isRecent).length;
-  }
-
-  /**
-   * Get tasks sorted by age (newest first)
-   */
-  getTasksSortedByAge(): TaskDto[] {
-    return [...this.filteredTasks].sort((a, b) => a.age - b.age);
   }
 }

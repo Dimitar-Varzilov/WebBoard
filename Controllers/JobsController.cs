@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebBoard.Common.Constants;
+using WebBoard.Common.DTOs.Common;
 using WebBoard.Common.DTOs.Jobs;
 using WebBoard.Common.DTOs.Tasks;
 using WebBoard.Common.Enums;
@@ -13,12 +14,17 @@ namespace WebBoard.Controllers
 	[Tags(Constants.SwaggerTags.Jobs)]
 	public class JobsController(IJobService jobService, ITaskService taskService) : ControllerBase
 	{
+		/// <summary>
+		/// Get jobs with pagination, filtering, and sorting
+		/// </summary>
+		/// <param name="parameters">Query parameters for pagination, filtering, and sorting</param>
+		/// <returns>A paginated list of jobs with metadata</returns>
 		[HttpGet]
-		[ProducesResponseType(typeof(IEnumerable<JobDto>), 200)]
-		public async Task<IActionResult> GetAllJobs()
+		[ProducesResponseType(typeof(PagedResult<JobDto>), 200)]
+		public async Task<IActionResult> GetJobs([FromQuery] JobQueryParameters parameters)
 		{
-			var jobs = await jobService.GetAllJobsAsync();
-			return Ok(jobs);
+			var result = await jobService.GetJobsAsync(parameters);
+			return Ok(result);
 		}
 
 		[HttpGet("{id}")]
@@ -69,10 +75,16 @@ namespace WebBoard.Controllers
 			}
 			else
 			{
-				// All tasks not assigned to other jobs
-				var allTasks = await taskService.GetAllTasksAsync();
-				availableTasks = allTasks
-					.Where(t => !HasJobAssignment(t));
+				// All tasks not assigned to other jobs - use paginated query with large page size
+				var parameters = new TaskQueryParameters
+				{
+					PageSize = 1000, // Large page size for available tasks
+					HasJob = false, // Only tasks without job assignment
+					SortBy = "CreatedAt",
+					SortDirection = "desc"
+				};
+				var result = await taskService.GetTasksAsync(parameters);
+				availableTasks = result.Items;
 			}
 
 			return Ok(availableTasks);

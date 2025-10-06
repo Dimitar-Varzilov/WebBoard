@@ -207,7 +207,7 @@
             </button>
           </div>
           <div
-            *ngFor="let task of recentTasks | slice : 0 : 5"
+            *ngFor="let task of recentTasks"
             class="d-flex justify-content-between align-items-center py-2 border-bottom"
           >
             <div class="flex-grow-1">
@@ -248,7 +248,7 @@
             </button>
           </div>
           <div
-            *ngFor="let job of recentJobs | slice : 0 : 5"
+            *ngFor="let job of recentJobs"
             class="d-flex justify-content-between align-items-center py-2 border-bottom"
           >
             <div class="flex-grow-1">

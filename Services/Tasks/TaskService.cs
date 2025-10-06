@@ -1,6 +1,8 @@
 using Microsoft.EntityFrameworkCore;
+using WebBoard.Common.DTOs.Common;
 using WebBoard.Common.DTOs.Tasks;
 using WebBoard.Common.Enums;
+using WebBoard.Common.Extensions;
 using WebBoard.Common.Models;
 using WebBoard.Data;
 
@@ -38,15 +40,46 @@ namespace WebBoard.Services.Tasks
 			return true;
 		}
 
-		public async Task<IEnumerable<TaskDto>> GetAllTasksAsync()
+		public async Task<PagedResult<TaskDto>> GetTasksAsync(TaskQueryParameters parameters)
 		{
-			return await db.Tasks
-				.AsNoTracking()
-				.OrderBy(task => task.CreatedAt)
-				.Select(task => new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt, task.JobId))
-				.ToListAsync();
-		}
+			var query = db.Tasks.AsNoTracking();
 
+			// Apply filtering
+			if (parameters.Status.HasValue)
+			{
+				query = query.Where(t => (int)t.Status == parameters.Status.Value);
+			}
+
+			if (parameters.HasJob.HasValue)
+			{
+				query = parameters.HasJob.Value
+					? query.Where(t => t.JobId != null)
+					: query.Where(t => t.JobId == null);
+			}
+
+			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
+			{
+				var searchTerm = parameters.SearchTerm.ToLower();
+				query = query.Where(t =>
+					t.Title.ToLower().Contains(searchTerm) ||
+					t.Description.ToLower().Contains(searchTerm));
+			}
+
+			// Apply sorting
+			query = query.ApplySort(parameters.SortBy ?? "CreatedAt", parameters.IsAscending);
+
+			// Project to DTO
+			var dtoQuery = query.Select(task => new TaskDto(
+				task.Id,
+				task.Title,
+				task.Description,
+				task.Status,
+				task.CreatedAt,
+				task.JobId));
+
+			// Apply pagination and return result
+			return await dtoQuery.ToPagedResultAsync(parameters);
+		}
 		public async Task<IEnumerable<TaskDto>> GetTasksByStatusAsync(TaskItemStatus status)
 		{
 			return await db.Tasks

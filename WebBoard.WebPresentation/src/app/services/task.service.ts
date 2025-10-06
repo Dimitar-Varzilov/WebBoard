@@ -8,9 +8,12 @@ import {
   CreateTaskRequestDto,
   UpdateTaskRequestDto,
   TaskItemStatus,
+  PagedResult,
+  TaskQueryParameters,
 } from '../models';
 import { TaskModelFactory } from '../factories/model.factory';
 import { TASKS_ENDPOINTS } from '../constants/endpoints';
+import { HttpParamsBuilder } from '../utils/http-params.utils';
 
 @Injectable({
   providedIn: 'root',
@@ -19,13 +22,18 @@ export class TaskService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get all tasks with computed properties
+   * Get paginated tasks with filtering and sorting
    */
-  getAllTasks(): Observable<TaskDto[]> {
+  getTasks(parameters: TaskQueryParameters): Observable<PagedResult<TaskDto>> {
+    const params = HttpParamsBuilder.fromQueryParams(parameters);
+
     return this.http
-      .get<TaskDtoRaw[]>(TASKS_ENDPOINTS.GET_ALL)
+      .get<PagedResult<TaskDtoRaw>>(TASKS_ENDPOINTS.BASE, { params })
       .pipe(
-        map((rawTasks) => TaskModelFactory.fromApiResponseArray(rawTasks))
+        map((result) => ({
+          items: TaskModelFactory.fromApiResponseArray(result.items),
+          metadata: result.metadata,
+        }))
       );
   }
 
@@ -35,9 +43,7 @@ export class TaskService {
   getTasksByStatus(status: TaskItemStatus): Observable<TaskDto[]> {
     return this.http
       .get<TaskDtoRaw[]>(TASKS_ENDPOINTS.GET_BY_STATUS(status))
-      .pipe(
-        map((rawTasks) => TaskModelFactory.fromApiResponseArray(rawTasks))
-      );
+      .pipe(map((rawTasks) => TaskModelFactory.fromApiResponseArray(rawTasks)));
   }
 
   /**

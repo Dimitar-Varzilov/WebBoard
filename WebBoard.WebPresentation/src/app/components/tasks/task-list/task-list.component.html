@@ -39,8 +39,19 @@
       </select>
     </div>
     <div class="col-md-5 text-end">
-      <small class="text-muted">
-        Showing {{ filteredTasks.length }} of {{ tasks.length }} tasks
+      <small class="text-muted" *ngIf="paginationMetadata">
+        Showing
+        {{
+          (paginationMetadata.currentPage - 1) * paginationMetadata.pageSize + 1
+        }}
+        -
+        {{
+          Math.min(
+            paginationMetadata.currentPage * paginationMetadata.pageSize,
+            paginationMetadata.totalCount
+          )
+        }}
+        of {{ paginationMetadata.totalCount }} tasks
       </small>
     </div>
   </div>
@@ -54,7 +65,12 @@
   </div>
 
   <!-- Empty State -->
-  <div *ngIf="!loading && tasks.length === 0" class="text-center py-5">
+  <div
+    *ngIf="
+      !loading && paginationMetadata && paginationMetadata.totalCount === 0
+    "
+    class="text-center py-5"
+  >
     <i class="fas fa-tasks fa-3x text-muted mb-3"></i>
     <h4 class="text-muted">No tasks yet</h4>
     <p class="text-muted">
@@ -81,17 +97,92 @@
     </div>
   </div>
 
-  <!-- No Results -->
+  <!-- Pagination Controls -->
   <div
-    *ngIf="!loading && tasks.length > 0 && filteredTasks.length === 0"
-    class="text-center py-5"
+    *ngIf="paginationMetadata && paginationMetadata.totalPages > 1"
+    class="mt-4"
   >
-    <i class="fas fa-search fa-3x text-muted mb-3"></i>
-    <h4 class="text-muted">No tasks found</h4>
-    <p class="text-muted">Try adjusting your search criteria or filters.</p>
-    <button class="btn btn-outline-secondary" (click)="clearFilters()">
-      <i class="fas fa-times me-1"></i>Clear Filters
-    </button>
+    <div class="row align-items-center">
+      <!-- Page size selector -->
+      <div class="col-md-3">
+        <div class="d-flex align-items-center">
+          <label class="me-2 text-nowrap">Items per page:</label>
+          <select
+            class="form-select form-select-sm"
+            [(ngModel)]="pageSize"
+            (ngModelChange)="onPageSizeChange($event)"
+          >
+            <option *ngFor="let size of pageSizes" [value]="size">
+              {{ size }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Pagination buttons -->
+      <div class="col-md-6">
+        <nav aria-label="Task pagination">
+          <ul class="pagination pagination-sm justify-content-center mb-0">
+            <!-- Previous button -->
+            <li
+              class="page-item"
+              [class.disabled]="!paginationMetadata.hasPrevious"
+            >
+              <a
+                class="page-link"
+                (click)="
+                  paginationMetadata.hasPrevious &&
+                    onPageChange(currentPage - 1)
+                "
+                aria-label="Previous"
+              >
+                <span aria-hidden="true">&laquo;</span>
+              </a>
+            </li>
+
+            <!-- Page numbers -->
+            <li
+              class="page-item"
+              *ngFor="let page of visiblePages"
+              [class.active]="page === currentPage"
+              [class.disabled]="page === -1"
+            >
+              <a
+                class="page-link"
+                *ngIf="page !== -1"
+                (click)="onPageChange(page)"
+                >{{ page }}</a
+              >
+              <span class="page-link" *ngIf="page === -1">...</span>
+            </li>
+
+            <!-- Next button -->
+            <li
+              class="page-item"
+              [class.disabled]="!paginationMetadata.hasNext"
+            >
+              <a
+                class="page-link"
+                (click)="
+                  paginationMetadata.hasNext && onPageChange(currentPage + 1)
+                "
+                aria-label="Next"
+              >
+                <span aria-hidden="true">&raquo;</span>
+              </a>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      <!-- Page info -->
+      <div class="col-md-3 text-end">
+        <small class="text-muted">
+          Page {{ paginationMetadata.currentPage }} of
+          {{ paginationMetadata.totalPages }}
+        </small>
+      </div>
+    </div>
   </div>
 </div>
 

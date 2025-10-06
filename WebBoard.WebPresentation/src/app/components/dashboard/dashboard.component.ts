@@ -1,6 +1,13 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
-import { TaskDto, JobDto, TaskItemStatus, JobStatus } from '../../models';
+import {
+  TaskDto,
+  JobDto,
+  TaskItemStatus,
+  JobStatus,
+  TaskQueryParameters,
+  JobQueryParameters,
+} from '../../models';
 import { TaskService, JobService } from '../../services';
 import { JOB_TYPES, ROUTES } from '../../constants';
 
@@ -57,14 +64,18 @@ export class DashboardComponent implements OnInit {
   loadDashboardData(): void {
     this.loading = true;
 
-    // Load tasks
-    this.taskService.getAllTasks().subscribe({
-      next: (tasks) => {
-        this.recentTasks = tasks.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        this.calculateTaskStats(tasks);
+    // Load recent tasks (first page, sorted by creation date)
+    const taskParams: TaskQueryParameters = {
+      pageNumber: 1,
+      pageSize: 5, // Get top 5 recent tasks for dashboard
+      sortBy: 'createdAt',
+      sortDirection: 'desc',
+    };
+
+    this.taskService.getTasks(taskParams).subscribe({
+      next: (result) => {
+        this.recentTasks = result.items;
+        this.calculateTaskStats(result.metadata.totalCount, result.items);
         this.checkLoadingComplete();
       },
       error: (error) => {
@@ -73,14 +84,18 @@ export class DashboardComponent implements OnInit {
       },
     });
 
-    // Load jobs
-    this.jobService.getAllJobs().subscribe({
-      next: (jobs) => {
-        this.recentJobs = jobs.sort(
-          (a, b) =>
-            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        );
-        this.calculateJobStats(jobs);
+    // Load recent jobs (first page, sorted by creation date)
+    const jobParams: JobQueryParameters = {
+      pageNumber: 1,
+      pageSize: 5, // Get top 5 recent jobs for dashboard
+      sortBy: 'createdAt',
+      sortDirection: 'desc',
+    };
+
+    this.jobService.getJobs(jobParams).subscribe({
+      next: (result) => {
+        this.recentJobs = result.items;
+        this.calculateJobStats(result.metadata.totalCount, result.items);
         this.checkLoadingComplete();
       },
       error: (error) => {
@@ -95,23 +110,27 @@ export class DashboardComponent implements OnInit {
     this.loading = false;
   }
 
-  private calculateTaskStats(tasks: TaskDto[]): void {
+  private calculateTaskStats(totalCount: number, recentItems: TaskDto[]): void {
     this.taskStats = {
-      total: tasks.length,
-      pending: tasks.filter((t) => t.status === TaskItemStatus.Pending).length,
-      inProgress: tasks.filter((t) => t.status === TaskItemStatus.InProgress)
+      total: totalCount,
+      pending: recentItems.filter((t) => t.status === TaskItemStatus.Pending)
         .length,
-      completed: tasks.filter((t) => t.status === TaskItemStatus.Completed)
-        .length,
+      inProgress: recentItems.filter(
+        (t) => t.status === TaskItemStatus.InProgress
+      ).length,
+      completed: recentItems.filter(
+        (t) => t.status === TaskItemStatus.Completed
+      ).length,
     };
   }
 
-  private calculateJobStats(jobs: JobDto[]): void {
+  private calculateJobStats(totalCount: number, recentItems: JobDto[]): void {
     this.jobStats = {
-      total: jobs.length,
-      queued: jobs.filter((j) => j.status === JobStatus.Queued).length,
-      running: jobs.filter((j) => j.status === JobStatus.Running).length,
-      completed: jobs.filter((j) => j.status === JobStatus.Completed).length,
+      total: totalCount,
+      queued: recentItems.filter((j) => j.status === JobStatus.Queued).length,
+      running: recentItems.filter((j) => j.status === JobStatus.Running).length,
+      completed: recentItems.filter((j) => j.status === JobStatus.Completed)
+        .length,
     };
   }
 

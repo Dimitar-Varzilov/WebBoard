@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using WebBoard.Common.Constants;
+using WebBoard.Common.DTOs.Common;
 using WebBoard.Common.DTOs.Tasks;
 using WebBoard.Common.Enums;
 using WebBoard.Services.Tasks;
@@ -12,15 +13,16 @@ namespace WebBoard.Controllers
 	public class TasksController(ITaskService taskService) : ControllerBase
 	{
 		/// <summary>
-		/// Get all tasks
+		/// Get tasks with pagination, filtering, and sorting
 		/// </summary>
-		/// <returns>A list of all tasks ordered by creation date</returns>
+		/// <param name="parameters">Query parameters for pagination, filtering, and sorting</param>
+		/// <returns>A paginated list of tasks with metadata</returns>
 		[HttpGet]
-		[ProducesResponseType(typeof(IEnumerable<TaskDto>), 200)]
-		public async Task<IActionResult> GetAllTasks()
+		[ProducesResponseType(typeof(PagedResult<TaskDto>), 200)]
+		public async Task<IActionResult> GetTasks([FromQuery] TaskQueryParameters parameters)
 		{
-			var tasks = await taskService.GetAllTasksAsync();
-			return Ok(tasks);
+			var result = await taskService.GetTasksAsync(parameters);
+			return Ok(result);
 		}
 
 		/// <summary>
