@@ -13,12 +13,15 @@ namespace WebBoard.Services.Jobs
 	/// </summary>
 	public abstract class BaseJob(IServiceProvider serviceProvider, ILogger logger) : IJob
 	{
+        protected readonly IServiceProvider ServiceProvider = serviceProvider;
+        protected readonly ILogger Logger = logger;
+
 		public async Task Execute(IJobExecutionContext context)
 		{
 			var jobId = context.MergedJobDataMap.GetGuid(Constants.JobDataKeys.JobId);
 			var ct = context.CancellationToken;
 
-			using var scope = serviceProvider.CreateScope();
+			using var scope = ServiceProvider.CreateScope();
 			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 			var jobCleanupService = scope.ServiceProvider.GetRequiredService<IJobCleanupService>();
 			var cleanupOptions = scope.ServiceProvider.GetRequiredService<IOptions<JobCleanupOptions>>().Value;
@@ -29,20 +32,20 @@ namespace WebBoard.Services.Jobs
 				var job = await dbContext.Jobs.FindAsync(jobId, ct);
 				if (job == null)
 				{
-					logger.LogError("Job {JobId} not found", jobId);
+					Logger.LogError("Job {JobId} not found", jobId);
 					return;
 				}
 
 				// Update job status to Running
 				await UpdateJobStatus(dbContext, job, JobStatus.Running, ct);
-				logger.LogInformation("Starting execution of job {JobId} of type {JobType}", jobId, job.JobType);
+				Logger.LogInformation("Starting execution of job {JobId} of type {JobType}", jobId, job.JobType);
 
 				// Execute the actual job logic
 				await ExecuteJobLogic(dbContext, jobId, ct);
 
 				// Update job status to Completed
 				await UpdateJobStatus(dbContext, job, JobStatus.Completed, ct);
-				logger.LogInformation("Job {JobId} completed successfully", jobId);
+				Logger.LogInformation("Job {JobId} completed successfully", jobId);
 
 				// Clean up the completed job from scheduler only (NEVER from database)
 				if (cleanupOptions.AutoCleanupCompletedJobs)
@@ -51,23 +54,23 @@ namespace WebBoard.Services.Jobs
 					{
 						// Immediate cleanup from scheduler only
 						await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
-						logger.LogInformation("Job {JobId} removed from scheduler but preserved in database for audit trail", jobId);
+						Logger.LogInformation("Job {JobId} removed from scheduler but preserved in database for audit trail", jobId);
 					}
 					else
 					{
 						// Schedule cleanup after retention period (you could implement this with another job)
-						logger.LogInformation("Job {JobId} will be cleaned up from scheduler after retention period of {RetentionPeriod}",
+						Logger.LogInformation("Job {JobId} will be cleaned up from scheduler after retention period of {RetentionPeriod}",
 							jobId, cleanupOptions.RetentionPeriod);
 					}
 				}
 				else
 				{
-					logger.LogDebug("Auto cleanup is disabled, job {JobId} will remain in both scheduler and database", jobId);
+					Logger.LogDebug("Auto cleanup is disabled, job {JobId} will remain in both scheduler and database", jobId);
 				}
 			}
 			catch (Exception ex)
 			{
-				logger.LogError(ex, "Error processing job {JobId}", jobId);
+				Logger.LogError(ex, "Error processing job {JobId}", jobId);
 
 				// Update job status to Failed and preserve in database for troubleshooting
 				try
@@ -76,23 +79,23 @@ namespace WebBoard.Services.Jobs
 					if (job != null)
 					{
 						await UpdateJobStatus(dbContext, job, JobStatus.Failed, ct);
-						logger.LogWarning("Job {JobId} marked as Failed and preserved in database for troubleshooting", jobId);
+						Logger.LogWarning("Job {JobId} marked as Failed and preserved in database for troubleshooting", jobId);
 
 						// Clean up failed job from scheduler only (keep in database for audit)
 						try
 						{
 							await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
-							logger.LogInformation("Failed job {JobId} removed from scheduler but preserved in database", jobId);
+							Logger.LogInformation("Failed job {JobId} removed from scheduler but preserved in database", jobId);
 						}
 						catch (Exception cleanupEx)
 						{
-							logger.LogError(cleanupEx, "Failed to cleanup job {JobId} from scheduler after failure", jobId);
+							Logger.LogError(cleanupEx, "Failed to cleanup job {JobId} from scheduler after failure", jobId);
 						}
 					}
 				}
 				catch (Exception statusUpdateEx)
 				{
-					logger.LogError(statusUpdateEx, "Failed to update job status to Failed for job {JobId}", jobId);
+					Logger.LogError(statusUpdateEx, "Failed to update job status to Failed for job {JobId}", jobId);
 				}
 
 				throw;
@@ -109,7 +112,7 @@ namespace WebBoard.Services.Jobs
 			dbContext.Entry(job).CurrentValues.SetValues(updatedJob);
 			var rowsUpdated = await dbContext.SaveChangesAsync(ct);
 
-			logger.LogDebug("Updated job {JobId} status to {Status}, {RowsUpdated} rows affected (preserved in database)",
+			Logger.LogDebug("Updated job {JobId} status to {Status}, {RowsUpdated} rows affected (preserved in database)",
 				job.Id, newStatus, rowsUpdated);
 		}
 
