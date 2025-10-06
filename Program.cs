@@ -1,3 +1,4 @@
+using WebBoard.Hubs;
 using WebBoard.Services.Extensions;
 
 namespace WebBoard
@@ -10,6 +11,9 @@ namespace WebBoard
 
 			// Configure custom services
 			builder.Services.ConfigureServices(builder.Configuration);
+
+			// Add SignalR services
+			builder.Services.AddSignalR();
 
 			// Add framework services
 			builder.Services.AddControllers();
@@ -31,18 +35,22 @@ namespace WebBoard
 				app.UseSwaggerUI();
 			}
 
+			// Configure CORS for SignalR
 			app.UseCors(builder =>
 			{
 				builder
 					.WithOrigins(["http://localhost:4200"])
 					.AllowAnyHeader()
 					.AllowAnyMethod()
-					.AllowCredentials();
+					.AllowCredentials(); // Required for SignalR
 			});
 
 			app.UseHttpsRedirection();
 			app.UseAuthorization();
 			app.MapControllers();
+
+			// Map SignalR hub endpoint
+			app.MapHub<JobStatusHub>("/hubs/job-status");
 
 			await app.RunAsync();
 		}

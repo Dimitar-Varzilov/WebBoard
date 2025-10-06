@@ -23,6 +23,7 @@ export class TaskService {
 
   /**
    * Get paginated tasks with filtering and sorting
+   * Backend: GET /api/tasks?pageNumber={pageNumber}&pageSize={pageSize}&sortBy={sortBy}&sortDirection={sortDirection}&searchTerm={searchTerm}&status={status}&hasJob={hasJob}
    */
   getTasks(parameters: TaskQueryParameters): Observable<PagedResult<TaskDto>> {
     const params = HttpParamsBuilder.fromQueryParams(parameters);
@@ -39,6 +40,7 @@ export class TaskService {
 
   /**
    * Get tasks by status with computed properties
+   * Backend: GET /api/tasks/status/{status}
    */
   getTasksByStatus(status: TaskItemStatus): Observable<TaskDto[]> {
     return this.http
@@ -48,6 +50,7 @@ export class TaskService {
 
   /**
    * Get task by ID with computed properties
+   * Backend: GET /api/tasks/{id}
    */
   getTaskById(id: string): Observable<TaskDto> {
     return this.http
@@ -57,6 +60,7 @@ export class TaskService {
 
   /**
    * Create task
+   * Backend: POST /api/tasks
    */
   createTask(createTaskRequest: CreateTaskRequestDto): Observable<TaskDto> {
     return this.http
@@ -66,6 +70,7 @@ export class TaskService {
 
   /**
    * Update task
+   * Backend: PUT /api/tasks/{id}
    */
   updateTask(
     id: string,
@@ -78,6 +83,7 @@ export class TaskService {
 
   /**
    * Delete task
+   * Backend: DELETE /api/tasks/{id}
    */
   deleteTask(id: string): Observable<boolean> {
     return this.http.delete<boolean>(TASKS_ENDPOINTS.DELETE(id));
@@ -85,6 +91,7 @@ export class TaskService {
 
   /**
    * Get task count by status (returns number, no model factory needed)
+   * Backend: GET /api/tasks/status/{status}/count
    */
   getTaskCountByStatus(status: TaskItemStatus): Observable<number> {
     return this.http.get<number>(TASKS_ENDPOINTS.GET_COUNT_BY_STATUS(status));

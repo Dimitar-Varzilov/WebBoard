@@ -1,4 +1,18 @@
-<div class="card h-100 job-card">
+<div class="card h-100 job-card" [class.border-warning]="job.status === 1" [class.border-success]="job.status === 2">
+  <!-- SignalR Connection Indicator -->
+  <div class="position-absolute top-0 end-0 p-2">
+    <i *ngIf="isConnected$ | async" 
+       class="fas fa-circle text-success pulse" 
+       title="Real-time updates active" 
+       style="font-size: 8px;">
+    </i>
+    <i *ngIf="!(isConnected$ | async)" 
+       class="fas fa-circle text-muted" 
+       title="Real-time updates inactive" 
+       style="font-size: 8px;">
+    </i>
+  </div>
+
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start mb-2">
       <h6 class="card-title mb-0">
@@ -49,6 +63,8 @@
           class="progress-bar"
           [ngClass]="getProgressClass(job.status)"
           [style.width.%]="getProgressPercentage(job.status)"
+          [class.progress-bar-striped]="job.status === 1"
+          [class.progress-bar-animated]="job.status === 1"
         ></div>
       </div>
 

@@ -6,7 +6,7 @@ import {
   JobDto,
   JobDtoRaw,
   CreateJobRequestDto,
-  TaskDtoRaw,
+  AvailableTaskDto,
   PagedResult,
   JobQueryParameters,
 } from '../models';
@@ -22,6 +22,7 @@ export class JobService {
 
   /**
    * Get paginated jobs with filtering and sorting
+   * Backend: GET /api/jobs?pageNumber={pageNumber}&pageSize={pageSize}&sortBy={sortBy}&sortDirection={sortDirection}&searchTerm={searchTerm}&status={status}&jobType={jobType}
    */
   getJobs(parameters: JobQueryParameters): Observable<PagedResult<JobDto>> {
     const params = HttpParamsBuilder.fromQueryParams(parameters);
@@ -38,6 +39,7 @@ export class JobService {
 
   /**
    * Get job by ID with computed properties
+   * Backend: GET /api/jobs/{id}
    */
   getJobById(id: string): Observable<JobDto> {
     return this.http
@@ -47,6 +49,7 @@ export class JobService {
 
   /**
    * Create job
+   * Backend: POST /api/jobs
    */
   createJob(createJobRequest: CreateJobRequestDto): Observable<JobDto> {
     return this.http
@@ -56,6 +59,7 @@ export class JobService {
 
   /**
    * Get pending tasks count
+   * Backend: GET /api/jobs/validation/pending-tasks-count
    */
   getPendingTasksCount(): Observable<number> {
     return this.http.get<number>(JOBS_ENDPOINTS.GET_PENDING_TASKS_COUNT);
@@ -63,11 +67,13 @@ export class JobService {
 
   /**
    * Get available tasks for job creation based on job type
+   * Backend: GET /api/jobs/validation/available-tasks?jobType={jobType}
    */
-  getAvailableTasksForJob(jobType: string): Observable<TaskDtoRaw[]> {
+  getAvailableTasksForJob(jobType: string): Observable<AvailableTaskDto[]> {
     const params = HttpParamsBuilder.build({ jobType });
-    return this.http.get<TaskDtoRaw[]>(JOBS_ENDPOINTS.GET_AVAILABLE_TASKS, {
-      params,
-    });
+    return this.http.get<AvailableTaskDto[]>(
+      JOBS_ENDPOINTS.GET_AVAILABLE_TASKS,
+      { params }
+    );
   }
 }

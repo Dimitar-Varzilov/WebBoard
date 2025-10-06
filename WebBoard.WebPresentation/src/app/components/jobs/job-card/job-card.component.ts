@@ -1,7 +1,10 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
-import { ReportService } from '../../../services';
+import { ReportService, SignalRService } from '../../../services';
 import { TIMING } from '../../../constants';
+import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
+import * as signalR from '@microsoft/signalr';
 
 @Component({
   selector: 'app-job-card',
@@ -15,8 +18,16 @@ export class JobCardComponent {
 
   isRefreshing = false;
   isDownloading = false;
+  isConnected$: Observable<boolean>;
 
-  constructor(private reportService: ReportService) {}
+  constructor(
+    private reportService: ReportService,
+    private signalRService: SignalRService
+  ) {
+    this.isConnected$ = this.signalRService.getConnectionState().pipe(
+      map((state) => state === signalR.HubConnectionState.Connected)
+    );
+  }
 
   getStatusClass(status: JobStatus): string {
     switch (status) {

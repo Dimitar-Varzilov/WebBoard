@@ -8,13 +8,12 @@ using WebBoard.Data;
 namespace WebBoard.Services.Jobs
 {
 	/// <summary>
-	/// Base class for jobs that automatically handles status updates and cleanup
-	/// Jobs are NEVER removed from database to maintain complete audit trail
+	/// Base class for jobs with automatic status updates and SignalR notifications
 	/// </summary>
 	public abstract class BaseJob(IServiceProvider serviceProvider, ILogger logger) : IJob
 	{
-        protected readonly IServiceProvider ServiceProvider = serviceProvider;
-        protected readonly ILogger Logger = logger;
+		protected readonly IServiceProvider ServiceProvider = serviceProvider;
+		protected readonly ILogger Logger = logger;
 
 		public async Task Execute(IJobExecutionContext context)
 		{
@@ -25,10 +24,11 @@ namespace WebBoard.Services.Jobs
 			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 			var jobCleanupService = scope.ServiceProvider.GetRequiredService<IJobCleanupService>();
 			var cleanupOptions = scope.ServiceProvider.GetRequiredService<IOptions<JobCleanupOptions>>().Value;
+			var statusNotifier = scope.ServiceProvider.GetRequiredService<IJobStatusNotifier>();
 
 			try
 			{
-				// Load the job entity (this will be tracked by EF)
+				// Load the job entity
 				var job = await dbContext.Jobs.FindAsync(jobId, ct);
 				if (job == null)
 				{
@@ -36,52 +36,38 @@ namespace WebBoard.Services.Jobs
 					return;
 				}
 
-				// Update job status to Running
-				await UpdateJobStatus(dbContext, job, JobStatus.Running, ct);
+				// Update status to Running and broadcast via SignalR
+				await UpdateJobStatusAsync(dbContext, job, JobStatus.Running, statusNotifier, ct);
 				Logger.LogInformation("Starting execution of job {JobId} of type {JobType}", jobId, job.JobType);
 
 				// Execute the actual job logic
 				await ExecuteJobLogic(dbContext, jobId, ct);
 
-				// Update job status to Completed
-				await UpdateJobStatus(dbContext, job, JobStatus.Completed, ct);
+				// Update status to Completed and broadcast via SignalR
+				await UpdateJobStatusAsync(dbContext, job, JobStatus.Completed, statusNotifier, ct);
 				Logger.LogInformation("Job {JobId} completed successfully", jobId);
 
-				// Clean up the completed job from scheduler only (NEVER from database)
-				if (cleanupOptions.AutoCleanupCompletedJobs)
+				// Clean up from scheduler if configured
+				if (cleanupOptions.AutoCleanupCompletedJobs && cleanupOptions.RetentionPeriod == TimeSpan.Zero)
 				{
-					if (cleanupOptions.RetentionPeriod == TimeSpan.Zero)
-					{
-						// Immediate cleanup from scheduler only
-						await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
-						Logger.LogInformation("Job {JobId} removed from scheduler but preserved in database for audit trail", jobId);
-					}
-					else
-					{
-						// Schedule cleanup after retention period (you could implement this with another job)
-						Logger.LogInformation("Job {JobId} will be cleaned up from scheduler after retention period of {RetentionPeriod}",
-							jobId, cleanupOptions.RetentionPeriod);
-					}
-				}
-				else
-				{
-					Logger.LogDebug("Auto cleanup is disabled, job {JobId} will remain in both scheduler and database", jobId);
+					await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
+					Logger.LogInformation("Job {JobId} removed from scheduler but preserved in database for audit trail", jobId);
 				}
 			}
 			catch (Exception ex)
 			{
 				Logger.LogError(ex, "Error processing job {JobId}", jobId);
 
-				// Update job status to Failed and preserve in database for troubleshooting
+				// Update job status to Failed and broadcast via SignalR
 				try
 				{
 					var job = await dbContext.Jobs.FindAsync(jobId, ct);
 					if (job != null)
 					{
-						await UpdateJobStatus(dbContext, job, JobStatus.Failed, ct);
+						await UpdateJobStatusAsync(dbContext, job, JobStatus.Failed, statusNotifier, ct, ex.Message);
 						Logger.LogWarning("Job {JobId} marked as Failed and preserved in database for troubleshooting", jobId);
 
-						// Clean up failed job from scheduler only (keep in database for audit)
+						// Clean up failed job from scheduler only
 						try
 						{
 							await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
@@ -103,26 +89,31 @@ namespace WebBoard.Services.Jobs
 		}
 
 		/// <summary>
-		/// Helper method to update job status using the tracked entity
-		/// Jobs are always preserved in database regardless of status
+		/// Update job status in database and notify all clients via SignalR
 		/// </summary>
-		private async Task UpdateJobStatus(AppDbContext dbContext, Job job, JobStatus newStatus, CancellationToken ct)
+		private async Task UpdateJobStatusAsync(
+			AppDbContext dbContext,
+			Job job,
+			JobStatus newStatus,
+			IJobStatusNotifier statusNotifier,
+			CancellationToken ct,
+			string? errorMessage = null)
 		{
+			// Update database
 			var updatedJob = job with { Status = newStatus };
 			dbContext.Entry(job).CurrentValues.SetValues(updatedJob);
-			var rowsUpdated = await dbContext.SaveChangesAsync(ct);
+			await dbContext.SaveChangesAsync(ct);
 
-			Logger.LogDebug("Updated job {JobId} status to {Status}, {RowsUpdated} rows affected (preserved in database)",
-				job.Id, newStatus, rowsUpdated);
+			// Broadcast via SignalR to all connected clients
+			await statusNotifier.NotifyJobStatusAsync(job.Id, job.JobType, newStatus, errorMessage);
+
+			Logger.LogDebug("Updated job {JobId} status to {Status} and broadcasted via SignalR",
+				job.Id, newStatus);
 		}
 
 		/// <summary>
 		/// Override this method to implement the actual job logic
 		/// </summary>
-		/// <param name="dbContext">Database context</param>
-		/// <param name="jobId">Job ID</param>
-		/// <param name="cancellationToken">Cancellation token</param>
-		/// <returns>Task representing the async operation</returns>
 		protected abstract Task ExecuteJobLogic(AppDbContext dbContext, Guid jobId, CancellationToken cancellationToken);
 	}
 }

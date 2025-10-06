@@ -20,6 +20,9 @@ namespace WebBoard.Services.Extensions
 			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
 			services.AddScoped<IJobCleanupService, JobCleanupService>();
 			services.AddScoped<IReportService, ReportService>();
+			
+			// Register SignalR job status notifier
+			services.AddScoped<IJobStatusNotifier, JobStatusNotifier>();
 
 			// Register job type registry as singleton since it's stateless
 			services.AddSingleton<IJobTypeRegistry, JobTypeRegistry>();

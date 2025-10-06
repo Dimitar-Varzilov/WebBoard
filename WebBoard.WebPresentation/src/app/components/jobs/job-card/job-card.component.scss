@@ -8,6 +8,15 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
     border-color: #0052cc;
   }
+
+  &.border-warning {
+    border-color: #f57c00 !important;
+    box-shadow: 0 0 0 0.2rem rgba(245, 124, 0, 0.25);
+  }
+
+  &.border-success {
+    border-color: #2e7d32 !important;
+  }
 }
 
 .card-title {
@@ -40,6 +49,23 @@
   }
 }
 
+// Pulse animation for SignalR connection indicator
+.pulse {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
 // Status badge styles
 .status-badge {
   font-size: 0.75rem;
@@ -56,6 +82,7 @@
   &.job-status-running {
     background-color: #fff3e0;
     color: #f57c00;
+    animation: glow 1.5s ease-in-out infinite;
   }
 
   &.job-status-completed {
@@ -66,5 +93,14 @@
   &.job-status-failed {
     background-color: #ffebee;
     color: #d32f2f;
+  }
+}
+
+@keyframes glow {
+  0%, 100% {
+    box-shadow: 0 0 5px rgba(245, 124, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(245, 124, 0, 0.8);
   }
 }

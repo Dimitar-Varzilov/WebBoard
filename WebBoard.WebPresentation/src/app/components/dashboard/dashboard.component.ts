@@ -7,6 +7,7 @@ import {
   JobStatus,
   TaskQueryParameters,
   JobQueryParameters,
+  PagedResult,
 } from '../../models';
 import { TaskService, JobService } from '../../services';
 import { JOB_TYPES, ROUTES } from '../../constants';
@@ -73,12 +74,12 @@ export class DashboardComponent implements OnInit {
     };
 
     this.taskService.getTasks(taskParams).subscribe({
-      next: (result) => {
+      next: (result: PagedResult<TaskDto>) => {
         this.recentTasks = result.items;
         this.calculateTaskStats(result.metadata.totalCount, result.items);
         this.checkLoadingComplete();
       },
-      error: (error) => {
+      error: (error: Error) => {
         console.error('Error loading tasks:', error);
         this.checkLoadingComplete();
       },
@@ -93,12 +94,12 @@ export class DashboardComponent implements OnInit {
     };
 
     this.jobService.getJobs(jobParams).subscribe({
-      next: (result) => {
+      next: (result: PagedResult<JobDto>) => {
         this.recentJobs = result.items;
         this.calculateJobStats(result.metadata.totalCount, result.items);
         this.checkLoadingComplete();
       },
-      error: (error) => {
+      error: (error: Error) => {
         console.error('Error loading jobs:', error);
         this.checkLoadingComplete();
       },
