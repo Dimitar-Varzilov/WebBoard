@@ -35,4 +35,12 @@ export class JobService {
   createJob(createJobRequest: CreateJobRequestDto): Observable<JobDto> {
     return this.http.post<JobDto>(JOBS_ENDPOINTS.CREATE, createJobRequest);
   }
+
+  /**
+   * Get count of pending tasks for validation
+   * @returns Observable<number>
+   */
+  getPendingTasksCount(): Observable<number> {
+    return this.http.get<number>(JOBS_ENDPOINTS.GET_PENDING_TASKS_COUNT);
+  }
 }

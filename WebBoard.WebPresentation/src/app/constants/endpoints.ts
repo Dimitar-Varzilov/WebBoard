@@ -18,6 +18,7 @@ export const JOBS_ENDPOINTS = {
   GET_ALL: buildEndpoint(CONTROLLERS.JOBS),
   GET_BY_ID: (id: string) => buildEndpoint(CONTROLLERS.JOBS, `/${id}`),
   CREATE: buildEndpoint(CONTROLLERS.JOBS),
+  GET_PENDING_TASKS_COUNT: buildEndpoint(CONTROLLERS.JOBS, '/validation/pending-tasks-count'),
 } as const;
 
 // Tasks Controller Endpoints
@@ -28,4 +29,5 @@ export const TASKS_ENDPOINTS = {
   CREATE: buildEndpoint(CONTROLLERS.TASKS),
   UPDATE: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
   DELETE: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
+  GET_COUNT_BY_STATUS: (status: string) => buildEndpoint(CONTROLLERS.TASKS, `/status/${status}/count`),
 } as const;

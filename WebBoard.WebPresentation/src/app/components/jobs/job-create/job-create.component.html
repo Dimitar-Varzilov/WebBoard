@@ -17,6 +17,61 @@
         </div>
 
         <div class="card-body">
+          <!-- Validation Message for Jobs Requiring Pending Tasks -->
+          <div *ngIf="validationMessage" class="mb-4">
+            <div
+              class="alert"
+              [ngClass]="{
+                'alert-warning': loadingPendingTasksCount,
+                'alert-danger': !loadingPendingTasksCount && !canCreateJob
+              }"
+            >
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <i class="fas"
+                     [ngClass]="{
+                       'fa-spinner fa-spin': loadingPendingTasksCount,
+                       'fa-exclamation-triangle': !loadingPendingTasksCount && !canCreateJob
+                     }"
+                     me-2></i>
+                  {{ validationMessage }}
+                </div>
+                <button
+                  *ngIf="!loadingPendingTasksCount && !canCreateJob"
+                  type="button"
+                  class="btn btn-sm btn-outline-primary"
+                  (click)="refreshPendingTasksCount()"
+                  [disabled]="loadingPendingTasksCount"
+                >
+                  <i class="fas fa-refresh me-1"></i>Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pending Tasks Count Info (only show when a job requiring pending tasks is selected) -->
+          <div *ngIf="requiresPendingTasksSelected && !loadingPendingTasksCount && pendingTasksCount > 0" class="mb-4">
+            <div class="alert alert-info">
+              <div class="d-flex justify-content-between align-items-center">
+                <div>
+                  <i class="fas fa-info-circle me-2"></i>
+                  <strong>Available:</strong> {{ pendingTasksCount }} pending task{{ pendingTasksCount === 1 ? '' : 's' }}
+                </div>
+                <button
+                  type="button"
+                  class="btn btn-sm btn-outline-info"
+                  (click)="refreshPendingTasksCount()"
+                  [disabled]="loadingPendingTasksCount"
+                >
+                  <i class="fas"
+                     [ngClass]="loadingPendingTasksCount ? 'fa-spinner fa-spin' : 'fa-refresh'"
+                     me-1></i>
+                  Refresh
+                </button>
+              </div>
+            </div>
+          </div>
+
           <form [formGroup]="jobForm" (ngSubmit)="onSubmit()">
             <div class="mb-4">
               <label for="jobType" class="form-label required">
@@ -110,6 +165,12 @@
               <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Description:</strong> {{ selectedJobTypeDescription }}
+                <div *ngIf="jobForm.get('jobType')?.value === 'GenerateTaskReport'" class="mt-2">
+                  <small class="text-muted">
+                    <i class="fas fa-info-circle me-1"></i>
+                    This job works with all tasks regardless of their status and can be run even without pending tasks.
+                  </small>
+                </div>
               </div>
             </div>
 
@@ -125,7 +186,8 @@
               <button
                 type="submit"
                 class="btn btn-primary"
-                [disabled]="jobForm.invalid || creating"
+                [disabled]="jobForm.invalid || creating || !canCreateJob"
+                [title]="!canCreateJob ? 'Cannot create job: No pending tasks available for Mark All Tasks as Done' : ''"
               >
                 <span
                   *ngIf="creating"
