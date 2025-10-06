@@ -50,12 +50,12 @@ namespace WebBoard.Services.Jobs
 			{
 				// Group tasks by status
 				var tasksByStatus = tasks.GroupBy(t => t.Status);
-				
+
 				foreach (var group in tasksByStatus)
 				{
 					report.AppendLine($"{group.Key.ToString().ToUpper()} TASKS ({group.Count()}):");
 					report.AppendLine(new string('-', 30));
-					
+
 					foreach (var task in group)
 					{
 						report.AppendLine($"• {task.Title}");

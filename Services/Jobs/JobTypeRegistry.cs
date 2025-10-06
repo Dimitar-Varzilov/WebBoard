@@ -5,7 +5,7 @@ using WebBoard.Common.Constants;
 namespace WebBoard.Services.Jobs
 {
 	public class JobTypeRegistry : IJobTypeRegistry
-    {
+	{
 		private readonly Dictionary<string, Type> _jobTypeMap;
 
 		public JobTypeRegistry()

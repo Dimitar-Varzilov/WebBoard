@@ -27,6 +27,7 @@ export class JobModelFactory {
     // Compute boolean flags once
     const isScheduledInPast = raw.scheduledAt ? DateTimeUtils.isPast(raw.scheduledAt) : false;
     const isOverdue = isScheduledInPast && raw.status === 0; // Queued but scheduled in past
+    const taskCount = raw.taskIds ? raw.taskIds.length : 0;
     
     return {
       ...raw,
@@ -39,7 +40,8 @@ export class JobModelFactory {
       scheduledAtRelative,
       scheduledAtCompact,
       isScheduledInPast,
-      isOverdue
+      isOverdue,
+      taskCount
     };
   }
 
@@ -79,6 +81,7 @@ export class TaskModelFactory {
     const ageInMs = now.getTime() - createdAtDate.getTime();
     const ageInDays = Math.floor(ageInMs / (1000 * 60 * 60 * 24));
     const isRecent = ageInMs < (24 * 60 * 60 * 1000); // Less than 24 hours old
+    const isAssignedToJob = !!raw.jobId; // Has job assignment
     
     return {
       ...raw,
@@ -87,7 +90,8 @@ export class TaskModelFactory {
       createdAtRelative,
       createdAtCompact,
       isRecent,
-      age: ageInDays
+      age: ageInDays,
+      isAssignedToJob
     };
   }
 

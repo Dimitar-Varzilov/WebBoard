@@ -20,7 +20,7 @@ namespace WebBoard.Services.Extensions
 			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
 			services.AddScoped<IJobCleanupService, JobCleanupService>();
 			services.AddScoped<IReportService, ReportService>();
-			
+
 			// Register job type registry as singleton since it's stateless
 			services.AddSingleton<IJobTypeRegistry, JobTypeRegistry>();
 

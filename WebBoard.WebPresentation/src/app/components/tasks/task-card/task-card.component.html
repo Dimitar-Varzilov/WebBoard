@@ -32,6 +32,14 @@
         <i class="fas fa-exclamation-triangle me-1"></i>
         {{ task.age }} days old
       </small>
+      <small *ngIf="task.isAssignedToJob" class="text-info d-block">
+        <i class="fas fa-link me-1"></i>
+        Assigned to job
+      </small>
+      <small *ngIf="!task.isAssignedToJob" class="text-muted d-block">
+        <i class="fas fa-unlock me-1"></i>
+        Available for jobs
+      </small>
     </div>
 
     <div class="d-flex justify-content-between align-items-center">
@@ -45,6 +53,7 @@
           class="btn btn-outline-primary btn-sm"
           (click)="onEdit()"
           [title]="'Edit task'"
+          [disabled]="task.isAssignedToJob"
         >
           <i class="fas fa-edit"></i>
         </button>
@@ -59,6 +68,7 @@
           class="btn btn-outline-danger btn-sm"
           (click)="onDelete()"
           [title]="'Delete task'"
+          [disabled]="task.isAssignedToJob"
         >
           <i class="fas fa-trash"></i>
         </button>

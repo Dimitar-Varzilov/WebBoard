@@ -22,7 +22,7 @@ namespace WebBoard.Services.Tasks
 			db.Tasks.Add(task);
 			await db.SaveChangesAsync();
 
-			return new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt);
+			return new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt, task.JobId);
 		}
 
 		public async Task<bool> DeleteTaskAsync(Guid id)
@@ -43,7 +43,7 @@ namespace WebBoard.Services.Tasks
 			return await db.Tasks
 				.AsNoTracking()
 				.OrderBy(task => task.CreatedAt)
-				.Select(task => new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt))
+				.Select(task => new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt, task.JobId))
 				.ToListAsync();
 		}
 
@@ -53,7 +53,7 @@ namespace WebBoard.Services.Tasks
 				.AsNoTracking()
 				.Where(task => task.Status == status)
 				.OrderBy(task => task.CreatedAt)
-				.Select(task => new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt))
+				.Select(task => new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt, task.JobId))
 				.ToListAsync();
 		}
 
@@ -76,7 +76,7 @@ namespace WebBoard.Services.Tasks
 			var task = await db.Tasks.AsNoTracking()
 								  .FirstOrDefaultAsync(t => t.Id == id);
 
-			return task == null ? null : new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt);
+			return task == null ? null : new TaskDto(task.Id, task.Title, task.Description, task.Status, task.CreatedAt, task.JobId);
 		}
 
 		public async Task<TaskDto?> UpdateTaskAsync(Guid id, UpdateTaskRequestDto updateTaskRequest)
@@ -98,7 +98,7 @@ namespace WebBoard.Services.Tasks
 			db.Entry(task).CurrentValues.SetValues(updatedTask);
 			await db.SaveChangesAsync();
 
-			return new TaskDto(updatedTask.Id, updatedTask.Title, updatedTask.Description, updatedTask.Status, updatedTask.CreatedAt);
+			return new TaskDto(updatedTask.Id, updatedTask.Title, updatedTask.Description, updatedTask.Status, updatedTask.CreatedAt, updatedTask.JobId);
 		}
 	}
 }

@@ -1,4 +1,3 @@
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Options;
 using Quartz;
 using WebBoard.Common.Constants;
@@ -66,7 +65,7 @@ namespace WebBoard.Services.Jobs
 					else
 					{
 						// Schedule cleanup after retention period (you could implement this with another job)
-						Logger.LogInformation("Job {JobId} will be cleaned up from scheduler after retention period of {RetentionPeriod}", 
+						Logger.LogInformation("Job {JobId} will be cleaned up from scheduler after retention period of {RetentionPeriod}",
 							jobId, cleanupOptions.RetentionPeriod);
 					}
 				}
@@ -118,8 +117,8 @@ namespace WebBoard.Services.Jobs
 			var updatedJob = job with { Status = newStatus };
 			dbContext.Entry(job).CurrentValues.SetValues(updatedJob);
 			var rowsUpdated = await dbContext.SaveChangesAsync(ct);
-			
-			Logger.LogDebug("Updated job {JobId} status to {Status}, {RowsUpdated} rows affected (preserved in database)", 
+
+			Logger.LogDebug("Updated job {JobId} status to {Status}, {RowsUpdated} rows affected (preserved in database)",
 				job.Id, newStatus, rowsUpdated);
 		}
 

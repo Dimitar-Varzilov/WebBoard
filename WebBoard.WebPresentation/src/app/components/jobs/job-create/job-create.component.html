@@ -1,6 +1,6 @@
 <div class="container-fluid">
   <div class="row justify-content-center">
-    <div class="col-lg-6 col-md-8">
+    <div class="col-lg-8 col-md-10">
       <div class="card">
         <div class="card-header">
           <div class="d-flex justify-content-between align-items-center">
@@ -25,13 +25,14 @@
             </div>
           </div>
 
-          <!-- Validation Message for Jobs Requiring Pending Tasks -->
+          <!-- Validation Message -->
           <div *ngIf="validationMessage" class="mb-4">
             <div
               class="alert"
               [ngClass]="{
-                'alert-warning': loadingPendingTasksCount,
-                'alert-danger': !loadingPendingTasksCount && !canCreateJob
+                'alert-warning': loadingTasks,
+                'alert-danger': !loadingTasks && !canCreateJob,
+                'alert-info': selectedTasksCount > 0
               }"
             >
               <div class="d-flex justify-content-between align-items-center">
@@ -39,20 +40,19 @@
                   <i
                     class="fas"
                     [ngClass]="{
-                      'fa-spinner fa-spin': loadingPendingTasksCount,
-                      'fa-exclamation-triangle':
-                        !loadingPendingTasksCount && !canCreateJob
+                      'fa-spinner fa-spin': loadingTasks,
+                      'fa-exclamation-triangle': !loadingTasks && !canCreateJob,
+                      'fa-info-circle': selectedTasksCount > 0
                     }"
                     me-2
                   ></i>
                   {{ validationMessage }}
                 </div>
                 <button
-                  *ngIf="!loadingPendingTasksCount && !canCreateJob"
+                  *ngIf="!loadingTasks && availableTasks.length === 0"
                   type="button"
                   class="btn btn-sm btn-outline-primary"
-                  (click)="refreshPendingTasksCount()"
-                  [disabled]="loadingPendingTasksCount"
+                  (click)="refreshAvailableTasks()"
                 >
                   <i class="fas fa-refresh me-1"></i>Refresh
                 </button>
@@ -60,44 +60,8 @@
             </div>
           </div>
 
-          <!-- Pending Tasks Count Info -->
-          <div
-            *ngIf="
-              requiresPendingTasksSelected &&
-              !loadingPendingTasksCount &&
-              pendingTasksCount > 0
-            "
-            class="mb-4"
-          >
-            <div class="alert alert-info">
-              <div class="d-flex justify-content-between align-items-center">
-                <div>
-                  <i class="fas fa-info-circle me-2"></i>
-                  <strong>Available:</strong> {{ pendingTasksCount }} pending
-                  task{{ pendingTasksCount === 1 ? "" : "s" }}
-                </div>
-                <button
-                  type="button"
-                  class="btn btn-sm btn-outline-info"
-                  (click)="refreshPendingTasksCount()"
-                  [disabled]="loadingPendingTasksCount"
-                >
-                  <i
-                    class="fas"
-                    [ngClass]="
-                      loadingPendingTasksCount
-                        ? 'fa-spinner fa-spin'
-                        : 'fa-refresh'
-                    "
-                    me-1
-                  ></i>
-                  Refresh
-                </button>
-              </div>
-            </div>
-          </div>
-
           <form [formGroup]="jobForm" (ngSubmit)="onSubmit()">
+            <!-- Job Type Selection -->
             <div class="mb-4">
               <label for="jobType" class="form-label required">
                 <i class="fas fa-cog me-1"></i>Job Type
@@ -117,7 +81,129 @@
                 </option>
               </select>
               <div class="invalid-feedback" *ngIf="isFieldInvalid('jobType')">
-                {{ getFieldError('jobType') }}
+                {{ getFieldError("jobType") }}
+              </div>
+            </div>
+
+            <!-- Task Selection -->
+            <div *ngIf="jobForm.get('jobType')?.value" class="mb-4">
+              <label class="form-label required">
+                <i class="fas fa-tasks me-1"></i>Select Tasks to Process
+              </label>
+
+              <!-- Task Search -->
+              <div class="mb-3">
+                <div class="input-group">
+                  <span class="input-group-text">
+                    <i class="fas fa-search"></i>
+                  </span>
+                  <input
+                    type="text"
+                    class="form-control"
+                    placeholder="Search tasks..."
+                    formControlName="taskSearchText"
+                  />
+                  <button
+                    *ngIf="filteredTasks.length > 0"
+                    type="button"
+                    class="btn btn-outline-primary"
+                    (click)="selectAllTasks()"
+                    [disabled]="selectedTaskIds.length === filteredTasks.length"
+                  >
+                    <i class="fas fa-check-double me-1"></i>Select All
+                  </button>
+                  <button
+                    *ngIf="selectedTaskIds.length > 0"
+                    type="button"
+                    class="btn btn-outline-secondary"
+                    (click)="clearTaskSelection()"
+                  >
+                    <i class="fas fa-times me-1"></i>Clear
+                  </button>
+                </div>
+                <div class="form-text">
+                  <i class="fas fa-info-circle me-1"></i>
+                  {{ selectedTasksCount }} of {{ filteredTasks.length }} tasks
+                  selected
+                  <span *ngIf="availableTasks.length !== filteredTasks.length">
+                    ({{ availableTasks.length }} total available)
+                  </span>
+                </div>
+              </div>
+
+              <!-- Task List -->
+              <div
+                class="border rounded p-3 ps-4"
+                style="max-height: 400px; overflow-y: auto"
+              >
+                <div *ngIf="loadingTasks" class="text-center py-3">
+                  <div
+                    class="spinner-border spinner-border-sm text-primary"
+                    role="status"
+                  >
+                    <span class="visually-hidden">Loading tasks...</span>
+                  </div>
+                  <small class="text-muted ms-2"
+                    >Loading available tasks...</small
+                  >
+                </div>
+
+                <div
+                  *ngIf="!loadingTasks && filteredTasks.length === 0"
+                  class="text-center py-3 text-muted"
+                >
+                  <i class="fas fa-search fa-2x mb-2"></i>
+                  <p class="mb-0">No tasks found</p>
+                  <small *ngIf="taskSearchText"
+                    >Try adjusting your search criteria</small
+                  >
+                </div>
+
+                <div *ngIf="!loadingTasks && filteredTasks.length > 0">
+                  <div
+                    *ngFor="let task of filteredTasks"
+                    class="form-check mb-2 p-2 rounded"
+                    [ngClass]="{ 'bg-light': isTaskSelected(task.id) }"
+                  >
+                    <input
+                      class="form-check-input"
+                      type="checkbox"
+                      [id]="'task-' + task.id"
+                      [checked]="isTaskSelected(task.id)"
+                      (change)="toggleTaskSelection(task.id)"
+                    />
+                    <label
+                      class="form-check-label w-100"
+                      [for]="'task-' + task.id"
+                    >
+                      <div
+                        class="d-flex justify-content-between align-items-start"
+                      >
+                        <div class="flex-grow-1">
+                          <div class="fw-semibold">{{ task.title }}</div>
+                          <div class="text-muted small">
+                            {{ task.description | slice : 0 : 100
+                            }}{{ task.description.length > 100 ? "..." : "" }}
+                          </div>
+                          <small class="text-muted">
+                            <i class="fas fa-calendar me-1"></i>
+                            Created: {{ task.createdAt | date : "short" }}
+                          </small>
+                        </div>
+                        <span class="badge bg-secondary ms-2">
+                          Status: {{ task.status }}
+                        </span>
+                      </div>
+                    </label>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                class="invalid-feedback d-block"
+                *ngIf="isFieldInvalid('taskIds')"
+              >
+                {{ getFieldError("taskIds") }}
               </div>
             </div>
 
@@ -173,32 +259,32 @@
                   class="invalid-feedback"
                   *ngIf="isFieldInvalid('scheduledAt')"
                 >
-                  {{ getFieldError('scheduledAt') }}
+                  {{ getFieldError("scheduledAt") }}
                 </div>
                 <div class="form-text">
                   <i class="fas fa-info-circle me-1"></i>
-                  Enter time in your local timezone. The job will be scheduled accordingly across all timezones.
+                  Enter time in your local timezone. The job will be scheduled
+                  accordingly across all timezones.
                 </div>
               </div>
             </div>
 
+            <!-- Job Description -->
             <div class="mb-4" *ngIf="selectedJobTypeDescription">
               <div class="alert alert-info">
                 <i class="fas fa-info-circle me-2"></i>
                 <strong>Description:</strong> {{ selectedJobTypeDescription }}
-                <div
-                  *ngIf="jobForm.get('jobType')?.value === 'GenerateTaskReport'"
-                  class="mt-2"
-                >
+                <div *ngIf="selectedTasksCount > 0" class="mt-2">
                   <small class="text-muted">
-                    <i class="fas fa-info-circle me-1"></i>
-                    This job works with all tasks regardless of their status and
-                    can be run even without pending tasks.
+                    <i class="fas fa-tasks me-1"></i>
+                    This job will process {{ selectedTasksCount }} selected
+                    task{{ selectedTasksCount > 1 ? "s" : "" }}.
                   </small>
                 </div>
               </div>
             </div>
 
+            <!-- Action Buttons -->
             <div class="d-flex justify-content-end gap-2">
               <button
                 type="button"
@@ -211,10 +297,10 @@
               <button
                 type="submit"
                 class="btn btn-primary"
-                [disabled]="jobForm.invalid || creating || !canCreateJob"
+                [disabled]="!canCreateJob || creating"
                 [title]="
                   !canCreateJob
-                    ? 'Cannot create job: No pending tasks available for Mark All Tasks as Done'
+                    ? 'Please select at least one task and ensure all fields are valid'
                     : ''
                 "
               >

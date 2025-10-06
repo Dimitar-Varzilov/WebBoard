@@ -20,18 +20,16 @@ namespace WebBoard.Common.Attributes
 				var minimumTime = DateTimeOffset.UtcNow.AddMinutes(MinimumMinutesInFuture);
 				return dateTimeOffset >= minimumTime;
 			}
-			
+
 			// If value is null or not DateTimeOffset, let other validators handle it
 			return true;
 		}
 
 		public override string FormatErrorMessage(string name)
 		{
-			if (MinimumMinutesInFuture <= 1)
-			{
-				return $"The {name} field cannot be in the past.";
-			}
-			return $"The {name} field must be at least {MinimumMinutesInFuture} minutes in the future.";
+			return MinimumMinutesInFuture <= 1
+				? $"The {name} field cannot be in the past."
+				: $"The {name} field must be at least {MinimumMinutesInFuture} minutes in the future.";
 		}
 	}
 }

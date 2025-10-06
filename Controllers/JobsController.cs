@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using WebBoard.Common.Constants;
 using WebBoard.Common.DTOs.Jobs;
+using WebBoard.Common.DTOs.Tasks;
 using WebBoard.Common.Enums;
 using WebBoard.Services.Jobs;
 using WebBoard.Services.Tasks;
@@ -42,6 +43,42 @@ namespace WebBoard.Controllers
 		}
 
 		/// <summary>
+		/// Get available tasks for job creation (tasks not already assigned to other jobs)
+		/// </summary>
+		/// <param name="jobType">Job type to filter appropriate tasks</param>
+		/// <returns>List of available tasks</returns>
+		[HttpGet("validation/available-tasks")]
+		[ProducesResponseType(typeof(IEnumerable<object>), 200)]
+		[ProducesResponseType(400)]
+		public async Task<IActionResult> GetAvailableTasksForJob([FromQuery] string jobType)
+		{
+			if (string.IsNullOrWhiteSpace(jobType))
+			{
+				return BadRequest(new { message = "Job type is required" });
+			}
+
+			IEnumerable<TaskDto> availableTasks;
+
+			// Filter tasks based on job type requirements
+			if (jobType == Constants.JobTypes.MarkAllTasksAsDone)
+			{
+				// Only pending tasks that are not assigned to other jobs
+				var pendingTasks = await taskService.GetTasksByStatusAsync(TaskItemStatus.Pending);
+				availableTasks = pendingTasks
+					.Where(t => !HasJobAssignment(t));
+			}
+			else
+			{
+				// All tasks not assigned to other jobs
+				var allTasks = await taskService.GetAllTasksAsync();
+				availableTasks = allTasks
+					.Where(t => !HasJobAssignment(t));
+			}
+
+			return Ok(availableTasks);
+		}
+
+		/// <summary>
 		/// Create a new job
 		/// </summary>
 		/// <param name="createJobRequest">The job creation request</param>
@@ -63,7 +100,7 @@ namespace WebBoard.Controllers
 			}
 			catch (ArgumentException ex)
 			{
-				// Job type validation error
+				// Job type validation error or task selection error
 				return BadRequest(new { message = ex.Message });
 			}
 			catch (InvalidOperationException ex)
@@ -71,6 +108,15 @@ namespace WebBoard.Controllers
 				// Business rule validation error (e.g., no pending tasks)
 				return BadRequest(new { message = ex.Message });
 			}
+		}
+
+		/// <summary>
+		/// Helper method to check if a task is assigned to a job
+		/// Checks if the task has a JobId indicating it's already assigned
+		/// </summary>
+		private static bool HasJobAssignment(TaskDto task)
+		{
+			return task.JobId.HasValue;
 		}
 	}
 }

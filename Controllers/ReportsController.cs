@@ -49,12 +49,7 @@ namespace WebBoard.Controllers
 		public async Task<IActionResult> GetReportByJobId(Guid jobId)
 		{
 			var report = await reportService.GetReportByJobIdAsync(jobId);
-			if (report == null)
-			{
-				return NotFound(new { message = "Report not found for this job" });
-			}
-
-			return Ok(report);
+			return report == null ? NotFound(new { message = "Report not found for this job" }) : Ok(report);
 		}
 	}
 }

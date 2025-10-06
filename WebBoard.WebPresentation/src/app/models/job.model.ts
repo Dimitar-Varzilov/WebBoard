@@ -17,6 +17,7 @@ export interface JobDtoRaw {
   hasReport?: boolean;
   reportId?: string;
   reportFileName?: string;
+  taskIds?: string[]; // Task IDs associated with this job
 }
 
 /**
@@ -26,7 +27,7 @@ export interface JobDto extends JobDtoRaw {
   // Computed Date objects for efficient operations
   readonly createdAtDate: Date;
   readonly scheduledAtDate?: Date;
-
+  
   // Cached formatted strings (computed once)
   readonly createdAtDisplay: string;
   readonly createdAtRelative: string;
@@ -34,16 +35,29 @@ export interface JobDto extends JobDtoRaw {
   readonly scheduledAtDisplay?: string;
   readonly scheduledAtRelative?: string;
   readonly scheduledAtCompact?: string;
-
+  
   // Computed boolean flags
   readonly isScheduledInPast: boolean;
   readonly isOverdue: boolean;
+  readonly taskCount: number;
 }
 
 export interface CreateJobRequestDto {
   jobType: string;
   runImmediately?: boolean;
   scheduledAt?: string; // ISO 8601 string with timezone info
+  taskIds: string[]; // Required: selected task IDs
+}
+
+/**
+ * Available task for job creation selection
+ */
+export interface AvailableTaskDto {
+  id: string;
+  title: string;
+  description: string;
+  status: number;
+  createdAt: string;
 }
 
 export interface ReportDto {

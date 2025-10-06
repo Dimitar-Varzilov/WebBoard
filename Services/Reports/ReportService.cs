@@ -6,7 +6,7 @@ using WebBoard.Data;
 
 namespace WebBoard.Services.Reports
 {
-	public class ReportService(AppDbContext db, ILogger<ReportService> logger): IReportService
+	public class ReportService(AppDbContext db, ILogger<ReportService> logger) : IReportService
 	{
 		public async Task<Report> CreateReportAsync(Guid jobId, string fileName, string content, string contentType)
 		{
@@ -33,12 +33,7 @@ namespace WebBoard.Services.Reports
 				.AsNoTracking()
 				.FirstOrDefaultAsync(r => r.Id == reportId);
 
-			if (report == null)
-			{
-				return null;
-			}
-
-			return new ReportDownloadDto(report.FileName, report.Content, report.ContentType);
+			return report == null ? null : new ReportDownloadDto(report.FileName, report.Content, report.ContentType);
 		}
 
 		public async Task<ReportDto?> GetReportByJobIdAsync(Guid jobId)
@@ -47,12 +42,9 @@ namespace WebBoard.Services.Reports
 				.AsNoTracking()
 				.FirstOrDefaultAsync(r => r.JobId == jobId);
 
-			if (report == null)
-			{
-				return null;
-			}
-
-			return new ReportDto(report.Id, report.JobId, report.FileName, report.ContentType, report.CreatedAt, report.Status);
+			return report == null
+				? null
+				: new ReportDto(report.Id, report.JobId, report.FileName, report.ContentType, report.CreatedAt, report.Status);
 		}
 
 		public async Task MarkReportAsDownloadedAsync(Guid reportId)
