@@ -17,6 +17,14 @@
         </div>
 
         <div class="card-body">
+          <!-- Timezone Info -->
+          <div class="mb-3">
+            <div class="alert alert-light">
+              <i class="fas fa-globe me-2"></i>
+              <small><strong>Your timezone:</strong> {{ timezoneInfo }}</small>
+            </div>
+          </div>
+
           <!-- Validation Message for Jobs Requiring Pending Tasks -->
           <div *ngIf="validationMessage" class="mb-4">
             <div
@@ -52,7 +60,7 @@
             </div>
           </div>
 
-          <!-- Pending Tasks Count Info (only show when a job requiring pending tasks is selected) -->
+          <!-- Pending Tasks Count Info -->
           <div
             *ngIf="
               requiresPendingTasksSelected &&
@@ -109,9 +117,7 @@
                 </option>
               </select>
               <div class="invalid-feedback" *ngIf="isFieldInvalid('jobType')">
-                <div *ngIf="jobForm.get('jobType')?.hasError('required')">
-                  Job type is required.
-                </div>
+                {{ getFieldError('jobType') }}
               </div>
             </div>
 
@@ -167,18 +173,11 @@
                   class="invalid-feedback"
                   *ngIf="isFieldInvalid('scheduledAt')"
                 >
-                  <div *ngIf="jobForm.get('scheduledAt')?.hasError('required')">
-                    Scheduled date and time is required.
-                  </div>
-                  <div
-                    *ngIf="jobForm.get('scheduledAt')?.hasError('notInPast')"
-                  >
-                    Scheduled date and time must be in the future.
-                  </div>
+                  {{ getFieldError('scheduledAt') }}
                 </div>
                 <div class="form-text">
                   <i class="fas fa-info-circle me-1"></i>
-                  The job will be queued and executed at the specified time.
+                  Enter time in your local timezone. The job will be scheduled accordingly across all timezones.
                 </div>
               </div>
             </div>

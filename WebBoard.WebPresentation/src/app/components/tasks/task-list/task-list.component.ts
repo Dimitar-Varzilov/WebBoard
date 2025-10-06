@@ -116,4 +116,25 @@ export class TaskListComponent implements OnInit {
   trackByTaskId(index: number, task: TaskDto): string {
     return task.id;
   }
+
+  /**
+   * Get task count by status (now uses computed properties for efficiency)
+   */
+  getTaskCountByStatus(status: TaskItemStatus): number {
+    return this.tasks.filter(task => task.status === status).length;
+  }
+
+  /**
+   * Get recent tasks count (new in last 24 hours)
+   */
+  getRecentTasksCount(): number {
+    return this.tasks.filter(task => task.isRecent).length;
+  }
+
+  /**
+   * Get tasks sorted by age (newest first)
+   */
+  getTasksSortedByAge(): TaskDto[] {
+    return [...this.filteredTasks].sort((a, b) => a.age - b.age);
+  }
 }

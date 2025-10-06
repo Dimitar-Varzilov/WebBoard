@@ -8,8 +8,8 @@ namespace WebBoard.Common.DTOs.Jobs
 		Guid Id, 
 		string JobType, 
 		JobStatus Status, 
-		DateTime CreatedAt, 
-		DateTime? ScheduledAt, 
+		DateTimeOffset CreatedAt, 
+		DateTimeOffset? ScheduledAt, 
 		bool HasReport = false, 
 		Guid? ReportId = null,
 		string? ReportFileName = null);
@@ -18,6 +18,6 @@ namespace WebBoard.Common.DTOs.Jobs
 		[Required(ErrorMessage = "Job type is required")]
 		string JobType, 
 		bool RunImmediately = true, 
-		[NotInPast(ErrorMessage = "Scheduled time cannot be in the past")]
-		DateTime? ScheduledAt = null);
+		[NotInPastOffset(ErrorMessage = "Scheduled time cannot be in the past")]
+		DateTimeOffset? ScheduledAt = null);
 }

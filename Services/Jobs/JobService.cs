@@ -44,7 +44,7 @@ namespace WebBoard.Services.Jobs
 			// 2. Validate scheduling time is not in the past
 			if (!createJobRequest.RunImmediately && createJobRequest.ScheduledAt.HasValue)
 			{
-				if (createJobRequest.ScheduledAt.Value <= DateTime.UtcNow)
+				if (createJobRequest.ScheduledAt.Value <= DateTimeOffset.UtcNow)
 				{
 					throw new ArgumentException("Scheduled time cannot be in the past.");
 				}
@@ -59,7 +59,7 @@ namespace WebBoard.Services.Jobs
 				Guid.NewGuid(),
 				createJobRequest.JobType,
 				JobStatus.Queued,
-				DateTime.UtcNow,
+				DateTimeOffset.UtcNow,
 				scheduledAt
 			);
 

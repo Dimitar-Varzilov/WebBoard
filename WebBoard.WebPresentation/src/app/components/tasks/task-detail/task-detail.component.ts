@@ -14,31 +14,27 @@ export class TaskDetailComponent {
 
   getStatusClass(status: TaskItemStatus): string {
     switch (status) {
-      case TaskItemStatus.NotStarted:
-        return 'status-not-started';
+      case TaskItemStatus.Pending:
+        return 'status-pending';
       case TaskItemStatus.InProgress:
         return 'status-in-progress';
       case TaskItemStatus.Completed:
         return 'status-completed';
-      case TaskItemStatus.OnHold:
-        return 'status-on-hold';
       default:
-        return 'status-not-started';
+        return 'status-pending';
     }
   }
 
   getStatusText(status: TaskItemStatus): string {
     switch (status) {
-      case TaskItemStatus.NotStarted:
-        return 'Not Started';
+      case TaskItemStatus.Pending:
+        return 'Pending';
       case TaskItemStatus.InProgress:
         return 'In Progress';
       case TaskItemStatus.Completed:
         return 'Completed';
-      case TaskItemStatus.OnHold:
-        return 'On Hold';
       default:
-        return 'Not Started';
+        return 'Pending';
     }
   }
 

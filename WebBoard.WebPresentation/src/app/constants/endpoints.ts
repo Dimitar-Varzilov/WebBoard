@@ -1,4 +1,5 @@
 import { environment } from '../../environments/environment';
+import { TaskItemStatus } from '../models';
 
 export const API_BASE_URL = environment.apiUrl;
 
@@ -27,10 +28,11 @@ export const TASKS_ENDPOINTS = {
   BASE: buildEndpoint(CONTROLLERS.TASKS),
   GET_ALL: buildEndpoint(CONTROLLERS.TASKS),
   GET_BY_ID: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
+  GET_BY_STATUS: (status: TaskItemStatus) => buildEndpoint(CONTROLLERS.TASKS, `/status/${status}`),
   CREATE: buildEndpoint(CONTROLLERS.TASKS),
   UPDATE: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
   DELETE: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
-  GET_COUNT_BY_STATUS: (status: string) => buildEndpoint(CONTROLLERS.TASKS, `/status/${status}/count`),
+  GET_COUNT_BY_STATUS: (status: TaskItemStatus) => buildEndpoint(CONTROLLERS.TASKS, `/status/${status}/count`),
 } as const;
 
 // Reports Controller Endpoints

@@ -8,7 +8,7 @@ namespace WebBoard.Services.Jobs
 		IScheduler scheduler,
 		IJobTypeRegistry jobTypeRegistry,
 		ILogger<JobSchedulingService> logger) : IJobSchedulingService
-    {
+	{
 		public async Task ScheduleJobAsync(Job job)
 		{
 			try
@@ -51,7 +51,7 @@ namespace WebBoard.Services.Jobs
 				else
 				{
 					// Check if scheduled time is in the past
-					if (job.ScheduledAt.Value <= DateTime.UtcNow)
+					if (job.ScheduledAt.Value <= DateTimeOffset.UtcNow)
 					{
 						logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately",
 							job.Id, job.ScheduledAt.Value);
@@ -63,7 +63,7 @@ namespace WebBoard.Services.Jobs
 					}
 					else
 					{
-						// Schedule for specific time
+						// Schedule for specific time - convert DateTimeOffset to DateTimeOffset for Quartz
 						trigger = TriggerBuilder.Create()
 							.WithIdentity(triggerKey)
 							.StartAt(job.ScheduledAt.Value)

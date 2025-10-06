@@ -3,7 +3,8 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
 import { Subject, takeUntil } from 'rxjs';
 import { JobService } from '../../../services';
-import { notInPastValidator } from '../../../validators/datetime.validators';
+import { notInPastValidator, minimumFutureTimeValidator } from '../../../validators/datetime.validators';
+import { DateTimeUtils } from '../../../utils/datetime.utils';
 import {
   JOB_TYPES,
   JOB_TYPE_LABELS,
@@ -32,7 +33,6 @@ export class JobCreateComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   // Only MarkAllTasksAsDone requires pending tasks
-  // GenerateTaskReport can work with all tasks regardless of status
   private readonly jobTypesRequiringPendingTasks = [
     JOB_TYPES.MARK_ALL_TASKS_DONE,
   ];
@@ -55,7 +55,6 @@ export class JobCreateComponent implements OnInit, OnDestroy {
     this.setupSchedulingWatcher();
     this.loadPendingTasksCount();
     
-    // Listen for query parameter changes that might indicate task creation
     this.route.queryParams
       .pipe(takeUntil(this.destroy$))
       .subscribe(params => {
@@ -82,7 +81,6 @@ export class JobCreateComponent implements OnInit, OnDestroy {
         error: (error) => {
           console.error('Error loading pending tasks count:', error);
           this.loadingPendingTasksCount = false;
-          // Set to 0 to be safe and show validation message
           this.pendingTasksCount = 0;
         },
       });
@@ -101,7 +99,8 @@ export class JobCreateComponent implements OnInit, OnDestroy {
           scheduledAtControl?.enable();
           scheduledAtControl?.setValidators([
             Validators.required,
-            notInPastValidator()
+            notInPastValidator(),
+            minimumFutureTimeValidator(1) // At least 1 minute in future
           ]);
         }
         scheduledAtControl?.updateValueAndValidity();
@@ -129,7 +128,7 @@ export class JobCreateComponent implements OnInit, OnDestroy {
 
   get canCreateJob(): boolean {
     if (!this.requiresPendingTasksSelected) {
-      return true; // Jobs that don't require pending tasks can always be created
+      return true;
     }
     return this.pendingTasksCount > 0;
   }
@@ -164,6 +163,10 @@ export class JobCreateComponent implements OnInit, OnDestroy {
       if (field.errors['notInPast']) {
         return 'Scheduled time cannot be in the past';
       }
+      if (field.errors['minimumFutureTime']) {
+        const minMinutes = field.errors['minimumFutureTime'].minimumMinutes;
+        return `Scheduled time must be at least ${minMinutes} minute${minMinutes > 1 ? 's' : ''} in the future`;
+      }
     }
     return '';
   }
@@ -172,10 +175,14 @@ export class JobCreateComponent implements OnInit, OnDestroy {
     return !this.jobForm.get('runImmediately')?.value;
   }
 
+  // Use DateTimeUtils for consistent datetime handling
   get minDateTime(): string {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-    return now.toISOString().slice(0, 16);
+    return DateTimeUtils.getCurrentLocalInput();
+  }
+
+  // Get current timezone info for user reference
+  get timezoneInfo(): string {
+    return `${DateTimeUtils.getCurrentTimezoneName()} (${DateTimeUtils.getCurrentTimezoneOffset()})`;
   }
 
   private showValidationPopup(): void {
@@ -192,7 +199,6 @@ export class JobCreateComponent implements OnInit, OnDestroy {
       return;
     }
 
-    // Check if job requiring pending tasks can be created
     if (this.requiresPendingTasksSelected && this.pendingTasksCount === 0) {
       this.showValidationPopup();
       return;
@@ -206,8 +212,14 @@ export class JobCreateComponent implements OnInit, OnDestroy {
       runImmediately: formValue.runImmediately,
     };
 
+    // Convert local datetime to UTC ISO string for API
     if (!formValue.runImmediately && formValue.scheduledAt) {
-      createRequest.scheduledAt = new Date(formValue.scheduledAt);
+      createRequest.scheduledAt = DateTimeUtils.localInputToUtcIso(formValue.scheduledAt);
+      console.log('Scheduling job for:', {
+        localInput: formValue.scheduledAt,
+        utcIso: createRequest.scheduledAt,
+        timezone: this.timezoneInfo
+      });
     }
 
     this.jobService.createJob(createRequest)
@@ -215,7 +227,7 @@ export class JobCreateComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (job) => {
           this.creating = false;
-          // Navigate to jobs list and show success message
+          console.log('Job created successfully:', job);
           this.router.navigate([ROUTES.JOBS], {
             queryParams: { created: job.id },
           });
@@ -224,7 +236,6 @@ export class JobCreateComponent implements OnInit, OnDestroy {
           console.error('Error creating job:', error);
           this.creating = false;
           
-          // Handle specific validation error from backend
           if (error.status === 400 && error.error?.message?.includes('No pending tasks')) {
             this.showValidationPopup();
           } else if (error.status === 400 && error.error?.message?.includes('past')) {

@@ -1,7 +1,9 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { JobDto, CreateJobRequestDto } from '../models';
+import { map } from 'rxjs/operators';
+import { JobDto, JobDtoRaw, CreateJobRequestDto } from '../models';
+import { JobModelFactory } from '../factories/model.factory';
 import { JOBS_ENDPOINTS } from '../constants/endpoints';
 
 @Injectable({
@@ -11,34 +13,34 @@ export class JobService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get all jobs
-   * @returns Observable<JobDto[]>
+   * Get all jobs with computed properties
    */
   getAllJobs(): Observable<JobDto[]> {
-    return this.http.get<JobDto[]>(JOBS_ENDPOINTS.GET_ALL);
+    return this.http.get<JobDtoRaw[]>(JOBS_ENDPOINTS.GET_ALL).pipe(
+      map((rawJobs) => JobModelFactory.fromApiResponseArray(rawJobs))
+    );
   }
 
   /**
-   * Get job by ID
-   * @param id Job ID
-   * @returns Observable<JobDto>
+   * Get job by ID with computed properties
    */
   getJobById(id: string): Observable<JobDto> {
-    return this.http.get<JobDto>(JOBS_ENDPOINTS.GET_BY_ID(id));
+    return this.http.get<JobDtoRaw>(JOBS_ENDPOINTS.GET_BY_ID(id)).pipe(
+      map((rawJob) => JobModelFactory.fromApiResponse(rawJob))
+    );
   }
 
   /**
-   * Create a new job
-   * @param createJobRequest Job creation request
-   * @returns Observable<JobDto>
+   * Create job
    */
   createJob(createJobRequest: CreateJobRequestDto): Observable<JobDto> {
-    return this.http.post<JobDto>(JOBS_ENDPOINTS.CREATE, createJobRequest);
+    return this.http.post<JobDtoRaw>(JOBS_ENDPOINTS.CREATE, createJobRequest).pipe(
+      map((rawJob) => JobModelFactory.fromApiResponse(rawJob))
+    );
   }
 
   /**
-   * Get count of pending tasks for validation
-   * @returns Observable<number>
+   * Get pending tasks count
    */
   getPendingTasksCount(): Observable<number> {
     return this.http.get<number>(JOBS_ENDPOINTS.GET_PENDING_TASKS_COUNT);

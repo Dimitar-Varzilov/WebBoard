@@ -7,7 +7,7 @@ namespace WebBoard.Common.DTOs.Reports
 		Guid JobId,
 		string FileName,
 		string ContentType,
-		DateTime CreatedAt,
+		DateTimeOffset CreatedAt,
 		ReportStatus Status);
 
 	public record ReportDownloadDto(

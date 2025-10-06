@@ -16,7 +16,7 @@ namespace WebBoard.Services.Reports
 				fileName,
 				content,
 				contentType,
-				DateTime.UtcNow,
+				DateTimeOffset.UtcNow,
 				ReportStatus.Generated
 			);
 

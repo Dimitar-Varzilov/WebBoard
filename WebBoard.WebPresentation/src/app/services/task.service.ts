@@ -1,7 +1,15 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { TaskDto, CreateTaskRequestDto, UpdateTaskRequestDto } from '../models';
+import { map } from 'rxjs/operators';
+import {
+  TaskDto,
+  TaskDtoRaw,
+  CreateTaskRequestDto,
+  UpdateTaskRequestDto,
+  TaskItemStatus,
+} from '../models';
+import { TaskModelFactory } from '../factories/model.factory';
 import { TASKS_ENDPOINTS } from '../constants/endpoints';
 
 @Injectable({
@@ -11,53 +19,68 @@ export class TaskService {
   constructor(private http: HttpClient) {}
 
   /**
-   * Get all tasks
-   * @returns Observable<TaskDto[]>
+   * Get all tasks with computed properties
    */
   getAllTasks(): Observable<TaskDto[]> {
-    return this.http.get<TaskDto[]>(TASKS_ENDPOINTS.GET_ALL);
+    return this.http
+      .get<TaskDtoRaw[]>(TASKS_ENDPOINTS.GET_ALL)
+      .pipe(
+        map((rawTasks) => TaskModelFactory.fromApiResponseArray(rawTasks))
+      );
   }
 
   /**
-   * Get task by ID
-   * @param id Task ID
-   * @returns Observable<TaskDto>
+   * Get tasks by status with computed properties
+   */
+  getTasksByStatus(status: TaskItemStatus): Observable<TaskDto[]> {
+    return this.http
+      .get<TaskDtoRaw[]>(TASKS_ENDPOINTS.GET_BY_STATUS(status))
+      .pipe(
+        map((rawTasks) => TaskModelFactory.fromApiResponseArray(rawTasks))
+      );
+  }
+
+  /**
+   * Get task by ID with computed properties
    */
   getTaskById(id: string): Observable<TaskDto> {
-    return this.http.get<TaskDto>(TASKS_ENDPOINTS.GET_BY_ID(id));
+    return this.http
+      .get<TaskDtoRaw>(TASKS_ENDPOINTS.GET_BY_ID(id))
+      .pipe(map((rawTask) => TaskModelFactory.fromApiResponse(rawTask)));
   }
 
   /**
-   * Create a new task
-   * @param createTaskRequest Task creation request
-   * @returns Observable<TaskDto>
+   * Create task
    */
   createTask(createTaskRequest: CreateTaskRequestDto): Observable<TaskDto> {
-    return this.http.post<TaskDto>(TASKS_ENDPOINTS.CREATE, createTaskRequest);
+    return this.http
+      .post<TaskDtoRaw>(TASKS_ENDPOINTS.CREATE, createTaskRequest)
+      .pipe(map((rawTask) => TaskModelFactory.fromApiResponse(rawTask)));
   }
 
   /**
-   * Update an existing task
-   * @param id Task ID
-   * @param updateTaskRequest Task update request
-   * @returns Observable<TaskDto>
+   * Update task
    */
   updateTask(
     id: string,
     updateTaskRequest: UpdateTaskRequestDto
   ): Observable<TaskDto> {
-    return this.http.put<TaskDto>(
-      TASKS_ENDPOINTS.UPDATE(id),
-      updateTaskRequest
-    );
+    return this.http
+      .put<TaskDtoRaw>(TASKS_ENDPOINTS.UPDATE(id), updateTaskRequest)
+      .pipe(map((rawTask) => TaskModelFactory.fromApiResponse(rawTask)));
   }
 
   /**
-   * Delete a task
-   * @param id Task ID
-   * @returns Observable<void>
+   * Delete task
    */
-  deleteTask(id: string): Observable<void> {
-    return this.http.delete<void>(TASKS_ENDPOINTS.DELETE(id));
+  deleteTask(id: string): Observable<boolean> {
+    return this.http.delete<boolean>(TASKS_ENDPOINTS.DELETE(id));
+  }
+
+  /**
+   * Get task count by status (returns number, no model factory needed)
+   */
+  getTaskCountByStatus(status: TaskItemStatus): Observable<number> {
+    return this.http.get<number>(TASKS_ENDPOINTS.GET_COUNT_BY_STATUS(status));
   }
 }

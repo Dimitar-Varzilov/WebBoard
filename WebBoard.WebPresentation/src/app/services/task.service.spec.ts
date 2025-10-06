@@ -20,7 +20,7 @@ describe('TaskService', () => {
     id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Test Task',
     description: 'Test Description',
-    status: TaskItemStatus.NotStarted,
+    status: TaskItemStatus.OnHold,
     createdAt: new Date('2024-01-01T00:00:00Z'),
   };
 
@@ -114,7 +114,7 @@ describe('TaskService', () => {
         expect(task).toEqual(mockTask);
         expect(task.id).toBe(taskId);
         expect(task.title).toBe('Test Task');
-        expect(task.status).toBe(TaskItemStatus.NotStarted);
+        expect(task.status).toBe(TaskItemStatus.OnHold);
       });
 
       const req = httpMock.expectOne(TASKS_ENDPOINTS.GET_BY_ID(taskId));
@@ -145,7 +145,7 @@ describe('TaskService', () => {
       service.createTask(createTaskRequest).subscribe((task) => {
         expect(task).toEqual(mockTask);
         expect(task.title).toBe('Test Task');
-        expect(task.status).toBe(TaskItemStatus.NotStarted);
+        expect(task.status).toBe(TaskItemStatus.OnHold);
       });
 
       const req = httpMock.expectOne(TASKS_ENDPOINTS.CREATE);

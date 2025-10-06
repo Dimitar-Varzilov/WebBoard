@@ -3,7 +3,7 @@ using WebBoard.Common.Enums;
 
 namespace WebBoard.Common.DTOs.Tasks
 {
-	public record TaskDto(Guid Id, string Title, string Description, TaskItemStatus Status, DateTime CreatedAt);
+	public record TaskDto(Guid Id, string Title, string Description, TaskItemStatus Status, DateTimeOffset CreatedAt);
 
 	public record CreateTaskRequestDto(
 		[Required]

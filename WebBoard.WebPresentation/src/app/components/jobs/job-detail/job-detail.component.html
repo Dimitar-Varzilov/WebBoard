@@ -11,6 +11,14 @@
       </div>
 
       <div class="modal-body" *ngIf="job">
+        <!-- Timezone Info -->
+        <div class="mb-3">
+          <div class="alert alert-light">
+            <i class="fas fa-globe me-2"></i>
+            <small><strong>Timezone:</strong> {{ getTimezoneInfo() }}</small>
+          </div>
+        </div>
+
         <div class="row">
           <div class="col-md-8">
             <h4 class="mb-3">
@@ -156,16 +164,17 @@
 
                 <div class="mb-3">
                   <small class="text-muted d-block">Created</small>
-                  <span class="small">{{
-                    job.createdAt | date : "medium"
-                  }}</span>
+                  <span class="small">{{ formatCreatedAt() }}</span>
                 </div>
 
                 <div class="mb-3" *ngIf="job.scheduledAt">
                   <small class="text-muted d-block">Scheduled</small>
-                  <span class="small">{{
-                    job.scheduledAt | date : "medium"
-                  }}</span>
+                  <span class="small" [ngClass]="{ 'text-danger': isScheduledInPast() }">
+                    {{ formatScheduledAt() }}
+                  </span>
+                  <small class="text-muted d-block mt-1">
+                    {{ getScheduledRelativeTime() }}
+                  </small>
                 </div>
 
                 <div class="mb-0" *ngIf="job.hasReport">

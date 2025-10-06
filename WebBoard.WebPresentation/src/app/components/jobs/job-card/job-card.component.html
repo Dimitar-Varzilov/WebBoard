@@ -16,15 +16,26 @@
       </small>
       <small class="text-muted d-block">
         <i class="fas fa-calendar me-1"></i>
-        Created: {{ job.createdAt | date : "short" }}
+        Created: {{ job.createdAtCompact }}
       </small>
       <small *ngIf="job.scheduledAt" class="text-muted d-block">
         <i class="fas fa-clock me-1"></i>
-        Scheduled: {{ job.scheduledAt | date : "short" }}
+        <span [ngClass]="{ 'text-danger': job.isScheduledInPast }">
+          Scheduled: {{ job.scheduledAtCompact }}
+        </span>
+      </small>
+      <small *ngIf="job.scheduledAt" class="text-muted d-block">
+        <i class="fas fa-hourglass-half me-1"></i>
+        {{ job.scheduledAtRelative }}
       </small>
       <small *ngIf="job.hasReport" class="text-success d-block">
         <i class="fas fa-file-download me-1"></i>
         Report: {{ job.reportFileName }}
+      </small>
+      <!-- Overdue indicator -->
+      <small *ngIf="job.isOverdue" class="text-danger d-block">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        Overdue
       </small>
     </div>
 

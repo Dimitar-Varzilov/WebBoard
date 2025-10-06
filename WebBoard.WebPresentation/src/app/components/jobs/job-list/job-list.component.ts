@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
 import { JobService } from '../../../services';
+import { DateTimeUtils } from '../../../utils/datetime.utils';
 import { TIMING, ROUTES } from '../../../constants';
 
 @Component({
@@ -16,6 +17,7 @@ export class JobListComponent implements OnInit {
   statusFilter = '';
   routes = ROUTES;
   JobStatus = JobStatus;
+  DateTimeUtils = DateTimeUtils; // Make DateTimeUtils available in template
 
   // Modal states
   showJobDetail = false;
@@ -79,5 +81,35 @@ export class JobListComponent implements OnInit {
 
   trackByJobId(index: number, job: JobDto): string {
     return job.id;
+  }
+
+  /**
+   * Format job creation time for display
+   */
+  formatCreatedAt(createdAt: string): string {
+    return DateTimeUtils.formatCompact(createdAt);
+  }
+
+  /**
+   * Format job scheduled time for display
+   */
+  formatScheduledAt(scheduledAt: string | undefined): string {
+    if (!scheduledAt) return '';
+    return DateTimeUtils.formatCompact(scheduledAt);
+  }
+
+  /**
+   * Get relative time for job creation/scheduling
+   */
+  getRelativeTime(dateString: string): string {
+    return DateTimeUtils.formatRelative(dateString);
+  }
+
+  /**
+   * Check if scheduled time is in the past
+   */
+  isScheduledInPast(scheduledAt: string | undefined): boolean {
+    if (!scheduledAt) return false;
+    return DateTimeUtils.isPast(scheduledAt);
   }
 }

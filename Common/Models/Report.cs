@@ -8,8 +8,8 @@ namespace WebBoard.Common.Models
 		string FileName,
 		string Content,
 		string ContentType,
-		DateTime CreatedAt,
-		ReportStatus Status)
+		DateTimeOffset CreatedAt,
+		ReportStatus Status = ReportStatus.Generated)
 	{
 		public Job? Job { get; init; }
 	}

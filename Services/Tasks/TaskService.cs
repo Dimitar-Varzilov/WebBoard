@@ -12,7 +12,7 @@ namespace WebBoard.Services.Tasks
 		{
 			var task = new TaskItem(
 				Guid.NewGuid(),
-				DateTime.UtcNow,
+				DateTimeOffset.UtcNow,
 				createTaskRequest.Title,
 				createTaskRequest.Description,
 				TaskItemStatus.Pending,

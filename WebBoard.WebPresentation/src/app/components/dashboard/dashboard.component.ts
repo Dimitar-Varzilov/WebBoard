@@ -6,10 +6,9 @@ import { JOB_TYPES, ROUTES } from '../../constants';
 
 interface TaskStats {
   total: number;
-  notStarted: number;
+  pending: number;
   inProgress: number;
   completed: number;
-  onHold: number;
 }
 
 interface JobStats {
@@ -30,10 +29,9 @@ export class DashboardComponent implements OnInit {
 
   taskStats: TaskStats = {
     total: 0,
-    notStarted: 0,
+    pending: 0,
     inProgress: 0,
     completed: 0,
-    onHold: 0,
   };
 
   jobStats: JobStats = {
@@ -100,13 +98,11 @@ export class DashboardComponent implements OnInit {
   private calculateTaskStats(tasks: TaskDto[]): void {
     this.taskStats = {
       total: tasks.length,
-      notStarted: tasks.filter((t) => t.status === TaskItemStatus.NotStarted)
-        .length,
+      pending: tasks.filter((t) => t.status === TaskItemStatus.Pending).length,
       inProgress: tasks.filter((t) => t.status === TaskItemStatus.InProgress)
         .length,
       completed: tasks.filter((t) => t.status === TaskItemStatus.Completed)
         .length,
-      onHold: tasks.filter((t) => t.status === TaskItemStatus.OnHold).length,
     };
   }
 
@@ -125,31 +121,27 @@ export class DashboardComponent implements OnInit {
 
   getTaskStatusClass(status: TaskItemStatus): string {
     switch (status) {
-      case TaskItemStatus.NotStarted:
-        return 'status-not-started';
+      case TaskItemStatus.Pending:
+        return 'status-pending';
       case TaskItemStatus.InProgress:
         return 'status-in-progress';
       case TaskItemStatus.Completed:
         return 'status-completed';
-      case TaskItemStatus.OnHold:
-        return 'status-on-hold';
       default:
-        return 'status-not-started';
+        return 'status-pending';
     }
   }
 
   getTaskStatusText(status: TaskItemStatus): string {
     switch (status) {
-      case TaskItemStatus.NotStarted:
-        return 'Not Started';
+      case TaskItemStatus.Pending:
+        return 'Pending';
       case TaskItemStatus.InProgress:
         return 'In Progress';
       case TaskItemStatus.Completed:
         return 'Completed';
-      case TaskItemStatus.OnHold:
-        return 'On Hold';
       default:
-        return 'Not Started';
+        return 'Pending';
     }
   }
 

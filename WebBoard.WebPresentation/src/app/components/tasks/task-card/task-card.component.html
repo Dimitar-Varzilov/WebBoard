@@ -2,6 +2,7 @@
   <div class="card-body">
     <div class="d-flex justify-content-between align-items-start mb-2">
       <h6 class="card-title mb-0 text-truncate" [title]="task.title">
+        <i [class]="getStatusIcon(task.status)" [ngClass]="getStatusClass(task.status)" me-2></i>
         {{ task.title }}
       </h6>
       <span class="status-badge ms-2" [ngClass]="getStatusClass(task.status)">{{
@@ -14,10 +15,29 @@
       }}{{ task.description.length > 80 ? "..." : "" }}
     </p>
 
+    <div class="mb-2">
+      <small class="text-muted d-block">
+        <i class="fas fa-calendar me-1"></i>
+        Created: {{ task.createdAtCompact }}
+      </small>
+      <small class="text-muted d-block">
+        <i class="fas fa-clock me-1"></i>
+        {{ task.createdAtRelative }}
+      </small>
+      <small *ngIf="task.isRecent" class="text-success d-block">
+        <i class="fas fa-star me-1"></i>
+        New task
+      </small>
+      <small *ngIf="task.age > 30" class="text-warning d-block">
+        <i class="fas fa-exclamation-triangle me-1"></i>
+        {{ task.age }} days old
+      </small>
+    </div>
+
     <div class="d-flex justify-content-between align-items-center">
       <small class="text-muted">
-        <i class="fas fa-calendar me-1"></i>
-        {{ task.createdAt | date : "short" }}
+        <i class="fas fa-fingerprint me-1"></i>
+        ID: {{ task.id | slice : 0 : 8 }}...
       </small>
 
       <div class="btn-group btn-group-sm">

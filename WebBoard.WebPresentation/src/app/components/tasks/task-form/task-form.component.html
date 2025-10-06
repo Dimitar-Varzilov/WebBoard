@@ -46,14 +46,11 @@
                   class="form-select"
                   formControlName="status"
                 >
-                  <option [value]="TaskItemStatus.NotStarted">
-                    Not Started
-                  </option>
+                  <option [value]="TaskItemStatus.Pending">Pending</option>
                   <option [value]="TaskItemStatus.InProgress">
                     In Progress
                   </option>
                   <option [value]="TaskItemStatus.Completed">Completed</option>
-                  <option [value]="TaskItemStatus.OnHold">On Hold</option>
                 </select>
               </div>
             </div>
