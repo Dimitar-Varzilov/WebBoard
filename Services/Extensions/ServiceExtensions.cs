@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Quartz;
 using WebBoard.Data;
 using WebBoard.Services.Jobs;
+using WebBoard.Services.Reports;
 using WebBoard.Services.Tasks;
 
 namespace WebBoard.Services.Extensions
@@ -18,7 +19,8 @@ namespace WebBoard.Services.Extensions
 			services.AddScoped<IJobService, JobService>();
 			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
 			services.AddScoped<IJobCleanupService, JobCleanupService>();
-
+			services.AddScoped<IReportService, ReportService>();
+			
 			// Register job type registry as singleton since it's stateless
 			services.AddSingleton<IJobTypeRegistry, JobTypeRegistry>();
 

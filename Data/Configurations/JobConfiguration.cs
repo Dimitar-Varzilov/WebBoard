@@ -22,6 +22,12 @@ namespace WebBoard.Data.Configurations
 
 			builder.Property(x => x.ScheduledAt)
 				.IsRequired(false);
+
+			// One-to-One relationship with Report
+			builder.HasOne(x => x.Report)
+				.WithOne(x => x.Job)
+				.HasForeignKey<Report>(x => x.JobId)
+				.OnDelete(DeleteBehavior.Cascade);
 		}
 	}
 }

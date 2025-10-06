@@ -11,10 +11,28 @@ export interface JobDto {
   status: JobStatus;
   createdAt: Date;
   scheduledAt?: Date;
+  hasReport?: boolean;
+  reportId?: string;
+  reportFileName?: string;
 }
 
 export interface CreateJobRequestDto {
   jobType: string;
   runImmediately?: boolean;
   scheduledAt?: Date;
+}
+
+export interface ReportDto {
+  id: string;
+  jobId: string;
+  fileName: string;
+  contentType: string;
+  createdAt: Date;
+  status: ReportStatus;
+}
+
+export enum ReportStatus {
+  Generated = 0,
+  Downloaded = 1,
+  Expired = 2,
 }

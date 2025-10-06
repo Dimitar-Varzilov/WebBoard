@@ -1,5 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
+import { ReportService } from '../../../services';
 import { TIMING } from '../../../constants';
 
 @Component({
@@ -13,6 +14,9 @@ export class JobCardComponent {
   @Output() refresh = new EventEmitter<JobDto>();
 
   isRefreshing = false;
+  isDownloading = false;
+
+  constructor(private reportService: ReportService) {}
 
   getStatusClass(status: JobStatus): string {
     switch (status) {
@@ -22,6 +26,8 @@ export class JobCardComponent {
         return 'job-status-running';
       case JobStatus.Completed:
         return 'job-status-completed';
+      case JobStatus.Failed:
+        return 'job-status-failed';
       default:
         return 'job-status-pending';
     }
@@ -35,6 +41,8 @@ export class JobCardComponent {
         return 'Running';
       case JobStatus.Completed:
         return 'Completed';
+      case JobStatus.Failed:
+        return 'Failed';
       default:
         return 'Queued';
     }
@@ -48,6 +56,8 @@ export class JobCardComponent {
         return 'bg-warning';
       case JobStatus.Completed:
         return 'bg-success';
+      case JobStatus.Failed:
+        return 'bg-danger';
       default:
         return 'bg-secondary';
     }
@@ -60,6 +70,8 @@ export class JobCardComponent {
       case JobStatus.Running:
         return 50;
       case JobStatus.Completed:
+        return 100;
+      case JobStatus.Failed:
         return 100;
       default:
         return 0;
@@ -78,5 +90,27 @@ export class JobCardComponent {
     setTimeout(() => {
       this.isRefreshing = false;
     }, TIMING.REFRESH_SPINNER_DURATION);
+  }
+
+  onDownloadReport(): void {
+    if (!this.job.reportId || this.isDownloading) {
+      return;
+    }
+
+    this.isDownloading = true;
+
+    this.reportService.downloadReport(this.job.reportId).subscribe({
+      next: (blob) => {
+        // Trigger automatic download
+        const fileName = this.job.reportFileName || 'report.txt';
+        this.reportService.triggerDownload(blob, fileName);
+        this.isDownloading = false;
+      },
+      error: (error) => {
+        console.error('Error downloading report:', error);
+        alert('Failed to download report. Please try again.');
+        this.isDownloading = false;
+      },
+    });
   }
 }

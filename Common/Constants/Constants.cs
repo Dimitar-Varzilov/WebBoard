@@ -13,6 +13,7 @@ namespace WebBoard.Common.Constants
 		{
 			public const string Tasks = "Tasks";
 			public const string Jobs = "Jobs";
+			public const string Reports = "Reports";
 		}
 
 		public static class JobDataKeys

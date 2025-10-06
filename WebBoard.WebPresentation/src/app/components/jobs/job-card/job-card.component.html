@@ -22,6 +22,10 @@
         <i class="fas fa-clock me-1"></i>
         Scheduled: {{ job.scheduledAt | date : "short" }}
       </small>
+      <small *ngIf="job.hasReport" class="text-success d-block">
+        <i class="fas fa-file-download me-1"></i>
+        Report: {{ job.reportFileName }}
+      </small>
     </div>
 
     <div class="d-flex justify-content-between align-items-center">
@@ -34,6 +38,15 @@
       </div>
 
       <div class="btn-group btn-group-sm">
+        <button
+          *ngIf="job.hasReport"
+          class="btn btn-outline-success btn-sm"
+          (click)="onDownloadReport()"
+          [disabled]="isDownloading"
+          [title]="'Download report'"
+        >
+          <i class="fas" [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'"></i>
+        </button>
         <button
           class="btn btn-outline-info btn-sm"
           (click)="onView()"

@@ -1,6 +1,6 @@
 import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { JobDto, JobStatus } from '../../../models';
-import { JobService } from '../../../services';
+import { JobService, ReportService } from '../../../services';
 
 @Component({
   selector: 'app-job-detail',
@@ -13,8 +13,12 @@ export class JobDetailComponent {
 
   JobStatus = JobStatus;
   refreshing = false;
+  isDownloading = false;
 
-  constructor(private jobService: JobService) {}
+  constructor(
+    private jobService: JobService,
+    private reportService: ReportService
+  ) {}
 
   getStatusClass(status: JobStatus): string {
     switch (status) {
@@ -39,6 +43,8 @@ export class JobDetailComponent {
         return 'Running';
       case JobStatus.Completed:
         return 'Completed';
+      case JobStatus.Failed:
+        return 'Failed';
       default:
         return 'Queued';
     }
@@ -52,6 +58,8 @@ export class JobDetailComponent {
         return 'bg-warning';
       case JobStatus.Completed:
         return 'bg-success';
+      case JobStatus.Failed:
+        return 'bg-danger';
       default:
         return 'bg-secondary';
     }
@@ -64,6 +72,8 @@ export class JobDetailComponent {
       case JobStatus.Running:
         return 75;
       case JobStatus.Completed:
+        return 100;
+      case JobStatus.Failed:
         return 100;
       default:
         return 0;
@@ -83,6 +93,28 @@ export class JobDetailComponent {
       error: (error) => {
         console.error('Error refreshing job:', error);
         this.refreshing = false;
+      },
+    });
+  }
+
+  onDownloadReport(): void {
+    if (!this.job?.reportId || this.isDownloading) {
+      return;
+    }
+
+    this.isDownloading = true;
+
+    this.reportService.downloadReport(this.job.reportId).subscribe({
+      next: (blob) => {
+        // Trigger automatic download
+        const fileName = this.job?.reportFileName || 'report.txt';
+        this.reportService.triggerDownload(blob, fileName);
+        this.isDownloading = false;
+      },
+      error: (error) => {
+        console.error('Error downloading report:', error);
+        alert('Failed to download report. Please try again.');
+        this.isDownloading = false;
       },
     });
   }

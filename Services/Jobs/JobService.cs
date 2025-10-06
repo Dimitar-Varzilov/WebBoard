@@ -16,11 +16,21 @@ namespace WebBoard.Services.Jobs
 	{
 		public async Task<IEnumerable<JobDto>> GetAllJobsAsync()
 		{
-			var jobs = await db.Jobs.AsNoTracking()
-								.OrderByDescending(j => j.CreatedAt)
-								.ToListAsync();
+			var jobs = await db.Jobs
+				.AsNoTracking()
+				.Include(j => j.Report)
+				.OrderByDescending(j => j.CreatedAt)
+				.ToListAsync();
 
-			return jobs.Select(job => new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt, job.ScheduledAt));
+			return jobs.Select(job => new JobDto(
+				job.Id,
+				job.JobType,
+				job.Status,
+				job.CreatedAt,
+				job.ScheduledAt,
+				job.Report != null,
+				job.Report?.Id,
+				job.Report?.FileName));
 		}
 
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
@@ -55,10 +65,20 @@ namespace WebBoard.Services.Jobs
 
 		public async Task<JobDto?> GetJobByIdAsync(Guid id)
 		{
-			var job = await db.Jobs.AsNoTracking()
-								.FirstOrDefaultAsync(j => j.Id == id);
+			var job = await db.Jobs
+				.AsNoTracking()
+				.Include(j => j.Report)
+				.FirstOrDefaultAsync(j => j.Id == id);
 
-			return job == null ? null : new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt, job.ScheduledAt);
+			return job == null ? null : new JobDto(
+				job.Id,
+				job.JobType,
+				job.Status,
+				job.CreatedAt,
+				job.ScheduledAt,
+				job.Report != null,
+				job.Report?.Id,
+				job.Report?.FileName);
 		}
 
 		/// <summary>

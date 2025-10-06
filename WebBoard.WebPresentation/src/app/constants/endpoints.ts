@@ -6,6 +6,7 @@ export const API_BASE_URL = environment.apiUrl;
 export const CONTROLLERS = {
   JOBS: 'jobs',
   TASKS: 'tasks',
+  REPORTS: 'reports',
 } as const;
 
 // Helper function to build endpoint URLs
@@ -30,4 +31,11 @@ export const TASKS_ENDPOINTS = {
   UPDATE: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
   DELETE: (id: string) => buildEndpoint(CONTROLLERS.TASKS, `/${id}`),
   GET_COUNT_BY_STATUS: (status: string) => buildEndpoint(CONTROLLERS.TASKS, `/status/${status}/count`),
+} as const;
+
+// Reports Controller Endpoints
+export const REPORTS_ENDPOINTS = {
+  BASE: buildEndpoint(CONTROLLERS.REPORTS),
+  DOWNLOAD: (id: string) => buildEndpoint(CONTROLLERS.REPORTS, `/${id}/download`),
+  GET_BY_JOB_ID: (jobId: string) => buildEndpoint(CONTROLLERS.REPORTS, `/by-job/${jobId}`),
 } as const;

@@ -68,6 +68,34 @@
               </div>
             </div>
 
+            <!-- Report Section -->
+            <div *ngIf="job.hasReport" class="card mb-3">
+              <div class="card-header">
+                <h6 class="mb-0">
+                  <i class="fas fa-file-download me-1"></i>Generated Report
+                </h6>
+              </div>
+              <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                  <div>
+                    <p class="mb-1">
+                      <i class="fas fa-file-alt me-2 text-success"></i>
+                      {{ job.reportFileName }}
+                    </p>
+                    <small class="text-muted">Report is ready for download</small>
+                  </div>
+                  <button
+                    class="btn btn-success"
+                    (click)="onDownloadReport()"
+                    [disabled]="isDownloading"
+                  >
+                    <i class="fas" [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'" me-1></i>
+                    {{ isDownloading ? 'Downloading...' : 'Download' }}
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div class="card">
               <div class="card-header">
                 <h6 class="mb-0">
@@ -91,8 +119,8 @@
                     report
                   </p>
                   <small class="text-muted"
-                    >This job will create a text file containing a summary of
-                    all tasks.</small
+                    >This job will create a report containing a summary of
+                    all tasks and make it available for download.</small
                   >
                 </div>
               </div>
@@ -133,11 +161,18 @@
                   }}</span>
                 </div>
 
-                <div class="mb-0" *ngIf="job.scheduledAt">
+                <div class="mb-3" *ngIf="job.scheduledAt">
                   <small class="text-muted d-block">Scheduled</small>
                   <span class="small">{{
                     job.scheduledAt | date : "medium"
                   }}</span>
+                </div>
+
+                <div class="mb-0" *ngIf="job.hasReport">
+                  <small class="text-muted d-block">Report</small>
+                  <span class="small text-success">
+                    <i class="fas fa-check-circle me-1"></i>Available
+                  </span>
                 </div>
               </div>
             </div>
@@ -157,6 +192,16 @@
         >
           <i class="fas fa-sync-alt me-1" [class.fa-spin]="refreshing"></i>
           Refresh Status
+        </button>
+        <button
+          *ngIf="job?.hasReport"
+          type="button"
+          class="btn btn-success"
+          (click)="onDownloadReport()"
+          [disabled]="isDownloading"
+        >
+          <i class="fas" [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'" me-1></i>
+          {{ isDownloading ? 'Downloading...' : 'Download Report' }}
         </button>
       </div>
     </div>

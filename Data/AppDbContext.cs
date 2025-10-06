@@ -7,6 +7,7 @@ namespace WebBoard.Data
 	{
 		public DbSet<TaskItem> Tasks => Set<TaskItem>();
 		public DbSet<Job> Jobs => Set<Job>();
+		public DbSet<Report> Reports => Set<Report>();
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
