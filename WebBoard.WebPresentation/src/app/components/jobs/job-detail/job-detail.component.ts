@@ -1,4 +1,12 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import {
+  Component,
+  EventEmitter,
+  Input,
+  Output,
+  OnDestroy,
+} from '@angular/core';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { JobDto, JobStatus } from '../../../models';
 import { JobService, ReportService } from '../../../services';
 import { DateTimeUtils } from '../../../utils/datetime.utils';
@@ -8,7 +16,7 @@ import { DateTimeUtils } from '../../../utils/datetime.utils';
   templateUrl: './job-detail.component.html',
   styleUrls: ['./job-detail.component.scss'],
 })
-export class JobDetailComponent {
+export class JobDetailComponent implements OnDestroy {
   @Input() job?: JobDto | null;
   @Output() close = new EventEmitter<void>();
 
@@ -16,10 +24,17 @@ export class JobDetailComponent {
   refreshing = false;
   isDownloading = false;
 
+  private destroy$ = new Subject<void>();
+
   constructor(
     private jobService: JobService,
     private reportService: ReportService
   ) {}
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
 
   getStatusClass(status: JobStatus): string {
     switch (status) {
@@ -125,16 +140,19 @@ export class JobDetailComponent {
       return;
     }
     this.refreshing = true;
-    this.jobService.getJobById(this.job.id).subscribe({
-      next: (updatedJob) => {
-        this.job = updatedJob;
-        this.refreshing = false;
-      },
-      error: (error) => {
-        console.error('Error refreshing job:', error);
-        this.refreshing = false;
-      },
-    });
+    this.jobService
+      .getJobById(this.job.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedJob) => {
+          this.job = updatedJob;
+          this.refreshing = false;
+        },
+        error: (error) => {
+          console.error('Error refreshing job:', error);
+          this.refreshing = false;
+        },
+      });
   }
 
   onDownloadReport(): void {
@@ -144,19 +162,22 @@ export class JobDetailComponent {
 
     this.isDownloading = true;
 
-    this.reportService.downloadReport(this.job.reportId).subscribe({
-      next: (blob) => {
-        // Trigger automatic download
-        const fileName = this.job?.reportFileName || 'report.txt';
-        this.reportService.triggerDownload(blob, fileName);
-        this.isDownloading = false;
-      },
-      error: (error) => {
-        console.error('Error downloading report:', error);
-        alert('Failed to download report. Please try again.');
-        this.isDownloading = false;
-      },
-    });
+    this.reportService
+      .downloadReport(this.job.reportId)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (blob) => {
+          // Trigger automatic download
+          const fileName = this.job?.reportFileName || 'report.txt';
+          this.reportService.triggerDownload(blob, fileName);
+          this.isDownloading = false;
+        },
+        error: (error) => {
+          console.error('Error downloading report:', error);
+          alert('Failed to download report. Please try again.');
+          this.isDownloading = false;
+        },
+      });
   }
 
   onClose(): void {

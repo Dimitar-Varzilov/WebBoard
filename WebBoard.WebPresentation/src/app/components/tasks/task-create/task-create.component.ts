@@ -1,6 +1,8 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Router } from '@angular/router';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
 import { TaskService } from '../../../services';
 import { CreateTaskRequestDto } from '../../../models';
 import { ROUTES } from '../../../constants';
@@ -10,9 +12,11 @@ import { ROUTES } from '../../../constants';
   templateUrl: './task-create.component.html',
   styleUrls: ['./task-create.component.scss'],
 })
-export class TaskCreateComponent implements OnInit {
+export class TaskCreateComponent implements OnInit, OnDestroy {
   taskForm: FormGroup;
   submitting = false;
+
+  private destroy$ = new Subject<void>();
 
   constructor(
     private fb: FormBuilder,
@@ -28,6 +32,11 @@ export class TaskCreateComponent implements OnInit {
 
   ngOnInit(): void {}
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+  }
+
   onSubmit(): void {
     if (this.taskForm.valid) {
       this.submitting = true;
@@ -36,24 +45,27 @@ export class TaskCreateComponent implements OnInit {
         description: this.taskForm.value.description,
       };
 
-      this.taskService.createTask(createRequest).subscribe({
-        next: (task) => {
-          this.submitting = false;
-          this.router.navigate([ROUTES.TASKS]);
-        },
-        error: (error) => {
-          console.error('Error creating task:', error);
-          this.submitting = false;
+      this.taskService
+        .createTask(createRequest)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: (task) => {
+            this.submitting = false;
+            this.router.navigate([ROUTES.TASKS]);
+          },
+          error: (error) => {
+            console.error('Error creating task:', error);
+            this.submitting = false;
 
-          // Handle validation errors from backend
-          if (error.status === 400 && error.error) {
-            const errorMessage = this.extractValidationErrors(error.error);
-            alert(`Failed to create task: ${errorMessage}`);
-          } else {
-            alert('Failed to create task. Please try again.');
-          }
-        },
-      });
+            // Handle validation errors from backend
+            if (error.status === 400 && error.error) {
+              const errorMessage = this.extractValidationErrors(error.error);
+              alert(`Failed to create task: ${errorMessage}`);
+            } else {
+              alert('Failed to create task. Please try again.');
+            }
+          },
+        });
     } else {
       this.markFormGroupTouched();
     }

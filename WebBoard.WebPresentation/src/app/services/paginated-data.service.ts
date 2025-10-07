@@ -1,5 +1,4 @@
-import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, of, Subscription } from 'rxjs';
 import {
   debounceTime,
   distinctUntilChanged,
@@ -46,6 +45,7 @@ export interface PaginatedState<TParams extends QueryParameters> {
 export class PaginatedDataService<T, TParams extends QueryParameters> {
   private stateSubject: BehaviorSubject<PaginatedState<TParams>>;
   private refreshSubject = new Subject<void>();
+  private subscriptions = new Subscription();
 
   public state$: Observable<PaginatedState<TParams>>;
 
@@ -72,25 +72,35 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
     );
     this.state$ = this.stateSubject.asObservable();
 
-    // Derived observables
+    // Derived observables - use map operator to avoid subscription leaks
     this.data$ = new Observable((observer) => {
-      this.state$.subscribe((state) => observer.next(state.data as T[]));
+      const sub = this.state$.subscribe((state) =>
+        observer.next(state.data as T[])
+      );
+      return () => sub.unsubscribe();
     });
 
     this.metadata$ = new Observable((observer) => {
-      this.state$.subscribe((state) => observer.next(state.metadata));
+      const sub = this.state$.subscribe((state) =>
+        observer.next(state.metadata)
+      );
+      return () => sub.unsubscribe();
     });
 
     this.loading$ = new Observable((observer) => {
-      this.state$.subscribe((state) => observer.next(state.loading));
+      const sub = this.state$.subscribe((state) =>
+        observer.next(state.loading)
+      );
+      return () => sub.unsubscribe();
     });
 
     this.error$ = new Observable((observer) => {
-      this.state$.subscribe((state) => observer.next(state.error));
+      const sub = this.state$.subscribe((state) => observer.next(state.error));
+      return () => sub.unsubscribe();
     });
 
     // Setup auto-refresh on parameter changes with debounce
-    this.refreshSubject
+    const refreshSub = this.refreshSubject
       .pipe(
         debounceTime(300), // Debounce search input
         distinctUntilChanged(),
@@ -104,6 +114,8 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
           console.error('Error in refresh subscription:', error);
         },
       });
+
+    this.subscriptions.add(refreshSub);
   }
 
   /**
@@ -181,7 +193,8 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
    */
   reload(): void {
     this.setLoading(true);
-    this.fetchData().subscribe();
+    const sub = this.fetchData().subscribe();
+    this.subscriptions.add(sub);
   }
 
   /**
@@ -322,5 +335,15 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
    */
   private setLoading(loading: boolean): void {
     this.setState({ loading });
+  }
+
+  /**
+   * Cleanup method to prevent memory leaks
+   * Call this when the service instance is no longer needed
+   */
+  destroy(): void {
+    this.subscriptions.unsubscribe();
+    this.refreshSubject.complete();
+    this.stateSubject.complete();
   }
 }

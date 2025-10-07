@@ -68,6 +68,10 @@ export class TaskListComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
+    // Cleanup pagination service to prevent memory leaks
+    if (this.paginationService) {
+      this.paginationService.destroy();
+    }
   }
 
   // Convenience getters for template
@@ -198,15 +202,18 @@ export class TaskListComponent implements OnInit, OnDestroy {
 
   deleteTask(task: TaskDto): void {
     if (confirm(`Are you sure you want to delete the task "${task.title}"?`)) {
-      this.taskService.deleteTask(task.id).subscribe({
-        next: () => {
-          this.refreshTasks();
-        },
-        error: (error) => {
-          console.error('Error deleting task:', error);
-          alert('Failed to delete task. Please try again.');
-        },
-      });
+      this.taskService
+        .deleteTask(task.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.refreshTasks();
+          },
+          error: (error) => {
+            console.error('Error deleting task:', error);
+            alert('Failed to delete task. Please try again.');
+          },
+        });
     }
   }
 

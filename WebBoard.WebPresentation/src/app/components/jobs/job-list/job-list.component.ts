@@ -112,17 +112,20 @@ export class JobListComponent implements OnInit, OnDestroy {
       sortDirection: 'desc',
     };
 
-    this.jobService.getJobs(params).subscribe({
-      next: (result) => {
-        this.jobs = result.items;
-        this.filterJobs();
-        this.loading = false;
-      },
-      error: (error: any) => {
-        console.error('Error loading jobs:', error);
-        this.loading = false;
-      },
-    });
+    this.jobService
+      .getJobs(params)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (result) => {
+          this.jobs = result.items;
+          this.filterJobs();
+          this.loading = false;
+        },
+        error: (error: any) => {
+          console.error('Error loading jobs:', error);
+          this.loading = false;
+        },
+      });
   }
 
   refreshJobs(): void {
@@ -155,18 +158,21 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   refreshJobStatus(job: JobDto): void {
-    this.jobService.getJobById(job.id).subscribe({
-      next: (updatedJob: JobDto) => {
-        const index = this.jobs.findIndex((j) => j.id === job.id);
-        if (index !== -1) {
-          this.jobs[index] = updatedJob;
-          this.filterJobs();
-        }
-      },
-      error: (error: any) => {
-        console.error('Error refreshing job status:', error);
-      },
-    });
+    this.jobService
+      .getJobById(job.id)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe({
+        next: (updatedJob: JobDto) => {
+          const index = this.jobs.findIndex((j) => j.id === job.id);
+          if (index !== -1) {
+            this.jobs[index] = updatedJob;
+            this.filterJobs();
+          }
+        },
+        error: (error: any) => {
+          console.error('Error refreshing job status:', error);
+        },
+      });
   }
 
   getJobCountByStatus(status: JobStatus): number {
