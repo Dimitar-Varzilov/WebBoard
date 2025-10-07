@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
 using FluentAssertions;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Common.DTOs.Jobs;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Services.Jobs;
 using WebBoard.API.Hubs;
@@ -51,12 +53,11 @@ namespace WebBoard.Tests
 			// Assert
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
-					"JobStatusUpdated",
+					SignalRConstants.Methods.JobStatusUpdated,
 					It.Is<object[]>(o => o.Length == 1 && ((JobStatusUpdateDto)o[0]).JobId == jobId),
 					default),
 				Times.Once);
 		}
-
 		[Fact]
 		public async Task NotifyJobStatusAsync_ShouldBroadcastToSpecificJobGroup()
 		{
@@ -71,17 +72,16 @@ namespace WebBoard.Tests
 
 			// Assert
 			_mockClients.Verify(
-				x => x.Group(expectedGroupName),
-				Times.Once);
+			x => x.Group(expectedGroupName),
+			Times.Once);
 
 			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
-					"JobStatusUpdated",
+					SignalRConstants.Methods.JobStatusUpdated,
 					It.Is<object[]>(o => o.Length == 1 && ((JobStatusUpdateDto)o[0]).JobId == jobId),
 					default),
 				Times.Once);
 		}
-
 		[Fact]
 		public async Task NotifyJobStatusAsync_ShouldIncludeJobTypeInUpdate()
 		{
@@ -96,12 +96,11 @@ namespace WebBoard.Tests
 			// Assert
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
-					"JobStatusUpdated",
+					SignalRConstants.Methods.JobStatusUpdated,
 					It.Is<object[]>(o => o.Length == 1 && ((JobStatusUpdateDto)o[0]).JobType == jobType),
 					default),
 				Times.Once);
 		}
-
 		[Fact]
 		public async Task NotifyJobStatusAsync_ShouldIncludeStatusInUpdate()
 		{
@@ -138,8 +137,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).ErrorMessage == errorMessage),
 					default),
 				Times.Once);
@@ -160,8 +159,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).ErrorMessage == null),
 					default),
 				Times.Once);
@@ -185,8 +184,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).Status == status),
 					default),
 				Times.Once);
@@ -277,8 +276,8 @@ namespace WebBoard.Tests
 			// Assert
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
-					"JobProgressUpdated",
-					It.Is<object[]>(o => o.Length == 1),
+					SignalRConstants.Methods.JobProgressUpdated,
+					It.Is<object[]>(o => o.Length == 1 && ((JobProgressUpdateDto)o[0]).JobId == jobId),
 					default),
 				Times.Once);
 		}
@@ -300,7 +299,7 @@ namespace WebBoard.Tests
 			// Assert
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
-					"JobProgressUpdated",
+					SignalRConstants.Methods.JobProgressUpdated,
 					It.IsAny<object[]>(),
 					default),
 				Times.Once);
@@ -321,7 +320,7 @@ namespace WebBoard.Tests
 				x => x.Log(
 					LogLevel.Debug,
 					It.IsAny<EventId>(),
-					It.Is<It.IsAnyType>((v, t) => 
+					It.Is<It.IsAnyType>((v, t) =>
 						v.ToString()!.Contains($"Broadcasted job progress") &&
 						v.ToString()!.Contains($"{progress}%")),
 					It.IsAny<Exception>(),
@@ -412,8 +411,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).ReportId == reportId),
 					default),
 				Times.Once);
@@ -434,8 +433,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).ReportFileName == fileName),
 					default),
 				Times.Once);
@@ -456,8 +455,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).HasReport == true),
 					default),
 				Times.Once);
@@ -478,8 +477,8 @@ namespace WebBoard.Tests
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).Status == JobStatus.Completed),
 					default),
 				Times.Once);
@@ -501,7 +500,7 @@ namespace WebBoard.Tests
 				x => x.Log(
 					LogLevel.Information,
 					It.IsAny<EventId>(),
-					It.Is<It.IsAnyType>((v, t) => 
+					It.Is<It.IsAnyType>((v, t) =>
 						v.ToString()!.Contains($"Broadcasted report generation") &&
 						v.ToString()!.Contains($"{jobId}") &&
 						v.ToString()!.Contains($"{reportId}")),
@@ -630,8 +629,8 @@ namespace WebBoard.Tests
 			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).JobId == jobId),
 					default),
 				Times.Once);
@@ -652,8 +651,8 @@ namespace WebBoard.Tests
 			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).JobType == jobType),
 					default),
 				Times.Once);
@@ -674,8 +673,8 @@ namespace WebBoard.Tests
 			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
-					It.Is<object[]>(o => 
-						o.Length == 1 && 
+					It.Is<object[]>(o =>
+						o.Length == 1 &&
 						((JobStatusUpdateDto)o[0]).Status == status),
 					default),
 				Times.Once);
@@ -697,7 +696,7 @@ namespace WebBoard.Tests
 				x => x.Log(
 					LogLevel.Debug,
 					It.IsAny<EventId>(),
-					It.Is<It.IsAnyType>((v, t) => 
+					It.Is<It.IsAnyType>((v, t) =>
 						v.ToString()!.Contains($"Notified job group for job {jobId}")),
 					It.IsAny<Exception>(),
 					It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
@@ -773,16 +772,15 @@ namespace WebBoard.Tests
 					"JobStatusUpdated",
 					It.IsAny<object[]>(),
 					default),
-				Times.Exactly(3));
+			Times.Exactly(3));
 
 			_mockAllClientsProxy.Verify(
 				x => x.SendCoreAsync(
-					"JobProgressUpdated",
+					SignalRConstants.Methods.JobProgressUpdated,
 					It.IsAny<object[]>(),
 					default),
 				Times.Once);
 		}
-
 		[Fact]
 		public async Task NotifyJobWithReport_ShouldSendBothStatusAndReportNotifications()
 		{

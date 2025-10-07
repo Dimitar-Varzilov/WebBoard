@@ -2,6 +2,7 @@ using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using WebBoard.API.Common.DTOs.Jobs;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Hubs;
 

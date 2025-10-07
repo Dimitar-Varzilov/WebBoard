@@ -1,5 +1,5 @@
 using Microsoft.AspNetCore.SignalR;
-using WebBoard.API.Common.Enums;
+using WebBoard.API.Common.Constants;
 
 namespace WebBoard.API.Hubs
 {
@@ -33,7 +33,7 @@ namespace WebBoard.API.Hubs
 		/// <param name="jobId">Job ID to subscribe to</param>
 		public async Task SubscribeToJob(string jobId)
 		{
-			await Groups.AddToGroupAsync(Context.ConnectionId, $"job_{jobId}");
+			await Groups.AddToGroupAsync(Context.ConnectionId, SignalRConstants.Groups.GetJobGroup(Guid.Parse(jobId)));
 			logger.LogInformation("Client {ConnectionId} subscribed to job {JobId}", Context.ConnectionId, jobId);
 		}
 
@@ -43,23 +43,8 @@ namespace WebBoard.API.Hubs
 		/// <param name="jobId">Job ID to unsubscribe from</param>
 		public async Task UnsubscribeFromJob(string jobId)
 		{
-			await Groups.RemoveFromGroupAsync(Context.ConnectionId, $"job_{jobId}");
+			await Groups.RemoveFromGroupAsync(Context.ConnectionId, SignalRConstants.Groups.GetJobGroup(Guid.Parse(jobId)));
 			logger.LogInformation("Client {ConnectionId} unsubscribed from job {JobId}", Context.ConnectionId, jobId);
 		}
 	}
-
-	/// <summary>
-	/// DTO for job status update notifications
-	/// </summary>
-	public record JobStatusUpdateDto(
-		Guid JobId,
-		string JobType,
-		JobStatus Status,
-		DateTimeOffset UpdatedAt,
-		int? Progress = null,
-		string? ErrorMessage = null,
-		bool HasReport = false,
-		Guid? ReportId = null,
-		string? ReportFileName = null,
-		int? TaskCount = null);
 }

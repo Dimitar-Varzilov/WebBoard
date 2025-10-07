@@ -1,4 +1,6 @@
 using Microsoft.AspNetCore.SignalR;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Common.DTOs.Jobs;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Hubs;
 
@@ -24,11 +26,11 @@ namespace WebBoard.API.Services.Jobs
 				);
 
 				// Broadcast to all clients
-				await hubContext.Clients.All.SendAsync("JobStatusUpdated", update);
+				await hubContext.Clients.All.SendAsync(SignalRConstants.Methods.JobStatusUpdated, update);
 
 				// Also send to specific job group
-				await hubContext.Clients.Group($"job_{jobId}")
-					.SendAsync("JobStatusUpdated", update);
+				await hubContext.Clients.Group(SignalRConstants.Groups.GetJobGroup(jobId))
+					.SendAsync(SignalRConstants.Methods.JobStatusUpdated, update);
 
 				logger.LogInformation(
 					"Broadcasted job status update: Job {JobId} status changed to {Status}",
@@ -44,12 +46,13 @@ namespace WebBoard.API.Services.Jobs
 		{
 			try
 			{
-				await hubContext.Clients.All.SendAsync("JobProgressUpdated", new
-				{
-					JobId = jobId,
-					Progress = progress,
-					UpdatedAt = DateTimeOffset.UtcNow
-				});
+				var update = new JobProgressUpdateDto(
+					JobId: jobId,
+					Progress: progress,
+					UpdatedAt: DateTimeOffset.UtcNow
+				);
+
+				await hubContext.Clients.All.SendAsync(SignalRConstants.Methods.JobProgressUpdated, update);
 
 				logger.LogDebug("Broadcasted job progress: Job {JobId} progress {Progress}%", jobId, progress);
 			}
@@ -73,7 +76,7 @@ namespace WebBoard.API.Services.Jobs
 					ReportFileName: fileName
 				);
 
-				await hubContext.Clients.All.SendAsync("ReportGenerated", update);
+				await hubContext.Clients.All.SendAsync(SignalRConstants.Methods.ReportGenerated, update);
 
 				logger.LogInformation(
 					"Broadcasted report generation: Job {JobId} generated report {ReportId}",
@@ -96,8 +99,8 @@ namespace WebBoard.API.Services.Jobs
 					UpdatedAt: DateTimeOffset.UtcNow
 				);
 
-				await hubContext.Clients.Group($"job_{jobId}")
-					.SendAsync("JobStatusUpdated", update);
+				await hubContext.Clients.Group(SignalRConstants.Groups.GetJobGroup(jobId))
+					.SendAsync(SignalRConstants.Methods.JobStatusUpdated, update);
 
 				logger.LogDebug("Notified job group for job {JobId}", jobId);
 			}
