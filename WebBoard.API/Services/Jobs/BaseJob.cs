@@ -1,5 +1,4 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Options;
 using Quartz;
 using WebBoard.API.Common.Constants;
 using WebBoard.API.Common.Enums;
@@ -58,7 +57,7 @@ namespace WebBoard.API.Services.Jobs
 				{
 					// Update status to Completed and broadcast via SignalR
 					await UpdateJobStatusAsync(dbContext, job, JobStatus.Completed, statusNotifier, ct);
-					Logger.LogInformation("Job {JobId} completed successfully. Processed {TaskCount} tasks", 
+					Logger.LogInformation("Job {JobId} completed successfully. Processed {TaskCount} tasks",
 						jobId, result.TasksProcessed);
 
 					// Update tasks to completed status if job completed successfully
@@ -133,7 +132,7 @@ namespace WebBoard.API.Services.Jobs
 		{
 			// Get all pending or in-progress tasks assigned to this job
 			var tasksToUpdate = await dbContext.Tasks
-				.Where(t => t.JobId == jobId && 
+				.Where(t => t.JobId == jobId &&
 					(t.Status == TaskItemStatus.Pending || t.Status == TaskItemStatus.InProgress))
 				.ToListAsync(ct);
 
@@ -152,7 +151,7 @@ namespace WebBoard.API.Services.Jobs
 
 			await dbContext.SaveChangesAsync(ct);
 
-			Logger.LogInformation("Updated {TaskCount} tasks to Completed status for job {JobId}", 
+			Logger.LogInformation("Updated {TaskCount} tasks to Completed status for job {JobId}",
 				tasksToUpdate.Count, jobId);
 
 			return tasksToUpdate.Count;
