@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
+using FluentAssertions;
 using WebBoard.Common.Enums;
 using WebBoard.Hubs;
 
