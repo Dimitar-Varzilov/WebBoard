@@ -1,10 +1,11 @@
 import { Injectable } from '@angular/core';
-import { BehaviorSubject, Observable, Subject } from 'rxjs';
+import { BehaviorSubject, Observable, Subject, of } from 'rxjs';
 import {
   debounceTime,
   distinctUntilChanged,
   switchMap,
   tap,
+  catchError,
 } from 'rxjs/operators';
 import {
   PagedResult,
@@ -96,7 +97,13 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
         tap(() => this.setLoading(true)),
         switchMap(() => this.fetchData())
       )
-      .subscribe();
+      .subscribe({
+        error: (error) => {
+          // Error is already handled in fetchData's tap operator
+          // This prevents uncaught errors from propagating
+          console.error('Error in refresh subscription:', error);
+        },
+      });
   }
 
   /**
@@ -278,15 +285,27 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
             error: null,
           });
         },
-        error: (error) => {
-          console.error('Error fetching paginated data:', error);
-          this.setState({
-            data: [],
-            metadata: null,
-            loading: false,
-            error: error.message || 'Failed to load data',
-          });
-        },
+      }),
+      catchError((error) => {
+        console.error('Error fetching paginated data:', error);
+        this.setState({
+          data: [],
+          metadata: null,
+          loading: false,
+          error: error.message || 'Failed to load data',
+        });
+        // Return empty result to prevent error propagation
+        return of({
+          items: [],
+          metadata: {
+            currentPage: 1,
+            pageSize: this.currentState.parameters.pageSize || 10,
+            totalCount: 0,
+            totalPages: 0,
+            hasPrevious: false,
+            hasNext: false,
+          },
+        });
       })
     );
   }
