@@ -8,6 +8,8 @@ namespace WebBoard.API.Services
 {
 	public class JobStartupService(
 		IServiceProvider serviceProvider,
+		IScheduler scheduler,
+		IJobSchedulingService jobSchedulingService,
 		ILogger<JobStartupService> logger) : IHostedService
 	{
 		private static bool _hasRunOnce = false;
@@ -33,11 +35,6 @@ namespace WebBoard.API.Services
 
 			try
 			{
-				using var scope = serviceProvider.CreateScope();
-				var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-				var jobSchedulingService = scope.ServiceProvider.GetRequiredService<IJobSchedulingService>();
-				var scheduler = scope.ServiceProvider.GetRequiredService<IScheduler>();
-
 				// Ensure scheduler is started
 				if (!scheduler.IsStarted)
 				{
@@ -55,6 +52,10 @@ namespace WebBoard.API.Services
 						logger.LogWarning("Quartz scheduler is not started after waiting {MaxWait} seconds, proceeding anyway", maxWait.TotalSeconds);
 					}
 				}
+
+				// Create scope only for DbContext (scoped service)
+				using var scope = serviceProvider.CreateScope();
+				var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
 
 				// Find all queued jobs that haven't been scheduled yet
 				// Use a timestamp check to avoid interfering with jobs created during startup

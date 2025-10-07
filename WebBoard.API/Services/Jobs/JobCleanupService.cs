@@ -9,7 +9,7 @@ namespace WebBoard.API.Services.Jobs
 {
 	public class JobCleanupService(
 		IScheduler scheduler,
-		IServiceProvider serviceProvider,
+		AppDbContext dbContext,
 		IOptions<JobCleanupOptions> cleanupOptions,
 		ILogger<JobCleanupService> logger) : IJobCleanupService
 	{
@@ -19,10 +19,7 @@ namespace WebBoard.API.Services.Jobs
 		{
 			try
 			{
-				using var scope = serviceProvider.CreateScope();
-				var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-				// Get the job from database
+				// Get the job from database using injected DbContext
 				var job = await dbContext.Jobs.FindAsync(jobId);
 				if (job == null)
 				{
@@ -50,7 +47,7 @@ namespace WebBoard.API.Services.Jobs
 				if (_cleanupOptions.RemoveFromDatabase)
 				{
 					logger.LogWarning("Database cleanup is enabled - removing job {JobId} from database", jobId);
-					cleanupTasks.Add(CleanupFromDatabase(dbContext, job));
+					cleanupTasks.Add(CleanupFromDatabase(job));
 				}
 				else
 				{
@@ -88,10 +85,7 @@ namespace WebBoard.API.Services.Jobs
 		{
 			try
 			{
-				using var scope = serviceProvider.CreateScope();
-				var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-
-				// Get all completed jobs
+				// Get all completed jobs using injected DbContext
 				var completedJobs = await dbContext.Jobs
 					.Where(j => j.Status == JobStatus.Completed)
 					.ToListAsync();
@@ -176,7 +170,7 @@ namespace WebBoard.API.Services.Jobs
 			}
 		}
 
-		private async Task CleanupFromDatabase(AppDbContext dbContext, Job job)
+		private async Task CleanupFromDatabase(Job job)
 		{
 			dbContext.Jobs.Remove(job);
 			await dbContext.SaveChangesAsync();

@@ -1,4 +1,3 @@
-using Microsoft.Extensions.Options;
 using Quartz;
 using WebBoard.API.Common.Constants;
 using WebBoard.API.Common.Enums;
@@ -21,38 +20,31 @@ namespace WebBoard.API.Services.Jobs
 			var ct = context.CancellationToken;
 
 			using var scope = ServiceProvider.CreateScope();
-			var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-			var jobCleanupService = scope.ServiceProvider.GetRequiredService<IJobCleanupService>();
-			var cleanupOptions = scope.ServiceProvider.GetRequiredService<IOptions<JobCleanupOptions>>().Value;
-			var statusNotifier = scope.ServiceProvider.GetRequiredService<IJobStatusNotifier>();
+			var scopedServices = scope.ServiceProvider;
+			var dbContext = scopedServices.GetRequiredService<AppDbContext>();
+			var jobCleanupService = scopedServices.GetRequiredService<IJobCleanupService>();
+			var statusNotifier = scopedServices.GetRequiredService<IJobStatusNotifier>();
+
+			// Load the job entity
+			var job = await dbContext.Jobs.FindAsync(jobId, ct);
+			if (job == null)
+			{
+				Logger.LogError("Job {JobId} not found", jobId);
+				return;
+			}
 
 			try
 			{
-				// Load the job entity
-				var job = await dbContext.Jobs.FindAsync(jobId, ct);
-				if (job == null)
-				{
-					Logger.LogError("Job {JobId} not found", jobId);
-					return;
-				}
-
 				// Update status to Running and broadcast via SignalR
 				await UpdateJobStatusAsync(dbContext, job, JobStatus.Running, statusNotifier, ct);
 				Logger.LogInformation("Starting execution of job {JobId} of type {JobType}", jobId, job.JobType);
 
-				// Execute the actual job logic
-				await ExecuteJobLogic(dbContext, jobId, ct);
+				// Execute the actual job logic - pass scoped service provider to avoid nested scopes
+				await ExecuteJobLogic(scopedServices, dbContext, jobId, ct);
 
 				// Update status to Completed and broadcast via SignalR
 				await UpdateJobStatusAsync(dbContext, job, JobStatus.Completed, statusNotifier, ct);
 				Logger.LogInformation("Job {JobId} completed successfully", jobId);
-
-				// Clean up from scheduler if configured
-				if (cleanupOptions.AutoCleanupCompletedJobs && cleanupOptions.RetentionPeriod == TimeSpan.Zero)
-				{
-					await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
-					Logger.LogInformation("Job {JobId} removed from scheduler but preserved in database for audit trail", jobId);
-				}
 			}
 			catch (Exception ex)
 			{
@@ -61,24 +53,9 @@ namespace WebBoard.API.Services.Jobs
 				// Update job status to Failed and broadcast via SignalR
 				try
 				{
-					var job = await dbContext.Jobs.FindAsync(jobId, ct);
-					if (job != null)
-					{
-						await UpdateJobStatusAsync(dbContext, job, JobStatus.Failed, statusNotifier, ct, ex.Message);
-						Logger.LogWarning("Job {JobId} marked as Failed and preserved in database for troubleshooting", jobId);
-
-						// Clean up failed job from scheduler only
-						try
-						{
-							await jobCleanupService.CleanupFromSchedulerOnlyAsync(jobId);
-							Logger.LogInformation("Failed job {JobId} removed from scheduler but preserved in database", jobId);
-						}
-						catch (Exception cleanupEx)
-						{
-							Logger.LogError(cleanupEx, "Failed to cleanup job {JobId} from scheduler after failure", jobId);
-						}
+					await UpdateJobStatusAsync(dbContext, job, JobStatus.Failed, statusNotifier, ct, ex.Message);
+					Logger.LogWarning("Job {JobId} marked as Failed and preserved in database for troubleshooting", jobId);
 					}
-				}
 				catch (Exception statusUpdateEx)
 				{
 					Logger.LogError(statusUpdateEx, "Failed to update job status to Failed for job {JobId}", jobId);
@@ -86,7 +63,12 @@ namespace WebBoard.API.Services.Jobs
 
 				throw;
 			}
+            finally
+            {
+                // Cleanup completed jobs based on configuration
+                await jobCleanupService.CleanupCompletedJobAsync(jobId);
 		}
+        }
 
 		/// <summary>
 		/// Update job status in database and notify all clients via SignalR
@@ -114,6 +96,14 @@ namespace WebBoard.API.Services.Jobs
 		/// <summary>
 		/// Override this method to implement the actual job logic
 		/// </summary>
-		protected abstract Task ExecuteJobLogic(AppDbContext dbContext, Guid jobId, CancellationToken cancellationToken);
+		/// <param name="scopedServices">Scoped service provider for resolving services without creating nested scopes</param>
+		/// <param name="dbContext">Database context from the current scope</param>
+		/// <param name="jobId">The job ID being executed</param>
+		/// <param name="cancellationToken">Cancellation token</param>
+		protected abstract Task ExecuteJobLogic(
+			IServiceProvider scopedServices,
+			AppDbContext dbContext,
+			Guid jobId,
+			CancellationToken cancellationToken);
 	}
 }

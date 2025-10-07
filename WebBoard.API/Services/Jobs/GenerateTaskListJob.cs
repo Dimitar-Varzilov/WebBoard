@@ -10,33 +10,51 @@ namespace WebBoard.API.Services.Jobs
 	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger)
 		: BaseJob(serviceProvider, logger)
 	{
-		protected override async Task ExecuteJobLogic(AppDbContext dbContext, Guid jobId, CancellationToken cancellationToken)
+		protected override async Task ExecuteJobLogic(
+			IServiceProvider scopedServices,
+			AppDbContext dbContext,
+			Guid jobId,
+			CancellationToken cancellationToken)
 		{
 			Logger.LogInformation("Starting task list generation for job {JobId}", jobId);
 
-			using var scope = ServiceProvider.CreateScope();
-			var reportService = scope.ServiceProvider.GetRequiredService<IReportService>();
+			// Get services from the scoped provider (no nested scope needed)
+			var reportService = scopedServices.GetRequiredService<IReportService>();
+			var statusNotifier = scopedServices.GetRequiredService<IJobStatusNotifier>();
 
-			// Generate task list report content
-			var reportContent = await GenerateTaskListReportAsync(dbContext, cancellationToken);
-			var fileName = $"TaskList_{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
+			// Generate task list report content for tasks assigned to this job only
+			var reportContent = await GenerateJobTaskListReportAsync(dbContext, jobId, cancellationToken);
+			var fileName = $"TaskList_Job_{jobId}_{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
 			var contentType = "text/plain";
 
 			// Create report entity linked to this job
-			await reportService.CreateReportAsync(jobId, fileName, reportContent, contentType);
+			var report = await reportService.CreateReportAsync(jobId, fileName, reportContent, contentType);
 
-			Logger.LogInformation("Task list generation completed for job {JobId}", jobId);
+			// Notify clients about report generation
+			await statusNotifier.NotifyReportGeneratedAsync(jobId, report.Id, fileName);
+
+			Logger.LogInformation("Task list generation completed for job {JobId} with report {ReportId}", jobId, report.Id);
 		}
 
-		private static async Task<string> GenerateTaskListReportAsync(AppDbContext dbContext, CancellationToken ct)
+		/// <summary>
+		/// Generates a task list report for tasks assigned to the specified job
+		/// </summary>
+		/// <param name="dbContext">Database context</param>
+		/// <param name="jobId">The job ID to generate report for</param>
+		/// <param name="ct">Cancellation token</param>
+		/// <returns>Report content as string</returns>
+		private async Task<string> GenerateJobTaskListReportAsync(AppDbContext dbContext, Guid jobId, CancellationToken ct)
 		{
+			// Get only tasks assigned to this specific job
 			var tasks = await dbContext.Tasks
 				.AsNoTracking()
+				.Where(t => t.JobId == jobId)
 				.OrderBy(t => t.CreatedAt)
 				.ToListAsync(ct);
 
 			var report = new StringBuilder();
 			report.AppendLine("TASK LIST REPORT");
+			report.AppendLine($"Job ID: {jobId}");
 			report.AppendLine($"Generated on: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC");
 			report.AppendLine($"Total Tasks: {tasks.Count}");
 			report.AppendLine(new string('=', 50));
@@ -44,10 +62,13 @@ namespace WebBoard.API.Services.Jobs
 
 			if (tasks.Count == 0)
 			{
-				report.AppendLine("No tasks found.");
+				Logger.LogWarning("No tasks found for job {JobId}", jobId);
+				report.AppendLine("No tasks assigned to this job.");
 			}
 			else
 			{
+				Logger.LogInformation("Generating report for {TaskCount} tasks in job {JobId}", tasks.Count, jobId);
+
 				// Group tasks by status
 				var tasksByStatus = tasks.GroupBy(t => t.Status);
 

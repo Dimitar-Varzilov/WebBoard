@@ -23,53 +23,11 @@ namespace WebBoard.API.Services.Jobs
 					await scheduler.DeleteJob(jobKey);
 				}
 
-				// Create job data map with job ID
-				var jobDataMap = new JobDataMap
-				{
-					[Constants.JobDataKeys.JobId] = job.Id
-				};
-
-				// Get job type using the registry
-				var quartzJobType = jobTypeRegistry.GetJobType(job.JobType);
-
 				// Create job detail
-				var jobDetail = JobBuilder.Create(quartzJobType)
-					.WithIdentity(jobKey)
-					.SetJobData(jobDataMap)
-					.Build();
+				var jobDetail = CreateJobDetail(job.Id, job.JobType);
 
 				// Create trigger based on scheduling
-				ITrigger trigger;
-				if (job.ScheduledAt == null)
-				{
-					// Run immediately
-					trigger = TriggerBuilder.Create()
-						.WithIdentity(triggerKey)
-						.StartNow()
-						.Build();
-				}
-				else
-				{
-					// Check if scheduled time is in the past
-					if (job.ScheduledAt.Value <= DateTimeOffset.UtcNow)
-					{
-						logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately",
-							job.Id, job.ScheduledAt.Value);
-
-						trigger = TriggerBuilder.Create()
-							.WithIdentity(triggerKey)
-							.StartNow()
-							.Build();
-					}
-					else
-					{
-						// Schedule for specific time - convert DateTimeOffset to DateTimeOffset for Quartz
-						trigger = TriggerBuilder.Create()
-							.WithIdentity(triggerKey)
-							.StartAt(job.ScheduledAt.Value)
-							.Build();
-					}
-				}
+				var trigger = CreateJobTrigger(job.Id, job.ScheduledAt);
 
 				// Schedule the job
 				await scheduler.ScheduleJob(jobDetail, trigger);
@@ -82,6 +40,70 @@ namespace WebBoard.API.Services.Jobs
 				logger.LogError(ex, "Error scheduling job {JobId}", job.Id);
 				throw;
 			}
+		}
+
+		/// <summary>
+		/// Creates a Quartz JobDetail for the specified job
+		/// </summary>
+		/// <param name="jobId">The unique identifier for the job</param>
+		/// <param name="jobType">The type of job to create</param>
+		/// <returns>A configured IJobDetail instance</returns>
+		private IJobDetail CreateJobDetail(Guid jobId, string jobType)
+		{
+			var jobKey = new JobKey(jobId.ToString());
+
+			// Create job data map with job ID
+			var jobDataMap = new JobDataMap
+			{
+				[Constants.JobDataKeys.JobId] = jobId
+			};
+
+			// Get job type using the registry
+			var quartzJobType = jobTypeRegistry.GetJobType(jobType);
+
+			// Create and return job detail
+			return JobBuilder.Create(quartzJobType)
+				.WithIdentity(jobKey)
+				.SetJobData(jobDataMap)
+				.Build();
+		}
+
+		/// <summary>
+		/// Creates a Quartz trigger for the specified job
+		/// </summary>
+		/// <param name="jobId">The unique identifier for the job</param>
+		/// <param name="scheduledAt">The scheduled execution time, or null to run immediately</param>
+		/// <returns>A configured ITrigger instance</returns>
+		private ITrigger CreateJobTrigger(Guid jobId, DateTimeOffset? scheduledAt)
+		{
+			var triggerKey = new TriggerKey($"{jobId}-trigger");
+
+			// Run immediately if no scheduled time
+			if (scheduledAt == null)
+			{
+				return TriggerBuilder.Create()
+					.WithIdentity(triggerKey)
+					.StartNow()
+					.Build();
+			}
+
+			// Check if scheduled time is in the past
+			if (scheduledAt.Value <= DateTimeOffset.UtcNow)
+			{
+				logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately",
+					jobId, scheduledAt.Value);
+
+				return TriggerBuilder.Create()
+					.WithIdentity(triggerKey)
+					.StartNow()
+					.Build();
+			}
+
+			// Schedule for specific time
+			return TriggerBuilder.Create()
+				.WithIdentity(triggerKey)
+				.StartAt(scheduledAt.Value)
+				.Build();
 		}
 	}
 }
