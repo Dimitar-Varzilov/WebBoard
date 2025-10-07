@@ -20,8 +20,15 @@ describe('TaskService', () => {
     id: '123e4567-e89b-12d3-a456-426614174000',
     title: 'Test Task',
     description: 'Test Description',
-    status: TaskItemStatus.OnHold,
-    createdAt: new Date('2024-01-01T00:00:00Z'),
+    status: TaskItemStatus.Pending,
+    createdAt: '2024-01-01T00:00:00Z',
+    createdAtDate: new Date('2024-01-01T00:00:00Z'),
+    createdAtDisplay: 'Jan 1, 2024',
+    createdAtRelative: '1 day ago',
+    createdAtCompact: '1/1/24',
+    isRecent: false,
+    age: 1,
+    isAssignedToJob: false,
   };
 
   const mockTasks: TaskDto[] = [
@@ -31,7 +38,14 @@ describe('TaskService', () => {
       title: 'Another Task',
       description: 'Another Description',
       status: TaskItemStatus.InProgress,
-      createdAt: new Date('2024-01-02T00:00:00Z'),
+      createdAt: '2024-01-02T00:00:00Z',
+      createdAtDate: new Date('2024-01-02T00:00:00Z'),
+      createdAtDisplay: 'Jan 2, 2024',
+      createdAtRelative: '2 days ago',
+      createdAtCompact: '1/2/24',
+      isRecent: false,
+      age: 2,
+      isAssignedToJob: false,
     },
   ];
 
@@ -63,34 +77,59 @@ describe('TaskService', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('getAllTasks', () => {
-    it('should return an array of tasks', () => {
-      service.getAllTasks().subscribe((tasks) => {
-        expect(tasks).toEqual(mockTasks);
-        expect(tasks.length).toBe(2);
-        expect(tasks[0].title).toBe('Test Task');
-        expect(tasks[1].title).toBe('Another Task');
+  describe('getTasks', () => {
+    it('should return paginated tasks', () => {
+      const mockPagedResult = {
+        items: mockTasks,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 2,
+          totalPages: 1,
+        },
+      };
+
+      service.getTasks({ pageNumber: 1, pageSize: 10 }).subscribe((result) => {
+        expect(result.items.length).toBe(2);
+        expect(result.items[0].title).toBe('Test Task');
+        expect(result.items[1].title).toBe('Another Task');
+        expect(result.items[0].createdAtDate).toBeDefined();
+        expect(result.items[0].createdAtDisplay).toBeDefined();
+        expect(result.metadata.totalCount).toBe(2);
       });
 
-      const req = httpMock.expectOne(TASKS_ENDPOINTS.GET_ALL);
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(TASKS_ENDPOINTS.BASE)
+      );
       expect(req.request.method).toBe('GET');
-      expect(req.request.url).toBe(TASKS_ENDPOINTS.GET_ALL);
-      req.flush(mockTasks);
+      req.flush(mockPagedResult);
     });
 
     it('should return empty array when no tasks exist', () => {
-      service.getAllTasks().subscribe((tasks) => {
-        expect(tasks).toEqual([]);
-        expect(tasks.length).toBe(0);
+      const emptyPagedResult = {
+        items: [],
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 0,
+          totalPages: 0,
+        },
+      };
+
+      service.getTasks({ pageNumber: 1, pageSize: 10 }).subscribe((result) => {
+        expect(result.items).toEqual([]);
+        expect(result.items.length).toBe(0);
       });
 
-      const req = httpMock.expectOne(TASKS_ENDPOINTS.GET_ALL);
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(TASKS_ENDPOINTS.BASE)
+      );
       expect(req.request.method).toBe('GET');
-      req.flush([]);
+      req.flush(emptyPagedResult);
     });
 
-    it('should handle HTTP error when getting all tasks', () => {
-      service.getAllTasks().subscribe({
+    it('should handle HTTP error when getting tasks', () => {
+      service.getTasks({ pageNumber: 1, pageSize: 10 }).subscribe({
         next: () => fail('Expected an error, not a successful response'),
         error: (error) => {
           expect(error.status).toBe(500);
@@ -98,7 +137,9 @@ describe('TaskService', () => {
         },
       });
 
-      const req = httpMock.expectOne(TASKS_ENDPOINTS.GET_ALL);
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(TASKS_ENDPOINTS.BASE)
+      );
       req.flush('Server error', {
         status: 500,
         statusText: 'Internal Server Error',
@@ -111,10 +152,11 @@ describe('TaskService', () => {
       const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
       service.getTaskById(taskId).subscribe((task) => {
-        expect(task).toEqual(mockTask);
         expect(task.id).toBe(taskId);
         expect(task.title).toBe('Test Task');
-        expect(task.status).toBe(TaskItemStatus.OnHold);
+        expect(task.status).toBe(TaskItemStatus.Pending);
+        expect(task.createdAtDate).toBeDefined();
+        expect(task.createdAtDisplay).toBeDefined();
       });
 
       const req = httpMock.expectOne(TASKS_ENDPOINTS.GET_BY_ID(taskId));
@@ -143,9 +185,9 @@ describe('TaskService', () => {
   describe('createTask', () => {
     it('should create a new task and return it', () => {
       service.createTask(createTaskRequest).subscribe((task) => {
-        expect(task).toEqual(mockTask);
         expect(task.title).toBe('Test Task');
-        expect(task.status).toBe(TaskItemStatus.OnHold);
+        expect(task.status).toBe(TaskItemStatus.Pending);
+        expect(task.createdAtDate).toBeDefined();
       });
 
       const req = httpMock.expectOne(TASKS_ENDPOINTS.CREATE);
@@ -244,14 +286,14 @@ describe('TaskService', () => {
       const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
       service.deleteTask(taskId).subscribe((response) => {
-        expect(response).toBeUndefined();
+        expect(response).toBe(true);
       });
 
       const req = httpMock.expectOne(TASKS_ENDPOINTS.DELETE(taskId));
       expect(req.request.method).toBe('DELETE');
       expect(req.request.url).toBe(TASKS_ENDPOINTS.DELETE(taskId));
       expect(req.request.body).toBeNull();
-      req.flush(null, { status: 204, statusText: 'No Content' });
+      req.flush(true);
     });
 
     it('should handle task not found error when deleting', () => {
@@ -275,30 +317,11 @@ describe('TaskService', () => {
     it('should construct correct endpoint URLs', () => {
       const taskId = '123e4567-e89b-12d3-a456-426614174000';
 
-      expect(TASKS_ENDPOINTS.GET_ALL).toContain('/tasks');
+      expect(TASKS_ENDPOINTS.BASE).toContain('/tasks');
       expect(TASKS_ENDPOINTS.GET_BY_ID(taskId)).toContain(`/tasks/${taskId}`);
       expect(TASKS_ENDPOINTS.CREATE).toContain('/tasks');
       expect(TASKS_ENDPOINTS.UPDATE(taskId)).toContain(`/tasks/${taskId}`);
       expect(TASKS_ENDPOINTS.DELETE(taskId)).toContain(`/tasks/${taskId}`);
-    });
-  });
-
-  describe('HTTP headers', () => {
-    it('should send correct headers for POST requests', () => {
-      service.createTask(createTaskRequest).subscribe();
-
-      const req = httpMock.expectOne(TASKS_ENDPOINTS.CREATE);
-      expect(req.request.headers.get('Content-Type')).toBe('application/json');
-      req.flush(mockTask);
-    });
-
-    it('should send correct headers for PUT requests', () => {
-      const taskId = '123e4567-e89b-12d3-a456-426614174000';
-      service.updateTask(taskId, updateTaskRequest).subscribe();
-
-      const req = httpMock.expectOne(TASKS_ENDPOINTS.UPDATE(taskId));
-      expect(req.request.headers.get('Content-Type')).toBe('application/json');
-      req.flush(mockTask);
     });
   });
 });

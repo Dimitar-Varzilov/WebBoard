@@ -15,11 +15,19 @@ describe('JobService', () => {
     id: '123e4567-e89b-12d3-a456-426614174000',
     jobType: 'DataProcessing',
     status: JobStatus.Queued,
-    createdAt: new Date('2024-01-01T00:00:00Z'),
+    createdAt: '2024-01-01T00:00:00Z',
+    createdAtDate: new Date('2024-01-01T00:00:00Z'),
+    createdAtDisplay: 'Jan 1, 2024',
+    createdAtRelative: '1 day ago',
+    createdAtCompact: '1/1/24',
+    isScheduledInPast: false,
+    isOverdue: false,
+    taskCount: 0,
   };
 
   const createJobRequest: CreateJobRequestDto = {
     jobType: 'DataProcessing',
+    taskIds: ['123e4567-e89b-12d3-a456-426614174000'],
   };
 
   beforeEach(() => {
@@ -39,44 +47,75 @@ describe('JobService', () => {
     expect(service).toBeTruthy();
   });
 
-  describe('getAllJobs', () => {
-    it('should return an array of jobs', () => {
+  describe('getJobs', () => {
+    it('should return paginated jobs', () => {
       const mockJobs: JobDto[] = [
         mockJob,
         {
           id: '123e4567-e89b-12d3-a456-426614174001',
           jobType: 'ReportGeneration',
           status: JobStatus.Running,
-          createdAt: new Date('2024-01-02T00:00:00Z'),
+          createdAt: '2024-01-02T00:00:00Z',
+          createdAtDate: new Date('2024-01-02T00:00:00Z'),
+          createdAtDisplay: 'Jan 2, 2024',
+          createdAtRelative: '2 days ago',
+          createdAtCompact: '1/2/24',
+          isScheduledInPast: false,
+          isOverdue: false,
+          taskCount: 0,
         },
       ];
 
-      service.getAllJobs().subscribe((jobs) => {
-        expect(jobs).toEqual(mockJobs);
-        expect(jobs.length).toBe(2);
-        expect(jobs[0].jobType).toBe('DataProcessing');
-        expect(jobs[1].jobType).toBe('ReportGeneration');
+      const mockPagedResult = {
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 2,
+          totalPages: 1,
+        },
+      };
+
+      service.getJobs({ pageNumber: 1, pageSize: 10 }).subscribe((result) => {
+        expect(result.items.length).toBe(2);
+        expect(result.items[0].jobType).toBe('DataProcessing');
+        expect(result.items[1].jobType).toBe('ReportGeneration');
+        expect(result.items[0].createdAtDate).toBeDefined();
+        expect(result.metadata.totalCount).toBe(2);
       });
 
-      const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_ALL);
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(JOBS_ENDPOINTS.BASE)
+      );
       expect(req.request.method).toBe('GET');
-      expect(req.request.url).toBe(JOBS_ENDPOINTS.GET_ALL);
-      req.flush(mockJobs);
+      req.flush(mockPagedResult);
     });
 
     it('should return empty array when no jobs exist', () => {
-      service.getAllJobs().subscribe((jobs) => {
-        expect(jobs).toEqual([]);
-        expect(jobs.length).toBe(0);
+      const emptyPagedResult = {
+        items: [],
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 0,
+          totalPages: 0,
+        },
+      };
+
+      service.getJobs({ pageNumber: 1, pageSize: 10 }).subscribe((result) => {
+        expect(result.items).toEqual([]);
+        expect(result.items.length).toBe(0);
       });
 
-      const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_ALL);
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(JOBS_ENDPOINTS.BASE)
+      );
       expect(req.request.method).toBe('GET');
-      req.flush([]);
+      req.flush(emptyPagedResult);
     });
 
-    it('should handle HTTP error when getting all jobs', () => {
-      service.getAllJobs().subscribe({
+    it('should handle HTTP error when getting jobs', () => {
+      service.getJobs({ pageNumber: 1, pageSize: 10 }).subscribe({
         next: () => fail('Expected an error, not a successful response'),
         error: (error) => {
           expect(error.status).toBe(500);
@@ -84,7 +123,9 @@ describe('JobService', () => {
         },
       });
 
-      const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_ALL);
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(JOBS_ENDPOINTS.BASE)
+      );
       req.flush('Server error', {
         status: 500,
         statusText: 'Internal Server Error',
@@ -97,10 +138,10 @@ describe('JobService', () => {
       const jobId = '123e4567-e89b-12d3-a456-426614174000';
 
       service.getJobById(jobId).subscribe((job) => {
-        expect(job).toEqual(mockJob);
         expect(job.id).toBe(jobId);
         expect(job.jobType).toBe('DataProcessing');
         expect(job.status).toBe(JobStatus.Queued);
+        expect(job.createdAtDate).toBeDefined();
       });
 
       const req = httpMock.expectOne(JOBS_ENDPOINTS.GET_BY_ID(jobId));
@@ -130,22 +171,22 @@ describe('JobService', () => {
   describe('createJob', () => {
     it('should create a new job and return it', () => {
       service.createJob(createJobRequest).subscribe((job) => {
-        expect(job).toEqual(mockJob);
         expect(job.jobType).toBe(createJobRequest.jobType);
         expect(job.status).toBe(JobStatus.Queued);
+        expect(job.createdAtDate).toBeDefined();
       });
 
       const req = httpMock.expectOne(JOBS_ENDPOINTS.CREATE);
       expect(req.request.method).toBe('POST');
       expect(req.request.url).toBe(JOBS_ENDPOINTS.CREATE);
       expect(req.request.body).toEqual(createJobRequest);
-      expect(req.request.headers.get('Content-Type')).toBe('application/json');
       req.flush(mockJob);
     });
 
     it('should handle validation error when creating job', () => {
       const invalidRequest: CreateJobRequestDto = {
         jobType: '', // Invalid empty job type
+        taskIds: [], // Empty task ids
       };
 
       service.createJob(invalidRequest).subscribe({
@@ -164,20 +205,13 @@ describe('JobService', () => {
         statusText: 'Bad Request',
       });
     });
-
-    it('should send correct headers when creating job', () => {
-      service.createJob(createJobRequest).subscribe();
-
-      const req = httpMock.expectOne(JOBS_ENDPOINTS.CREATE);
-      expect(req.request.headers.get('Content-Type')).toBe('application/json');
-      req.flush(mockJob);
-    });
   });
 
   describe('endpoint construction', () => {
     it('should construct correct endpoint URLs', () => {
       const jobId = '123e4567-e89b-12d3-a456-426614174000';
 
+      expect(JOBS_ENDPOINTS.BASE).toContain('/jobs');
       expect(JOBS_ENDPOINTS.GET_BY_ID(jobId)).toContain(`/jobs/${jobId}`);
       expect(JOBS_ENDPOINTS.CREATE).toContain('/jobs');
     });

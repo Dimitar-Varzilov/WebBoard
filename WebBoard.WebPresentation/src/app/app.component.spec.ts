@@ -1,16 +1,24 @@
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
+
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { AppComponent } from './app.component';
+import { SignalRService } from './services';
 
 describe('AppComponent', () => {
+  let mockSignalRService: jasmine.SpyObj<SignalRService>;
+
   beforeEach(async () => {
+    mockSignalRService = jasmine.createSpyObj('SignalRService', [
+      'startConnection',
+      'stopConnection',
+    ]);
+
     await TestBed.configureTestingModule({
-      imports: [
-        RouterTestingModule
-      ],
-      declarations: [
-        AppComponent
-      ],
+      imports: [RouterTestingModule],
+      declarations: [AppComponent],
+      providers: [{ provide: SignalRService, useValue: mockSignalRService }],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements like app-navbar
     }).compileComponents();
   });
 
@@ -26,10 +34,16 @@ describe('AppComponent', () => {
     expect(app.title).toEqual('web-board.web-presentation');
   });
 
-  it('should render title', () => {
+  it('should start SignalR connection on init', () => {
     const fixture = TestBed.createComponent(AppComponent);
     fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('.content span')?.textContent).toContain('web-board.web-presentation app is running!');
+    expect(mockSignalRService.startConnection).toHaveBeenCalled();
+  });
+
+  it('should stop SignalR connection on destroy', () => {
+    const fixture = TestBed.createComponent(AppComponent);
+    fixture.detectChanges();
+    fixture.destroy();
+    expect(mockSignalRService.stopConnection).toHaveBeenCalled();
   });
 });
