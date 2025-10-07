@@ -97,41 +97,9 @@ export class JobDetailComponent implements OnDestroy {
   }
 
   /**
-   * Format job creation time for detailed display
+   * Get current timezone info - cached as it doesn't change
    */
-  formatCreatedAt(): string {
-    if (!this.job?.createdAt) return '';
-    return DateTimeUtils.formatForDisplay(this.job.createdAt);
-  }
-
-  /**
-   * Format scheduled time for detailed display
-   */
-  formatScheduledAt(): string {
-    if (!this.job?.scheduledAt) return '';
-    return DateTimeUtils.formatForDisplay(this.job.scheduledAt);
-  }
-
-  /**
-   * Get relative time for scheduled job
-   */
-  getScheduledRelativeTime(): string {
-    if (!this.job?.scheduledAt) return '';
-    return DateTimeUtils.formatRelative(this.job.scheduledAt);
-  }
-
-  /**
-   * Check if job is scheduled in the past
-   */
-  isScheduledInPast(): boolean {
-    if (!this.job?.scheduledAt) return false;
-    return DateTimeUtils.isPast(this.job.scheduledAt);
-  }
-
-  /**
-   * Get current timezone info
-   */
-  getTimezoneInfo(): string {
+  get timezoneInfo(): string {
     return `${DateTimeUtils.getCurrentTimezoneName()} (${DateTimeUtils.getCurrentTimezoneOffset()})`;
   }
 

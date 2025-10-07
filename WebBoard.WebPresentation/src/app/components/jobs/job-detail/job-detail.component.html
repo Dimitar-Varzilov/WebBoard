@@ -15,7 +15,7 @@
         <div class="mb-3">
           <div class="alert alert-light">
             <i class="fas fa-globe me-2"></i>
-            <small><strong>Timezone:</strong> {{ getTimezoneInfo() }}</small>
+            <small><strong>Timezone:</strong> {{ timezoneInfo }}</small>
           </div>
         </div>
 
@@ -90,15 +90,23 @@
                       <i class="fas fa-file-alt me-2 text-success"></i>
                       {{ job.reportFileName }}
                     </p>
-                    <small class="text-muted">Report is ready for download</small>
+                    <small class="text-muted"
+                      >Report is ready for download</small
+                    >
                   </div>
                   <button
                     class="btn btn-success"
                     (click)="onDownloadReport()"
                     [disabled]="isDownloading"
                   >
-                    <i class="fas" [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'" me-1></i>
-                    {{ isDownloading ? 'Downloading...' : 'Download' }}
+                    <i
+                      class="fas"
+                      [ngClass]="
+                        isDownloading ? 'fa-spinner fa-spin' : 'fa-download'
+                      "
+                      me-1
+                    ></i>
+                    {{ isDownloading ? "Downloading..." : "Download" }}
                   </button>
                 </div>
               </div>
@@ -127,8 +135,8 @@
                     report
                   </p>
                   <small class="text-muted"
-                    >This job will create a report containing a summary of
-                    all tasks and make it available for download.</small
+                    >This job will create a report containing a summary of all
+                    tasks and make it available for download.</small
                   >
                 </div>
               </div>
@@ -164,16 +172,19 @@
 
                 <div class="mb-3">
                   <small class="text-muted d-block">Created</small>
-                  <span class="small">{{ formatCreatedAt() }}</span>
+                  <span class="small">{{ job.createdAtDisplay }}</span>
                 </div>
 
                 <div class="mb-3" *ngIf="job.scheduledAt">
                   <small class="text-muted d-block">Scheduled</small>
-                  <span class="small" [ngClass]="{ 'text-danger': isScheduledInPast() }">
-                    {{ formatScheduledAt() }}
+                  <span
+                    class="small"
+                    [ngClass]="{ 'text-danger': job.isScheduledInPast }"
+                  >
+                    {{ job.scheduledAtDisplay }}
                   </span>
                   <small class="text-muted d-block mt-1">
-                    {{ getScheduledRelativeTime() }}
+                    {{ job.scheduledAtRelative }}
                   </small>
                 </div>
 
@@ -209,8 +220,12 @@
           (click)="onDownloadReport()"
           [disabled]="isDownloading"
         >
-          <i class="fas" [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'" me-1></i>
-          {{ isDownloading ? 'Downloading...' : 'Download Report' }}
+          <i
+            class="fas"
+            [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'"
+            me-1
+          ></i>
+          {{ isDownloading ? "Downloading..." : "Download Report" }}
         </button>
       </div>
     </div>
