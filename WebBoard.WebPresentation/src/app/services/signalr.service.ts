@@ -17,7 +17,7 @@ export interface JobStatusUpdate {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class SignalRService {
   private hubConnection?: signalR.HubConnection;
@@ -32,9 +32,11 @@ export class SignalRService {
 
   private initializeConnection(): void {
     this.hubConnection = new signalR.HubConnectionBuilder()
-      .withUrl(`${environment.apiUrl}/hubs/job-status`, {
+      .withUrl(environment.signalRUrl, {
         withCredentials: true,
-        transport: signalR.HttpTransportType.WebSockets | signalR.HttpTransportType.ServerSentEvents
+        transport:
+          signalR.HttpTransportType.WebSockets |
+          signalR.HttpTransportType.ServerSentEvents,
       })
       .withAutomaticReconnect({
         nextRetryDelayInMilliseconds: (retryContext) => {
@@ -44,7 +46,7 @@ export class SignalRService {
           if (retryContext.previousRetryCount === 2) return 10000;
           if (retryContext.previousRetryCount === 3) return 30000;
           return 60000;
-        }
+        },
       })
       .configureLogging(signalR.LogLevel.Information)
       .build();
@@ -116,7 +118,10 @@ export class SignalRService {
   }
 
   async subscribeToJob(jobId: string): Promise<void> {
-    if (!this.hubConnection || this.hubConnection.state !== signalR.HubConnectionState.Connected) {
+    if (
+      !this.hubConnection ||
+      this.hubConnection.state !== signalR.HubConnectionState.Connected
+    ) {
       console.warn('⚠️ Cannot subscribe - connection not established');
       return;
     }
@@ -130,7 +135,10 @@ export class SignalRService {
   }
 
   async unsubscribeFromJob(jobId: string): Promise<void> {
-    if (!this.hubConnection || this.hubConnection.state !== signalR.HubConnectionState.Connected) {
+    if (
+      !this.hubConnection ||
+      this.hubConnection.state !== signalR.HubConnectionState.Connected
+    ) {
       return;
     }
 

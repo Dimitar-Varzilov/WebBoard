@@ -5,6 +5,7 @@
 export const environment = {
   production: false,
   apiUrl: 'https://localhost:7247/api',
+  signalRUrl: 'https://localhost:7247/hubs/job-status',
 };
 
 /*

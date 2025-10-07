@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
 import { JobDto, JobStatus, JobQueryParameters } from '../../../models';
-import { JobService, SignalRService } from '../../../services';
+import { JobService, JobStatusUpdate, SignalRService } from '../../../services';
 import { JobModelFactory } from '../../../factories/model.factory';
 import { DateTimeUtils } from '../../../utils/datetime.utils';
 import { ROUTES } from '../../../constants';
@@ -77,7 +77,7 @@ export class JobListComponent implements OnInit, OnDestroy {
       });
   }
 
-  private showNotification(update: any): void {
+  private showNotification(update: JobStatusUpdate): void {
     const statusText = this.getStatusText(update.status);
     const message = update.errorMessage
       ? `Job failed: ${update.errorMessage}`

@@ -13,7 +13,6 @@ export class JobDetailComponent {
   @Output() close = new EventEmitter<void>();
 
   JobStatus = JobStatus;
-  DateTimeUtils = DateTimeUtils; // Make DateTimeUtils available in template
   refreshing = false;
   isDownloading = false;
 
