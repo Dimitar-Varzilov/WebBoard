@@ -9,7 +9,7 @@ namespace WebBoard.API.Services.Jobs
 	public class MarkTasksAsCompletedJob(IServiceProvider serviceProvider, ILogger<MarkTasksAsCompletedJob> logger)
 		: BaseJob(serviceProvider, logger)
 	{
-		protected override async Task ExecuteJobLogic(
+		protected override async Task<JobExecutionResult> ExecuteJobLogic(
 			IServiceProvider scopedServices,
 			AppDbContext dbContext,
 			Guid jobId,
@@ -17,10 +17,28 @@ namespace WebBoard.API.Services.Jobs
 		{
 			Logger.LogInformation("Starting mark tasks as completed for job {JobId}", jobId);
 
-			// Mark only tasks assigned to this job as completed
-			var updatedCount = await MarkJobTasksAsCompletedAsync(dbContext, jobId, cancellationToken);
+			try
+			{
+				// Mark only tasks assigned to this job as completed
+				var updatedCount = await MarkJobTasksAsCompletedAsync(dbContext, jobId, cancellationToken);
 
-			Logger.LogInformation("Marked {TaskCount} tasks as completed for job {JobId}", updatedCount, jobId);
+				Logger.LogInformation("Marked {TaskCount} tasks as completed for job {JobId}", updatedCount, jobId);
+
+				// Return success with the number of tasks processed
+				return new JobExecutionResult(
+					IsSuccess: true,
+					TasksProcessed: updatedCount);
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError(ex, "Error marking tasks as completed for job {JobId}", jobId);
+				
+				// Return failure with error message
+				return new JobExecutionResult(
+					IsSuccess: false,
+					TasksProcessed: 0,
+					ErrorMessage: ex.Message);
+			}
 		}
 
 		/// <summary>

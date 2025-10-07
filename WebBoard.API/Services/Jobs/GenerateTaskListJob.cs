@@ -10,7 +10,7 @@ namespace WebBoard.API.Services.Jobs
 	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger)
 		: BaseJob(serviceProvider, logger)
 	{
-		protected override async Task ExecuteJobLogic(
+		protected override async Task<JobExecutionResult> ExecuteJobLogic(
 			IServiceProvider scopedServices,
 			AppDbContext dbContext,
 			Guid jobId,
@@ -18,22 +18,45 @@ namespace WebBoard.API.Services.Jobs
 		{
 			Logger.LogInformation("Starting task list generation for job {JobId}", jobId);
 
-			// Get services from the scoped provider (no nested scope needed)
-			var reportService = scopedServices.GetRequiredService<IReportService>();
-			var statusNotifier = scopedServices.GetRequiredService<IJobStatusNotifier>();
+			try
+			{
+				// Get services from the scoped provider (no nested scope needed)
+				var reportService = scopedServices.GetRequiredService<IReportService>();
+				var statusNotifier = scopedServices.GetRequiredService<IJobStatusNotifier>();
 
-			// Generate task list report content for tasks assigned to this job only
-			var reportContent = await GenerateJobTaskListReportAsync(dbContext, jobId, cancellationToken);
-			var fileName = $"TaskList_Job_{jobId}_{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
-			var contentType = "text/plain";
+				// Generate task list report content for tasks assigned to this job only
+				var reportContent = await GenerateJobTaskListReportAsync(dbContext, jobId, cancellationToken);
+				var fileName = $"TaskList_Job_{jobId}_{DateTime.UtcNow:yyyyMMddHHmmss}.txt";
+				var contentType = "text/plain";
 
-			// Create report entity linked to this job
-			var report = await reportService.CreateReportAsync(jobId, fileName, reportContent, contentType);
+				// Create report entity linked to this job
+				var report = await reportService.CreateReportAsync(jobId, fileName, reportContent, contentType);
 
-			// Notify clients about report generation
-			await statusNotifier.NotifyReportGeneratedAsync(jobId, report.Id, fileName);
+				// Notify clients about report generation
+				await statusNotifier.NotifyReportGeneratedAsync(jobId, report.Id, fileName);
 
-			Logger.LogInformation("Task list generation completed for job {JobId} with report {ReportId}", jobId, report.Id);
+				Logger.LogInformation("Task list generation completed for job {JobId} with report {ReportId}", jobId, report.Id);
+
+				// Get task count from the report generation
+				var taskCount = await dbContext.Tasks
+					.Where(t => t.JobId == jobId)
+					.CountAsync(cancellationToken);
+
+				// Return success with the number of tasks processed
+				return new JobExecutionResult(
+					IsSuccess: true,
+					TasksProcessed: taskCount);
+			}
+			catch (Exception ex)
+			{
+				Logger.LogError(ex, "Error generating task list for job {JobId}", jobId);
+				
+				// Return failure with error message
+				return new JobExecutionResult(
+					IsSuccess: false,
+					TasksProcessed: 0,
+					ErrorMessage: ex.Message);
+			}
 		}
 
 		/// <summary>
