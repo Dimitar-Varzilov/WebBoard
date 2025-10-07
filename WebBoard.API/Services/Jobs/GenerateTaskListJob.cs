@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
 using System.Text;
-using WebBoard.Common.Constants;
-using WebBoard.Data;
-using WebBoard.Services.Reports;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Data;
+using WebBoard.API.Services.Reports;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	[JobType(Constants.JobTypes.GenerateTaskReport)]
 	public class GenerateTaskListJob(IServiceProvider serviceProvider, ILogger<GenerateTaskListJob> logger)

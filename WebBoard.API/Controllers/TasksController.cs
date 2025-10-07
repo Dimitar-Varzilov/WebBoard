@@ -1,11 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
-using WebBoard.Common.Constants;
-using WebBoard.Common.DTOs.Common;
-using WebBoard.Common.DTOs.Tasks;
-using WebBoard.Common.Enums;
-using WebBoard.Services.Tasks;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Common.DTOs.Tasks;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Services.Tasks;
 
-namespace WebBoard.Controllers
+namespace WebBoard.API.Controllers
 {
 	[ApiController]
 	[Route("api/tasks")]

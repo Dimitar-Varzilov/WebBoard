@@ -1,7 +1,7 @@
 using System.ComponentModel.DataAnnotations;
-using WebBoard.Common.Enums;
+using WebBoard.API.Common.Enums;
 
-namespace WebBoard.Common.DTOs.Tasks
+namespace WebBoard.API.Common.DTOs.Tasks
 {
 	public record TaskDto(Guid Id, string Title, string Description, TaskItemStatus Status, DateTimeOffset CreatedAt, Guid? JobId = null);
 

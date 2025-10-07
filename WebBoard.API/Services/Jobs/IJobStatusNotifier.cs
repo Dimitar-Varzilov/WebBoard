@@ -1,6 +1,6 @@
-using WebBoard.Common.Enums;
+using WebBoard.API.Common.Enums;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	/// <summary>
 	/// Service for broadcasting job status updates via SignalR

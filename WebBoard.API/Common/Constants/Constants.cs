@@ -1,4 +1,4 @@
-namespace WebBoard.Common.Constants
+namespace WebBoard.API.Common.Constants
 {
 	public static class Constants
 	{

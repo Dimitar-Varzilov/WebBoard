@@ -1,6 +1,6 @@
-using WebBoard.Common.Enums;
+using WebBoard.API.Common.Enums;
 
-namespace WebBoard.Common.DTOs.Reports
+namespace WebBoard.API.Common.DTOs.Reports
 {
 	public record ReportDto(
 		Guid Id,

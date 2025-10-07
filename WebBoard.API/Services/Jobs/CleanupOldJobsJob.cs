@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.Enums;
-using WebBoard.Data;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	/// <summary>
 	/// Example of how easy it is to add a new job type with the new system

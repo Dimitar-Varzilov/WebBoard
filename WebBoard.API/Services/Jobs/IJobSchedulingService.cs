@@ -1,6 +1,6 @@
-using WebBoard.Common.Models;
+using WebBoard.API.Common.Models;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	public interface IJobSchedulingService
 	{

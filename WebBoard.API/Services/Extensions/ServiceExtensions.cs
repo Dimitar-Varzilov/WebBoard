@@ -1,11 +1,11 @@
 using Microsoft.EntityFrameworkCore;
 using Quartz;
-using WebBoard.Data;
-using WebBoard.Services.Jobs;
-using WebBoard.Services.Reports;
-using WebBoard.Services.Tasks;
+using WebBoard.API.Data;
+using WebBoard.API.Services.Jobs;
+using WebBoard.API.Services.Reports;
+using WebBoard.API.Services.Tasks;
 
-namespace WebBoard.Services.Extensions
+namespace WebBoard.API.Services.Extensions
 {
 	public static class ServiceExtensions
 	{
@@ -20,7 +20,7 @@ namespace WebBoard.Services.Extensions
 			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
 			services.AddScoped<IJobCleanupService, JobCleanupService>();
 			services.AddScoped<IReportService, ReportService>();
-			
+
 			// Register SignalR job status notifier
 			services.AddScoped<IJobStatusNotifier, JobStatusNotifier>();
 

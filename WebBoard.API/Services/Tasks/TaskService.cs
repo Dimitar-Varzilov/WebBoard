@@ -1,12 +1,12 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.DTOs.Common;
-using WebBoard.Common.DTOs.Tasks;
-using WebBoard.Common.Enums;
-using WebBoard.Common.Extensions;
-using WebBoard.Common.Models;
-using WebBoard.Data;
+using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Common.DTOs.Tasks;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Common.Extensions;
+using WebBoard.API.Common.Models;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Tasks
+namespace WebBoard.API.Services.Tasks
 {
 	public class TaskService(AppDbContext db) : ITaskService
 	{
@@ -61,8 +61,8 @@ namespace WebBoard.Services.Tasks
 			{
 				var searchTerm = parameters.SearchTerm.ToLower();
 				query = query.Where(t =>
-					t.Title.ToLower().Contains(searchTerm) ||
-					t.Description.ToLower().Contains(searchTerm));
+					t.Title.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+					t.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
 			}
 
 			// Apply sorting

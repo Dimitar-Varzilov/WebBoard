@@ -1,8 +1,8 @@
-using WebBoard.Common.DTOs.Common;
-using WebBoard.Common.DTOs.Tasks;
-using WebBoard.Common.Enums;
+using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Common.DTOs.Tasks;
+using WebBoard.API.Common.Enums;
 
-namespace WebBoard.Services.Tasks
+namespace WebBoard.API.Services.Tasks
 {
 	public interface ITaskService
 	{

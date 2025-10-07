@@ -1,6 +1,6 @@
-using WebBoard.Services.Jobs;
+using WebBoard.API.Services.Jobs;
 
-namespace WebBoard.Services.Extensions
+namespace WebBoard.API.Services.Extensions
 {
 	public static class JobTypeExtensions
 	{

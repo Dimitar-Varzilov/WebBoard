@@ -1,7 +1,7 @@
-using WebBoard.Common.DTOs.Reports;
-using WebBoard.Common.Models;
+using WebBoard.API.Common.DTOs.Reports;
+using WebBoard.API.Common.Models;
 
-namespace WebBoard.Services.Reports
+namespace WebBoard.API.Services.Reports
 {
 	public interface IReportService
 	{

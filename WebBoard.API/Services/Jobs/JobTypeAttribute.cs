@@ -1,4 +1,4 @@
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	/// <summary>
 	/// Attribute to mark a job class and specify its string identifier

@@ -1,4 +1,4 @@
-namespace WebBoard.Common.Enums
+namespace WebBoard.API.Common.Enums
 {
 	public enum JobStatus
 	{

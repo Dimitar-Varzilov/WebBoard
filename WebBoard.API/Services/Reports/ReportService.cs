@@ -1,10 +1,10 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.DTOs.Reports;
-using WebBoard.Common.Enums;
-using WebBoard.Common.Models;
-using WebBoard.Data;
+using WebBoard.API.Common.DTOs.Reports;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Common.Models;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Reports
+namespace WebBoard.API.Services.Reports
 {
 	public class ReportService(AppDbContext db, ILogger<ReportService> logger) : IReportService
 	{

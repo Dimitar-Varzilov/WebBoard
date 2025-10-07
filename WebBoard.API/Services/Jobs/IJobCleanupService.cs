@@ -1,4 +1,4 @@
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	public interface IJobCleanupService
 	{

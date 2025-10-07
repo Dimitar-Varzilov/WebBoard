@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Metadata.Builders;
-using WebBoard.Common.Models;
+using WebBoard.API.Common.Models;
 
-namespace WebBoard.Data.Configurations
+namespace WebBoard.API.Data.Configurations
 {
 	public class JobConfiguration : IEntityTypeConfiguration<Job>
 	{

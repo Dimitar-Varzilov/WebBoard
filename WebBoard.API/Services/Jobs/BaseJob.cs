@@ -1,11 +1,11 @@
 using Microsoft.Extensions.Options;
 using Quartz;
-using WebBoard.Common.Constants;
-using WebBoard.Common.Enums;
-using WebBoard.Common.Models;
-using WebBoard.Data;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Common.Models;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	/// <summary>
 	/// Base class for jobs with automatic status updates and SignalR notifications

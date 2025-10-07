@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace WebBoard.Common.Attributes
+namespace WebBoard.API.Common.Attributes
 {
 	/// <summary>
 	/// Validation attribute for DateTimeOffset values that cannot be in the past

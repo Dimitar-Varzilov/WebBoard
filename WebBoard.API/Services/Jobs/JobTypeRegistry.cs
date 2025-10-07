@@ -1,8 +1,8 @@
 using Quartz;
 using System.Reflection;
-using WebBoard.Common.Constants;
+using WebBoard.API.Common.Constants;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	public class JobTypeRegistry : IJobTypeRegistry
 	{

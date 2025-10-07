@@ -1,7 +1,7 @@
-using WebBoard.Hubs;
-using WebBoard.Services.Extensions;
+using WebBoard.API.Hubs;
+using WebBoard.API.Services.Extensions;
 
-namespace WebBoard
+namespace WebBoard.API
 {
 	public class Program
 	{

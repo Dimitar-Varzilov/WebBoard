@@ -1,7 +1,7 @@
 using Microsoft.AspNetCore.SignalR;
-using WebBoard.Common.Enums;
+using WebBoard.API.Common.Enums;
 
-namespace WebBoard.Hubs
+namespace WebBoard.API.Hubs
 {
 	/// <summary>
 	/// SignalR Hub for real-time job status updates

@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.Constants;
-using WebBoard.Common.DTOs.Common;
-using WebBoard.Common.DTOs.Jobs;
-using WebBoard.Common.Enums;
-using WebBoard.Common.Extensions;
-using WebBoard.Common.Models;
-using WebBoard.Data;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Common.DTOs.Jobs;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Common.Extensions;
+using WebBoard.API.Common.Models;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	public class JobService(
 		AppDbContext db,
@@ -36,7 +36,7 @@ namespace WebBoard.Services.Jobs
 			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
 			{
 				var searchTerm = parameters.SearchTerm.ToLower();
-				query = query.Where(j => j.JobType.ToLower().Contains(searchTerm));
+				query = query.Where(j => j.JobType.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
 			}
 
 			// Apply sorting

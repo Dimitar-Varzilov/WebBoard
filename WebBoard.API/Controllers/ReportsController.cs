@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Mvc;
-using WebBoard.Common.Constants;
-using WebBoard.Services.Reports;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Services.Reports;
 
-namespace WebBoard.Controllers
+namespace WebBoard.API.Controllers
 {
 	[ApiController]
 	[Route("api/reports")]

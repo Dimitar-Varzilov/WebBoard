@@ -1,9 +1,9 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.Constants;
-using WebBoard.Common.Enums;
-using WebBoard.Data;
+using WebBoard.API.Common.Constants;
+using WebBoard.API.Common.Enums;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	[JobType(Constants.JobTypes.MarkAllTasksAsDone)]
 	public class MarkTasksAsCompletedJob(IServiceProvider serviceProvider, ILogger<MarkTasksAsCompletedJob> logger)

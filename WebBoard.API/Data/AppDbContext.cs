@@ -1,7 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
-using WebBoard.Common.Models;
+using WebBoard.API.Common.Models;
 
-namespace WebBoard.Data
+namespace WebBoard.API.Data
 {
 	public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(options)
 	{

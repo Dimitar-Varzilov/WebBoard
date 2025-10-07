@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using WebBoard.Data;
+using WebBoard.API.Data;
 
-namespace WebBoard.Services.Extensions
+namespace WebBoard.API.Services.Extensions
 {
 	public static class DatabaseExtensions
 	{

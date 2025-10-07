@@ -1,7 +1,7 @@
-using WebBoard.Common.DTOs.Common;
-using WebBoard.Common.DTOs.Jobs;
+using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Common.DTOs.Jobs;
 
-namespace WebBoard.Services.Jobs
+namespace WebBoard.API.Services.Jobs
 {
 	public interface IJobService
 	{

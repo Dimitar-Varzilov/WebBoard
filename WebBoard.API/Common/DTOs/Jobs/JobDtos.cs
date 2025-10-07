@@ -1,8 +1,8 @@
 using System.ComponentModel.DataAnnotations;
-using WebBoard.Common.Attributes;
-using WebBoard.Common.Enums;
+using WebBoard.API.Common.Attributes;
+using WebBoard.API.Common.Enums;
 
-namespace WebBoard.Common.DTOs.Jobs
+namespace WebBoard.API.Common.DTOs.Jobs
 {
 	public record JobDto(
 		Guid Id,

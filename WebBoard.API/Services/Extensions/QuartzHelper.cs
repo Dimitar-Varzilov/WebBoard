@@ -1,6 +1,6 @@
 using Quartz;
 
-namespace WebBoard.Services.Extensions
+namespace WebBoard.API.Services.Extensions
 {
 	public static class QuartzHelper
 	{
