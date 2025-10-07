@@ -23,6 +23,8 @@ export class JobListComponent implements OnInit, OnDestroy {
   showJobDetail = false;
   selectedJob: JobDto | null = null;
 
+  // Track subscribed job IDs
+  private subscribedJobIds: Set<string> = new Set();
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -36,6 +38,8 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    // Unsubscribe from all jobs
+    this.unsubscribeFromAllJobs();
     this.destroy$.next();
     this.destroy$.complete();
   }
@@ -67,12 +71,71 @@ export class JobListComponent implements OnInit, OnDestroy {
 
           // Use factory to recompute all properties
           this.jobs[jobIndex] = JobModelFactory.fromApiResponse(rawJob);
+
+          // Update selectedJob reference if this is the job being viewed in the modal
+          // This ensures the modal displays the latest data without needing its own SignalR subscription
+          if (this.selectedJob && this.selectedJob.id === update.jobId) {
+            this.selectedJob = this.jobs[jobIndex];
+            console.log('📨 Updated selectedJob reference for modal display');
+          }
+
           this.filterJobs();
 
           // Show notification
           this.showNotification(update);
+        } else {
+          // Job not in list - might be a newly created job
+          console.log('📥 Received update for job not in list, refreshing...');
+          this.loadJobs();
         }
       });
+  }
+
+  /**
+   * Subscribe to all jobs currently in the list using batch operation
+   */
+  private async subscribeToAllJobs(): Promise<void> {
+    if (!this.signalRService.isConnected()) {
+      console.warn('⚠️ Cannot subscribe - SignalR not connected');
+      return;
+    }
+
+    const jobIds = this.jobs.map((job) => job.id);
+
+    // Find new jobs that haven't been subscribed to yet
+    const newJobIds = jobIds.filter((id) => !this.subscribedJobIds.has(id));
+
+    if (newJobIds.length === 0) {
+      console.log('✅ No new jobs to subscribe to');
+      return;
+    }
+
+    // Use batch subscription for better performance
+    await this.signalRService.subscribeToJobs(newJobIds);
+
+    // Track subscribed jobs
+    newJobIds.forEach((id) => this.subscribedJobIds.add(id));
+
+    console.log(
+      `✅ Subscribed to ${this.subscribedJobIds.size} total jobs (${newJobIds.length} new)`
+    );
+  }
+
+  /**
+   * Unsubscribe from all jobs using batch operation
+   */
+  private async unsubscribeFromAllJobs(): Promise<void> {
+    if (this.subscribedJobIds.size === 0) {
+      return;
+    }
+
+    const jobIdsArray = Array.from(this.subscribedJobIds);
+
+    // Use batch unsubscription for better performance
+    await this.signalRService.unsubscribeFromJobs(jobIdsArray);
+
+    this.subscribedJobIds.clear();
+    console.log('✅ Unsubscribed from all jobs');
   }
 
   private showNotification(update: JobStatusUpdate): void {
@@ -114,10 +177,13 @@ export class JobListComponent implements OnInit, OnDestroy {
       .getJobs(params)
       .pipe(takeUntil(this.destroy$))
       .subscribe({
-        next: (result) => {
+        next: async (result) => {
           this.jobs = result.items;
           this.filterJobs();
           this.loading = false;
+
+          // Subscribe to all loaded jobs using batch operation
+          await this.subscribeToAllJobs();
         },
         error: (error: any) => {
           console.error('Error loading jobs:', error);

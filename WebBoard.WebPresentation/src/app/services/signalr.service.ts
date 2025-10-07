@@ -150,6 +150,57 @@ export class SignalRService {
     }
   }
 
+  /**
+   * Subscribe to multiple jobs at once (batch operation)
+   * @param jobIds Array of job IDs to subscribe to
+   */
+  async subscribeToJobs(jobIds: string[]): Promise<void> {
+    if (
+      !this.hubConnection ||
+      this.hubConnection.state !== signalR.HubConnectionState.Connected
+    ) {
+      console.warn('⚠️ Cannot subscribe - connection not established');
+      return;
+    }
+
+    if (!jobIds || jobIds.length === 0) {
+      console.warn('⚠️ No job IDs provided for batch subscription');
+      return;
+    }
+
+    try {
+      await this.hubConnection.invoke('SubscribeToJobs', jobIds);
+      console.log(`✅ Batch subscribed to ${jobIds.length} jobs`);
+    } catch (error) {
+      console.error(`❌ Error batch subscribing to jobs:`, error);
+    }
+  }
+
+  /**
+   * Unsubscribe from multiple jobs at once (batch operation)
+   * @param jobIds Array of job IDs to unsubscribe from
+   */
+  async unsubscribeFromJobs(jobIds: string[]): Promise<void> {
+    if (
+      !this.hubConnection ||
+      this.hubConnection.state !== signalR.HubConnectionState.Connected
+    ) {
+      return;
+    }
+
+    if (!jobIds || jobIds.length === 0) {
+      console.warn('⚠️ No job IDs provided for batch unsubscription');
+      return;
+    }
+
+    try {
+      await this.hubConnection.invoke('UnsubscribeFromJobs', jobIds);
+      console.log(`✅ Batch unsubscribed from ${jobIds.length} jobs`);
+    } catch (error) {
+      console.error(`❌ Error batch unsubscribing from jobs:`, error);
+    }
+  }
+
   getJobStatusUpdates(): Observable<JobStatusUpdate | null> {
     return this.jobStatusUpdates$.asObservable();
   }

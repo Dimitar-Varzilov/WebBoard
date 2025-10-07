@@ -25,10 +25,7 @@ namespace WebBoard.API.Services.Jobs
 					ErrorMessage: errorMessage
 				);
 
-				// Broadcast to all clients
-				await hubContext.Clients.All.SendAsync(SignalRConstants.Methods.JobStatusUpdated, update);
-
-				// Also send to specific job group
+				// Send to specific job group only (clients subscribed to this specific job)
 				await hubContext.Clients.Group(SignalRConstants.Groups.GetJobGroup(jobId))
 					.SendAsync(SignalRConstants.Methods.JobStatusUpdated, update);
 
@@ -52,7 +49,9 @@ namespace WebBoard.API.Services.Jobs
 					UpdatedAt: DateTimeOffset.UtcNow
 				);
 
-				await hubContext.Clients.All.SendAsync(SignalRConstants.Methods.JobProgressUpdated, update);
+				// Send to specific job group for progress updates
+				await hubContext.Clients.Group(SignalRConstants.Groups.GetJobGroup(jobId))
+					.SendAsync(SignalRConstants.Methods.JobProgressUpdated, update);
 
 				logger.LogDebug("Broadcasted job progress: Job {JobId} progress {Progress}%", jobId, progress);
 			}
@@ -76,7 +75,9 @@ namespace WebBoard.API.Services.Jobs
 					ReportFileName: fileName
 				);
 
-				await hubContext.Clients.All.SendAsync(SignalRConstants.Methods.ReportGenerated, update);
+				// Send to specific job group for report generation
+				await hubContext.Clients.Group(SignalRConstants.Groups.GetJobGroup(jobId))
+					.SendAsync(SignalRConstants.Methods.ReportGenerated, update);
 
 				logger.LogInformation(
 					"Broadcasted report generation: Job {JobId} generated report {ReportId}",

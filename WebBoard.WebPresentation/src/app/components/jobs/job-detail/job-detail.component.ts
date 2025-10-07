@@ -4,20 +4,11 @@ import {
   Input,
   Output,
   OnDestroy,
-  OnInit,
-  OnChanges,
-  SimpleChanges,
 } from '@angular/core';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { JobDto, JobStatus } from '../../../models';
-import {
-  JobService,
-  ReportService,
-  SignalRService,
-  JobStatusUpdate,
-} from '../../../services';
-import { JobModelFactory } from '../../../factories/model.factory';
+import { JobService, ReportService } from '../../../services';
 import { DateTimeUtils } from '../../../utils/datetime.utils';
 
 @Component({
@@ -25,7 +16,7 @@ import { DateTimeUtils } from '../../../utils/datetime.utils';
   templateUrl: './job-detail.component.html',
   styleUrls: ['./job-detail.component.scss'],
 })
-export class JobDetailComponent implements OnInit, OnChanges, OnDestroy {
+export class JobDetailComponent implements OnDestroy {
   @Input() job?: JobDto | null;
   @Output() close = new EventEmitter<void>();
 
@@ -34,93 +25,15 @@ export class JobDetailComponent implements OnInit, OnChanges, OnDestroy {
   isDownloading = false;
 
   private destroy$ = new Subject<void>();
-  private currentJobId?: string;
 
   constructor(
     private jobService: JobService,
-    private reportService: ReportService,
-    private signalRService: SignalRService
+    private reportService: ReportService
   ) {}
 
-  ngOnInit(): void {
-    this.subscribeToJobUpdates();
-    this.subscribeToSpecificJob();
-  }
-
-  ngOnChanges(changes: SimpleChanges): void {
-    // When the job input changes, update SignalR subscription
-    if (changes['job']) {
-      this.subscribeToSpecificJob();
-    }
-  }
-
   ngOnDestroy(): void {
-    // Unsubscribe from the specific job
-    if (this.currentJobId) {
-      this.signalRService.unsubscribeFromJob(this.currentJobId);
-    }
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  /**
-   * Subscribe to general job status updates from SignalR
-   */
-  private subscribeToJobUpdates(): void {
-    this.signalRService
-      .getJobStatusUpdates()
-      .pipe(takeUntil(this.destroy$))
-      .subscribe((update) => {
-        if (!update || !this.job) return;
-
-        // Only update if this is the job we're displaying
-        if (update.jobId === this.job.id) {
-          console.log('📨 Job detail received update for job:', update.jobId);
-          this.updateJobFromSignalR(update);
-        }
-      });
-  }
-
-  /**
-   * Subscribe to updates for the specific job being displayed
-   */
-  private async subscribeToSpecificJob(): Promise<void> {
-    // Unsubscribe from previous job if any
-    if (this.currentJobId && this.currentJobId !== this.job?.id) {
-      await this.signalRService.unsubscribeFromJob(this.currentJobId);
-    }
-
-    // Subscribe to the new job
-    if (this.job?.id && this.signalRService.isConnected()) {
-      this.currentJobId = this.job.id;
-      await this.signalRService.subscribeToJob(this.job.id);
-      console.log(`✅ Job detail subscribed to job ${this.job.id}`);
-    }
-  }
-
-  /**
-   * Update the displayed job with data from SignalR
-   */
-  private updateJobFromSignalR(update: JobStatusUpdate): void {
-    if (!this.job) return;
-
-    // Create updated raw job data
-    const rawJob = {
-      ...this.job,
-      status: update.status,
-      hasReport: update.hasReport || this.job.hasReport,
-      reportId: update.reportId || this.job.reportId,
-      reportFileName: update.reportFileName || this.job.reportFileName,
-    };
-
-    // Use factory to recompute all properties
-    this.job = JobModelFactory.fromApiResponse(rawJob);
-
-    console.log(
-      `🔄 Job detail updated from SignalR - Status: ${this.getStatusText(
-        update.status
-      )}`
-    );
   }
 
   getStatusClass(status: JobStatus): string {
