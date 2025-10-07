@@ -9,7 +9,6 @@ namespace WebBoard.API.Services
 	public class JobStartupService(
 		IServiceProvider serviceProvider,
 		IScheduler scheduler,
-		IJobSchedulingService jobSchedulingService,
 		ILogger<JobStartupService> logger) : IHostedService
 	{
 		private static bool _hasRunOnce = false;
@@ -53,9 +52,10 @@ namespace WebBoard.API.Services
 					}
 				}
 
-				// Create scope only for DbContext (scoped service)
+				// Create scope for scoped services (DbContext and JobSchedulingService)
 				using var scope = serviceProvider.CreateScope();
 				var dbContext = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+				var jobSchedulingService = scope.ServiceProvider.GetRequiredService<IJobSchedulingService>();
 
 				// Find all queued jobs that haven't been scheduled yet
 				// Use a timestamp check to avoid interfering with jobs created during startup
