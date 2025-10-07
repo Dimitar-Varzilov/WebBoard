@@ -20,6 +20,7 @@ namespace WebBoard.API.Services.Extensions
 			services.AddScoped<IJobSchedulingService, JobSchedulingService>();
 			services.AddScoped<IJobCleanupService, JobCleanupService>();
 			services.AddScoped<IReportService, ReportService>();
+			services.AddScoped<IJobRetryService, JobRetryService>();
 
 			// Register SignalR job status notifier
 			services.AddScoped<IJobStatusNotifier, JobStatusNotifier>();

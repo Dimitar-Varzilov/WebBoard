@@ -8,6 +8,7 @@ namespace WebBoard.API.Data
 		public DbSet<TaskItem> Tasks => Set<TaskItem>();
 		public DbSet<Job> Jobs => Set<Job>();
 		public DbSet<Report> Reports => Set<Report>();
+		public DbSet<JobRetryInfo> JobRetries => Set<JobRetryInfo>();
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
