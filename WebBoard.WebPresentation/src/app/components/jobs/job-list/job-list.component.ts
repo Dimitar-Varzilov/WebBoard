@@ -14,8 +14,25 @@ export class JobListComponent implements OnInit, OnDestroy {
   jobs: JobDto[] = [];
   filteredJobs: JobDto[] = [];
   loading = false;
-  searchText = '';
-  statusFilter = '';
+
+  private _searchText = '';
+  get searchText(): string {
+    return this._searchText;
+  }
+  set searchText(value: string) {
+    this._searchText = value;
+    this.filterJobs();
+  }
+
+  private _statusFilter = '';
+  get statusFilter(): string {
+    return this._statusFilter;
+  }
+  set statusFilter(value: string) {
+    this._statusFilter = value;
+    this.filterJobs();
+  }
+
   routes = ROUTES;
   JobStatus = JobStatus;
 
@@ -197,6 +214,12 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   filterJobs(): void {
+    // Initialize filteredJobs to empty if jobs not loaded yet
+    if (!this.jobs) {
+      this.filteredJobs = [];
+      return;
+    }
+
     this.filteredJobs = this.jobs.filter((job) => {
       const matchesSearch =
         !this.searchText ||
@@ -211,8 +234,8 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   clearFilters(): void {
-    this.searchText = '';
-    this.statusFilter = '';
+    this._searchText = '';
+    this._statusFilter = '';
     this.filterJobs();
   }
 

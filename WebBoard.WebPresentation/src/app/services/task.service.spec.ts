@@ -324,4 +324,299 @@ describe('TaskService', () => {
       expect(TASKS_ENDPOINTS.DELETE(taskId)).toContain(`/tasks/${taskId}`);
     });
   });
+
+  describe('getTasks with complex filtering', () => {
+    it('should send searchTerm parameter correctly', () => {
+      const mockPagedResult = {
+        items: [mockTask],
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 1,
+          totalPages: 1,
+        },
+      };
+
+      service
+        .getTasks({
+          pageNumber: 1,
+          pageSize: 10,
+          searchTerm: 'test',
+        })
+        .subscribe((result) => {
+          expect(result.items.length).toBe(1);
+        });
+
+      const req = httpMock.expectOne((request) => {
+        return (
+          request.url.includes(TASKS_ENDPOINTS.BASE) &&
+          request.params.has('searchTerm') &&
+          request.params.get('searchTerm') === 'test'
+        );
+      });
+      expect(req.request.method).toBe('GET');
+      req.flush(mockPagedResult);
+    });
+
+    it('should send status filter parameter correctly', () => {
+      const mockPagedResult = {
+        items: [mockTask],
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 1,
+          totalPages: 1,
+        },
+      };
+
+      service
+        .getTasks({
+          pageNumber: 1,
+          pageSize: 10,
+          status: TaskItemStatus.Pending,
+        })
+        .subscribe((result) => {
+          expect(result.items.length).toBe(1);
+        });
+
+      const req = httpMock.expectOne((request) => {
+        return (
+          request.url.includes(TASKS_ENDPOINTS.BASE) &&
+          request.params.has('status') &&
+          request.params.get('status') === TaskItemStatus.Pending.toString()
+        );
+      });
+      expect(req.request.method).toBe('GET');
+      req.flush(mockPagedResult);
+    });
+
+    it('should send hasJob filter parameter correctly', () => {
+      const mockPagedResult = {
+        items: [mockTask],
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 1,
+          totalPages: 1,
+        },
+      };
+
+      service
+        .getTasks({
+          pageNumber: 1,
+          pageSize: 10,
+          hasJob: true,
+        })
+        .subscribe((result) => {
+          expect(result.items.length).toBe(1);
+        });
+
+      const req = httpMock.expectOne((request) => {
+        return (
+          request.url.includes(TASKS_ENDPOINTS.BASE) &&
+          request.params.has('hasJob') &&
+          request.params.get('hasJob') === 'true'
+        );
+      });
+      expect(req.request.method).toBe('GET');
+      req.flush(mockPagedResult);
+    });
+
+    it('should send multiple filter parameters together', () => {
+      const mockPagedResult = {
+        items: [mockTask],
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 1,
+          totalPages: 1,
+        },
+      };
+
+      service
+        .getTasks({
+          pageNumber: 1,
+          pageSize: 10,
+          searchTerm: 'test',
+          status: TaskItemStatus.Pending,
+          hasJob: false,
+        })
+        .subscribe((result) => {
+          expect(result.items.length).toBe(1);
+        });
+
+      const req = httpMock.expectOne((request) => {
+        return (
+          request.url.includes(TASKS_ENDPOINTS.BASE) &&
+          request.params.has('searchTerm') &&
+          request.params.get('searchTerm') === 'test' &&
+          request.params.has('status') &&
+          request.params.get('status') === TaskItemStatus.Pending.toString() &&
+          request.params.has('hasJob') &&
+          request.params.get('hasJob') === 'false'
+        );
+      });
+      expect(req.request.method).toBe('GET');
+      req.flush(mockPagedResult);
+    });
+
+    it('should send sorting parameters correctly', () => {
+      const mockPagedResult = {
+        items: mockTasks,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 2,
+          totalPages: 1,
+        },
+      };
+
+      service
+        .getTasks({
+          pageNumber: 1,
+          pageSize: 10,
+          sortBy: 'createdAt',
+          sortDirection: 'desc',
+        })
+        .subscribe((result) => {
+          expect(result.items.length).toBe(2);
+        });
+
+      const req = httpMock.expectOne((request) => {
+        return (
+          request.url.includes(TASKS_ENDPOINTS.BASE) &&
+          request.params.has('sortBy') &&
+          request.params.get('sortBy') === 'createdAt' &&
+          request.params.has('sortDirection') &&
+          request.params.get('sortDirection') === 'desc'
+        );
+      });
+      expect(req.request.method).toBe('GET');
+      req.flush(mockPagedResult);
+    });
+  });
+
+  describe('getTasksByStatus', () => {
+    it('should return tasks by status', () => {
+      const pendingTasks = [mockTask];
+
+      service.getTasksByStatus(TaskItemStatus.Pending).subscribe((tasks) => {
+        expect(tasks.length).toBe(1);
+        expect(tasks[0].status).toBe(TaskItemStatus.Pending);
+        expect(tasks[0].createdAtDate).toBeDefined();
+      });
+
+      const req = httpMock.expectOne(
+        TASKS_ENDPOINTS.GET_BY_STATUS(TaskItemStatus.Pending)
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush(pendingTasks);
+    });
+
+    it('should return empty array when no tasks match status', () => {
+      service.getTasksByStatus(TaskItemStatus.Completed).subscribe((tasks) => {
+        expect(tasks).toEqual([]);
+      });
+
+      const req = httpMock.expectOne(
+        TASKS_ENDPOINTS.GET_BY_STATUS(TaskItemStatus.Completed)
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush([]);
+    });
+  });
+
+  describe('getTaskCountByStatus', () => {
+    it('should return task count by status', () => {
+      service
+        .getTaskCountByStatus(TaskItemStatus.Pending)
+        .subscribe((count) => {
+          expect(count).toBe(5);
+        });
+
+      const req = httpMock.expectOne(
+        TASKS_ENDPOINTS.GET_COUNT_BY_STATUS(TaskItemStatus.Pending)
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush(5);
+    });
+
+    it('should return 0 when no tasks match status', () => {
+      service
+        .getTaskCountByStatus(TaskItemStatus.Completed)
+        .subscribe((count) => {
+          expect(count).toBe(0);
+        });
+
+      const req = httpMock.expectOne(
+        TASKS_ENDPOINTS.GET_COUNT_BY_STATUS(TaskItemStatus.Completed)
+      );
+      expect(req.request.method).toBe('GET');
+      req.flush(0);
+    });
+  });
+
+  describe('Model factory integration', () => {
+    it('should transform raw task data with computed properties', () => {
+      const rawTask = {
+        id: 'task-123',
+        title: 'Test Task',
+        description: 'Test Description',
+        status: TaskItemStatus.Pending,
+        createdAt: '2024-01-01T00:00:00Z',
+      };
+
+      service.getTaskById('task-123').subscribe((task) => {
+        expect(task.createdAtDate).toBeInstanceOf(Date);
+        expect(task.createdAtDisplay).toBeDefined();
+        expect(task.createdAtRelative).toBeDefined();
+        expect(task.createdAtCompact).toBeDefined();
+        expect(task.isRecent).toBeDefined();
+        expect(task.age).toBeDefined();
+        expect(task.isAssignedToJob).toBeDefined();
+      });
+
+      const req = httpMock.expectOne(TASKS_ENDPOINTS.GET_BY_ID('task-123'));
+      req.flush(rawTask);
+    });
+
+    it('should transform array of raw task data with computed properties', () => {
+      const rawTasks = [
+        {
+          id: 'task-1',
+          title: 'Task 1',
+          description: 'Description 1',
+          status: TaskItemStatus.Pending,
+          createdAt: '2024-01-01T00:00:00Z',
+        },
+        {
+          id: 'task-2',
+          title: 'Task 2',
+          description: 'Description 2',
+          status: TaskItemStatus.InProgress,
+          createdAt: '2024-01-02T00:00:00Z',
+          jobId: 'job-123',
+        },
+      ];
+
+      service.getTasks({ pageNumber: 1, pageSize: 10 }).subscribe((result) => {
+        expect(result.items[0].createdAtDate).toBeInstanceOf(Date);
+        expect(result.items[0].isAssignedToJob).toBe(false);
+        expect(result.items[1].isAssignedToJob).toBe(true);
+      });
+
+      const req = httpMock.expectOne((request) =>
+        request.url.includes(TASKS_ENDPOINTS.BASE)
+      );
+      req.flush({
+        items: rawTasks,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 2,
+          totalPages: 1,
+        },
+      });
+    });
+  });
 });
