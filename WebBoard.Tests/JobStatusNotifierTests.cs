@@ -18,7 +18,6 @@ namespace WebBoard.Tests
 		private readonly Mock<IHubContext<JobStatusHub>> _mockHubContext;
 		private readonly Mock<ILogger<JobStatusNotifier>> _mockLogger;
 		private readonly Mock<IHubClients> _mockClients;
-		private readonly Mock<IClientProxy> _mockAllClientsProxy;
 		private readonly Mock<IClientProxy> _mockGroupClientsProxy;
 		private readonly JobStatusNotifier _notifier;
 
@@ -27,11 +26,9 @@ namespace WebBoard.Tests
 			_mockHubContext = new Mock<IHubContext<JobStatusHub>>();
 			_mockLogger = new Mock<ILogger<JobStatusNotifier>>();
 			_mockClients = new Mock<IHubClients>();
-			_mockAllClientsProxy = new Mock<IClientProxy>();
 			_mockGroupClientsProxy = new Mock<IClientProxy>();
 
 			_mockHubContext.Setup(h => h.Clients).Returns(_mockClients.Object);
-			_mockClients.Setup(c => c.All).Returns(_mockAllClientsProxy.Object);
 			_mockClients.Setup(c => c.Group(It.IsAny<string>())).Returns(_mockGroupClientsProxy.Object);
 
 			_notifier = new JobStatusNotifier(_mockHubContext.Object, _mockLogger.Object);
@@ -39,25 +36,6 @@ namespace WebBoard.Tests
 
 		#region NotifyJobStatusAsync Tests
 
-		[Fact]
-		public async Task NotifyJobStatusAsync_ShouldBroadcastToAllClients()
-		{
-			// Arrange
-			var jobId = Guid.NewGuid();
-			var jobType = "TestJob";
-			var status = JobStatus.Running;
-
-			// Act
-			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
-
-			// Assert
-			_mockAllClientsProxy.Verify(
-				x => x.SendCoreAsync(
-					SignalRConstants.Methods.JobStatusUpdated,
-					It.Is<object[]>(o => o.Length == 1 && ((JobStatusUpdateDto)o[0]).JobId == jobId),
-					default),
-				Times.Once);
-		}
 		[Fact]
 		public async Task NotifyJobStatusAsync_ShouldBroadcastToSpecificJobGroup()
 		{
@@ -72,8 +50,8 @@ namespace WebBoard.Tests
 
 			// Assert
 			_mockClients.Verify(
-			x => x.Group(expectedGroupName),
-			Times.Once);
+				x => x.Group(expectedGroupName),
+				Times.Once);
 
 			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
@@ -82,6 +60,24 @@ namespace WebBoard.Tests
 					default),
 				Times.Once);
 		}
+
+		[Fact]
+		public async Task NotifyJobStatusAsync_ShouldNotBroadcastToAllClients()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var jobType = "TestJob";
+			var status = JobStatus.Running;
+
+			// Act
+			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
+
+			// Assert - Should NOT send to All clients
+			_mockClients.Verify(
+				x => x.All,
+				Times.Never);
+		}
+
 		[Fact]
 		public async Task NotifyJobStatusAsync_ShouldIncludeJobTypeInUpdate()
 		{
@@ -94,13 +90,14 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					SignalRConstants.Methods.JobStatusUpdated,
 					It.Is<object[]>(o => o.Length == 1 && ((JobStatusUpdateDto)o[0]).JobType == jobType),
 					default),
 				Times.Once);
 		}
+
 		[Fact]
 		public async Task NotifyJobStatusAsync_ShouldIncludeStatusInUpdate()
 		{
@@ -113,7 +110,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
 					It.Is<object[]>(o => o.Length == 1 && ((JobStatusUpdateDto)o[0]).Status == status),
@@ -134,7 +131,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, status, errorMessage);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
 					It.Is<object[]>(o =>
@@ -156,7 +153,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
 					It.Is<object[]>(o =>
@@ -181,7 +178,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
 					It.Is<object[]>(o =>
@@ -222,7 +219,7 @@ namespace WebBoard.Tests
 			var status = JobStatus.Running;
 			var expectedException = new Exception("SignalR error");
 
-			_mockAllClientsProxy
+			_mockGroupClientsProxy
 				.Setup(x => x.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
 				.ThrowsAsync(expectedException);
 
@@ -248,7 +245,7 @@ namespace WebBoard.Tests
 			var jobType = "TestJob";
 			var status = JobStatus.Running;
 
-			_mockAllClientsProxy
+			_mockGroupClientsProxy
 				.Setup(x => x.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
 				.ThrowsAsync(new Exception("SignalR error"));
 
@@ -264,7 +261,31 @@ namespace WebBoard.Tests
 		#region NotifyJobProgressAsync Tests
 
 		[Fact]
-		public async Task NotifyJobProgressAsync_ShouldBroadcastToAllClients()
+		public async Task NotifyJobProgressAsync_ShouldBroadcastToSpecificJobGroup()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var progress = 50;
+			var expectedGroupName = $"job_{jobId}";
+
+			// Act
+			await _notifier.NotifyJobProgressAsync(jobId, progress);
+
+			// Assert
+			_mockClients.Verify(
+				x => x.Group(expectedGroupName),
+				Times.Once);
+
+			_mockGroupClientsProxy.Verify(
+				x => x.SendCoreAsync(
+					SignalRConstants.Methods.JobProgressUpdated,
+					It.Is<object[]>(o => o.Length == 1 && ((JobProgressUpdateDto)o[0]).JobId == jobId),
+					default),
+				Times.Once);
+		}
+
+		[Fact]
+		public async Task NotifyJobProgressAsync_ShouldNotBroadcastToAllClients()
 		{
 			// Arrange
 			var jobId = Guid.NewGuid();
@@ -274,12 +295,9 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobProgressAsync(jobId, progress);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
-				x => x.SendCoreAsync(
-					SignalRConstants.Methods.JobProgressUpdated,
-					It.Is<object[]>(o => o.Length == 1 && ((JobProgressUpdateDto)o[0]).JobId == jobId),
-					default),
-				Times.Once);
+			_mockClients.Verify(
+				x => x.All,
+				Times.Never);
 		}
 
 		[Theory]
@@ -297,7 +315,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobProgressAsync(jobId, progress);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					SignalRConstants.Methods.JobProgressUpdated,
 					It.IsAny<object[]>(),
@@ -336,7 +354,7 @@ namespace WebBoard.Tests
 			var progress = 50;
 			var expectedException = new Exception("SignalR error");
 
-			_mockAllClientsProxy
+			_mockGroupClientsProxy
 				.Setup(x => x.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
 				.ThrowsAsync(expectedException);
 
@@ -361,7 +379,7 @@ namespace WebBoard.Tests
 			var jobId = Guid.NewGuid();
 			var progress = 50;
 
-			_mockAllClientsProxy
+			_mockGroupClientsProxy
 				.Setup(x => x.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
 				.ThrowsAsync(new Exception("SignalR error"));
 
@@ -377,7 +395,32 @@ namespace WebBoard.Tests
 		#region NotifyReportGeneratedAsync Tests
 
 		[Fact]
-		public async Task NotifyReportGeneratedAsync_ShouldBroadcastToAllClients()
+		public async Task NotifyReportGeneratedAsync_ShouldBroadcastToSpecificJobGroup()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var reportId = Guid.NewGuid();
+			var fileName = "report.pdf";
+			var expectedGroupName = $"job_{jobId}";
+
+			// Act
+			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
+
+			// Assert
+			_mockClients.Verify(
+				x => x.Group(expectedGroupName),
+				Times.Once);
+
+			_mockGroupClientsProxy.Verify(
+				x => x.SendCoreAsync(
+					"ReportGenerated",
+					It.Is<object[]>(o => o.Length == 1),
+					default),
+				Times.Once);
+		}
+
+		[Fact]
+		public async Task NotifyReportGeneratedAsync_ShouldNotBroadcastToAllClients()
 		{
 			// Arrange
 			var jobId = Guid.NewGuid();
@@ -388,12 +431,9 @@ namespace WebBoard.Tests
 			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
-				x => x.SendCoreAsync(
-					"ReportGenerated",
-					It.Is<object[]>(o => o.Length == 1),
-					default),
-				Times.Once);
+			_mockClients.Verify(
+				x => x.All,
+				Times.Never);
 		}
 
 		[Fact]
@@ -408,7 +448,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
 					It.Is<object[]>(o =>
@@ -430,7 +470,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
 					It.Is<object[]>(o =>
@@ -452,7 +492,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
 					It.Is<object[]>(o =>
@@ -474,7 +514,7 @@ namespace WebBoard.Tests
 			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
 
 			// Assert
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
 					It.Is<object[]>(o =>
@@ -518,7 +558,7 @@ namespace WebBoard.Tests
 			var fileName = "report.pdf";
 			var expectedException = new Exception("SignalR error");
 
-			_mockAllClientsProxy
+			_mockGroupClientsProxy
 				.Setup(x => x.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
 				.ThrowsAsync(expectedException);
 
@@ -544,7 +584,7 @@ namespace WebBoard.Tests
 			var reportId = Guid.NewGuid();
 			var fileName = "report.pdf";
 
-			_mockAllClientsProxy
+			_mockGroupClientsProxy
 				.Setup(x => x.SendCoreAsync(It.IsAny<string>(), It.IsAny<object[]>(), default))
 				.ThrowsAsync(new Exception("SignalR error"));
 
@@ -766,21 +806,25 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobProgressAsync(jobId, 50);
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, JobStatus.Completed);
 
-			// Assert
-			_mockAllClientsProxy.Verify(
+			// Assert - Should send to group, not All clients
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
 					It.IsAny<object[]>(),
 					default),
-			Times.Exactly(3));
+				Times.Exactly(3));
 
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					SignalRConstants.Methods.JobProgressUpdated,
 					It.IsAny<object[]>(),
 					default),
 				Times.Once);
+
+			// Verify All clients was never called
+			_mockClients.Verify(x => x.All, Times.Never);
 		}
+
 		[Fact]
 		public async Task NotifyJobWithReport_ShouldSendBothStatusAndReportNotifications()
 		{
@@ -794,36 +838,43 @@ namespace WebBoard.Tests
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, JobStatus.Running);
 			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, fileName);
 
-			// Assert
-			_mockAllClientsProxy.Verify(
+			// Assert - Should send to group, not All clients
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"JobStatusUpdated",
 					It.IsAny<object[]>(),
 					default),
 				Times.Once);
 
-			_mockAllClientsProxy.Verify(
+			_mockGroupClientsProxy.Verify(
 				x => x.SendCoreAsync(
 					"ReportGenerated",
 					It.IsAny<object[]>(),
 					default),
 				Times.Once);
+
+			// Verify All clients was never called
+			_mockClients.Verify(x => x.All, Times.Never);
 		}
 
 		[Fact]
-		public async Task NotifyBothAllClientsAndGroup_ShouldSendToBoth()
+		public async Task AllNotificationMethods_ShouldOnlySendToJobGroup()
 		{
 			// Arrange
 			var jobId = Guid.NewGuid();
 			var jobType = "TestJob";
 			var status = JobStatus.Running;
+			var reportId = Guid.NewGuid();
 
 			// Act
 			await _notifier.NotifyJobStatusAsync(jobId, jobType, status);
+			await _notifier.NotifyJobProgressAsync(jobId, 50);
+			await _notifier.NotifyReportGeneratedAsync(jobId, reportId, "test.pdf");
+			await _notifier.NotifyJobGroupAsync(jobId, jobType, status);
 
-			// Assert - Should send to both All and Group
-			_mockClients.Verify(x => x.All, Times.AtLeastOnce);
-			_mockClients.Verify(x => x.Group($"job_{jobId}"), Times.AtLeastOnce);
+			// Assert - Should ONLY send to job group, NEVER to All clients
+			_mockClients.Verify(x => x.Group($"job_{jobId}"), Times.Exactly(4));
+			_mockClients.Verify(x => x.All, Times.Never);
 		}
 
 		#endregion
