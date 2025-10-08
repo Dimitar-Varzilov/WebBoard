@@ -2,9 +2,8 @@ using Microsoft.EntityFrameworkCore;
 using Quartz;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Data;
-using WebBoard.API.Services.Jobs;
 
-namespace WebBoard.API.Services
+namespace WebBoard.API.Services.Jobs
 {
 	public class JobStartupService(
 		IServiceProvider serviceProvider,
