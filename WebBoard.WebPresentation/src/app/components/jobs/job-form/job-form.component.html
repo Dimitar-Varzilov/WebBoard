@@ -1,1 +1,116 @@
-<p>job-form works!</p>
+<div
+  class="modal d-block"
+  tabindex="-1"
+  style="background-color: rgba(0, 0, 0, 0.5)"
+>
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title"><i class="fas fa-cog me-2"></i>Edit Job</h5>
+        <button type="button" class="btn-close" (click)="onCancel()"></button>
+      </div>
+
+      <form [formGroup]="jobForm" (ngSubmit)="onSubmit()">
+        <div class="modal-body">
+          <div class="alert alert-info">
+            <i class="fas fa-info-circle me-2"></i>
+            Only the scheduling options can be modified for queued jobs. Job
+            type and tasks are read-only.
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label for="jobType" class="form-label">Job Type</label>
+                <input
+                  type="text"
+                  id="jobType"
+                  class="form-control"
+                  formControlName="jobType"
+                  readonly
+                />
+                <small class="form-text text-muted">
+                  Job type cannot be changed
+                </small>
+              </div>
+            </div>
+
+            <div class="col-md-6">
+              <div class="mb-3">
+                <label class="form-label">Execution</label>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    id="runNow"
+                    [value]="true"
+                    formControlName="runImmediately"
+                  />
+                  <label class="form-check-label" for="runNow">
+                    Run Immediately
+                  </label>
+                </div>
+                <div class="form-check">
+                  <input
+                    class="form-check-input"
+                    type="radio"
+                    id="runLater"
+                    [value]="false"
+                    formControlName="runImmediately"
+                  />
+                  <label class="form-check-label" for="runLater">
+                    Schedule for Later
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="row" *ngIf="!jobForm.value.runImmediately">
+            <div class="col-md-12">
+              <div class="mb-3">
+                <label for="scheduledAt" class="form-label required"
+                  >Scheduled Time</label
+                >
+                <input
+                  type="datetime-local"
+                  id="scheduledAt"
+                  class="form-control"
+                  formControlName="scheduledAt"
+                  [class.is-invalid]="isFieldInvalid('scheduledAt')"
+                />
+                <div
+                  class="invalid-feedback"
+                  *ngIf="isFieldInvalid('scheduledAt')"
+                >
+                  Scheduled time is required
+                </div>
+                <small class="form-text text-muted">
+                  Select when the job should be executed
+                </small>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" (click)="onCancel()">
+            <i class="fas fa-times me-1"></i>Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            [disabled]="jobForm.invalid || saving"
+          >
+            <span
+              *ngIf="saving"
+              class="spinner-border spinner-border-sm me-2"
+            ></span>
+            <i *ngIf="!saving" class="fas fa-save me-1"></i>
+            {{ saving ? "Saving..." : "Update Job" }}
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>

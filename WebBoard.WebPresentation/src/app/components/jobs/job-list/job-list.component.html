@@ -82,7 +82,9 @@
     >
       <app-job-card
         [job]="job"
+        (edit)="editJob($event)"
         (view)="viewJob($event)"
+        (delete)="deleteJob($event)"
         (refresh)="refreshJobStatus($event)"
       >
       </app-job-card>
@@ -94,6 +96,18 @@
 <app-job-detail
   *ngIf="showJobDetail"
   [job]="selectedJob"
+  (edit)="editJob($event)"
+  (delete)="deleteJob($event)"
   (close)="onJobDetailClosed()"
 >
 </app-job-detail>
+
+<!-- Job Form Modal -->
+<app-job-form
+  *ngIf="showJobForm"
+  [job]="selectedJob"
+  [isEdit]="isEditMode"
+  (save)="onJobSaved($event)"
+  (cancel)="onJobFormCanceled()"
+>
+</app-job-form>

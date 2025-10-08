@@ -38,7 +38,9 @@ export class JobListComponent implements OnInit, OnDestroy {
 
   // Modal states
   showJobDetail = false;
+  showJobForm = false;
   selectedJob: JobDto | null = null;
+  isEditMode = false;
 
   // Track subscribed job IDs
   private subscribedJobIds: Set<string> = new Set();
@@ -268,6 +270,47 @@ export class JobListComponent implements OnInit, OnDestroy {
 
   onJobDetailClosed(): void {
     this.showJobDetail = false;
+    this.selectedJob = null;
+  }
+
+  editJob(job: JobDto): void {
+    this.selectedJob = job;
+    this.isEditMode = true;
+    this.showJobForm = true;
+  }
+
+  deleteJob(job: JobDto): void {
+    if (job.status !== JobStatus.Queued) {
+      alert('Only queued jobs can be deleted.');
+      return;
+    }
+
+    if (confirm(`Are you sure you want to delete the job "${job.jobType}"?`)) {
+      // Note: Backend doesn't have delete endpoint yet
+      alert(
+        'Delete job functionality will be implemented when backend endpoint is available.'
+      );
+      // TODO: Implement when backend adds DELETE /api/jobs/{id} endpoint
+      // this.jobService.deleteJob(job.id).subscribe({
+      //   next: () => {
+      //     this.loadJobs();
+      //   },
+      //   error: (error) => {
+      //     console.error('Error deleting job:', error);
+      //     alert('Failed to delete job. Please try again.');
+      //   },
+      // });
+    }
+  }
+
+  onJobSaved(job: JobDto): void {
+    this.showJobForm = false;
+    this.selectedJob = null;
+    this.loadJobs();
+  }
+
+  onJobFormCanceled(): void {
+    this.showJobForm = false;
     this.selectedJob = null;
   }
 

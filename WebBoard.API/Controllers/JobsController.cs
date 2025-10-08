@@ -123,6 +123,41 @@ namespace WebBoard.API.Controllers
 		}
 
 		/// <summary>
+		/// Update an existing job (only queued jobs can be updated)
+		/// </summary>
+		/// <param name="id">The unique identifier of the job to update</param>
+		/// <param name="updateJobRequest">The job update request</param>
+		/// <returns>The updated job</returns>
+		[HttpPut("{id:guid}")]
+		[ProducesResponseType(typeof(JobDto), 200)]
+		[ProducesResponseType(400)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(409)]
+		public async Task<IActionResult> UpdateJob(Guid id, [FromBody] UpdateJobRequestDto updateJobRequest)
+		{
+			if (!ModelState.IsValid)
+			{
+				return BadRequest(ModelState);
+			}
+
+			try
+			{
+				var job = await jobService.UpdateJobAsync(id, updateJobRequest);
+				return job == null ? NotFound() : Ok(job);
+			}
+			catch (InvalidOperationException ex)
+			{
+				// Return 409 Conflict for non-queued jobs
+				return Conflict(new { message = ex.Message });
+			}
+			catch (ArgumentException ex)
+			{
+				// Job type validation error or task selection error
+				return BadRequest(new { message = ex.Message });
+			}
+		}
+
+		/// <summary>
 		/// Helper method to check if a task is assigned to a job
 		/// Checks if the task has a JobId indicating it's already assigned
 		/// </summary>

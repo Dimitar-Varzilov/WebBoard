@@ -70,6 +70,14 @@
 
       <div class="btn-group btn-group-sm">
         <button
+          class="btn btn-outline-primary btn-sm"
+          (click)="onEdit()"
+          [title]="canEdit() ? 'Edit job' : 'Only queued jobs can be edited'"
+          [disabled]="!canEdit()"
+        >
+          <i class="fas fa-edit"></i>
+        </button>
+        <button
           *ngIf="job.hasReport"
           class="btn btn-outline-success btn-sm"
           (click)="onDownloadReport()"
@@ -84,6 +92,14 @@
           [title]="'View job details'"
         >
           <i class="fas fa-eye"></i>
+        </button>
+        <button
+          class="btn btn-outline-danger btn-sm"
+          (click)="onDelete()"
+          [title]="canDelete() ? 'Delete job' : 'Only queued jobs can be deleted'"
+          [disabled]="!canDelete()"
+        >
+          <i class="fas fa-trash"></i>
         </button>
         <button
           class="btn btn-outline-secondary btn-sm"

@@ -92,7 +92,9 @@ namespace WebBoard.API.Services.Jobs
 			// 4. Validate scheduling time is not in the past
 			if (!createJobRequest.RunImmediately && createJobRequest.ScheduledAt.HasValue)
 			{
-				if (createJobRequest.ScheduledAt.Value <= DateTimeOffset.UtcNow)
+				// Convert to UTC for validation (if not already)
+				var scheduledAtUtc = createJobRequest.ScheduledAt.Value.ToUniversalTime();
+				if (scheduledAtUtc <= DateTimeOffset.UtcNow)
 				{
 					throw new ArgumentException("Scheduled time cannot be in the past.");
 				}
@@ -101,7 +103,11 @@ namespace WebBoard.API.Services.Jobs
 			// 5. Validate business rules (e.g., pending tasks requirement)
 			await ValidateJobCreationRequirementsAsync(createJobRequest.JobType, createJobRequest.TaskIds);
 
-			var scheduledAt = createJobRequest.RunImmediately ? null : createJobRequest.ScheduledAt;
+			// ? FIX: Convert ScheduledAt to UTC to prevent PostgreSQL timezone error
+			// PostgreSQL only accepts DateTimeOffset with UTC offset (00:00:00)
+			var scheduledAt = createJobRequest.RunImmediately 
+				? null 
+				: createJobRequest.ScheduledAt?.ToUniversalTime();
 
 			var job = new Job(
 				Guid.NewGuid(),
@@ -122,6 +128,90 @@ namespace WebBoard.API.Services.Jobs
 			await jobSchedulingService.ScheduleJobAsync(job);
 
 			return new JobDto(job.Id, job.JobType, job.Status, job.CreatedAt, job.ScheduledAt, false, null, null, createJobRequest.TaskIds);
+		}
+
+		public async Task<JobDto?> UpdateJobAsync(Guid id, UpdateJobRequestDto updateJobRequest)
+		{
+			var job = await db.Jobs
+				.Include(j => j.Tasks)
+				.FirstOrDefaultAsync(j => j.Id == id);
+
+			if (job == null)
+			{
+				return null;
+			}
+
+			// ? Prevent editing non-queued jobs (Running, Completed, Failed)
+			if (job.Status != JobStatus.Queued)
+			{
+				throw new InvalidOperationException($"Cannot update a {job.Status.ToString().ToLower()} job. Only queued jobs can be edited.");
+			}
+
+			// 1. Validate job type exists
+			if (!jobTypeRegistry.IsValidJobType(updateJobRequest.JobType))
+			{
+				throw new ArgumentException($"Invalid job type: '{updateJobRequest.JobType}'. Available types: {string.Join(", ", jobTypeRegistry.GetAllJobTypes())}");
+			}
+
+			// 2. Validate task selection
+			if (updateJobRequest.TaskIds == null || !updateJobRequest.TaskIds.Any())
+			{
+				throw new ArgumentException("At least one task must be selected for job processing.");
+			}
+
+			// 3. Validate selected tasks exist and have correct status
+			await ValidateSelectedTasksAsync(updateJobRequest.TaskIds, updateJobRequest.JobType, job.Id);
+
+			// 4. Validate scheduling time is not in the past
+			if (!updateJobRequest.RunImmediately && updateJobRequest.ScheduledAt.HasValue)
+			{
+				// Convert to UTC for validation (if not already)
+				var scheduledAtUtc = updateJobRequest.ScheduledAt.Value.ToUniversalTime();
+				if (scheduledAtUtc <= DateTimeOffset.UtcNow)
+				{
+					throw new ArgumentException("Scheduled time cannot be in the past.");
+				}
+			}
+
+			// 5. Validate business rules
+			await ValidateJobCreationRequirementsAsync(updateJobRequest.JobType, updateJobRequest.TaskIds);
+
+			// ? FIX: Convert ScheduledAt to UTC to prevent PostgreSQL timezone error
+			// PostgreSQL only accepts DateTimeOffset with UTC offset (00:00:00)
+			var scheduledAt = updateJobRequest.RunImmediately 
+				? null 
+				: updateJobRequest.ScheduledAt?.ToUniversalTime();
+
+			// Unassign previous tasks from this job
+			await UnassignTasksFromJobAsync(job.Id);
+
+			// Update job properties
+			var updatedJob = job with
+			{
+				JobType = updateJobRequest.JobType,
+				ScheduledAt = scheduledAt
+			};
+
+			db.Entry(job).CurrentValues.SetValues(updatedJob);
+
+			// Assign new tasks to the job
+			await AssignTasksToJobAsync(job.Id, updateJobRequest.TaskIds);
+
+			await db.SaveChangesAsync();
+
+			// Reschedule the job with new parameters (pass full job object)
+			await jobSchedulingService.RescheduleJobAsync(updatedJob);
+
+			return new JobDto(
+				updatedJob.Id,
+				updatedJob.JobType,
+				updatedJob.Status,
+				updatedJob.CreatedAt,
+				updatedJob.ScheduledAt,
+				false,
+				null,
+				null,
+				updateJobRequest.TaskIds);
 		}
 
 		public async Task<JobDto?> GetJobByIdAsync(Guid id)
@@ -149,8 +239,9 @@ namespace WebBoard.API.Services.Jobs
 		/// </summary>
 		/// <param name="taskIds">Selected task IDs</param>
 		/// <param name="jobType">Job type being created</param>
+		/// <param name="excludeJobId">Job ID to exclude from job assignment check (for updates)</param>
 		/// <exception cref="ArgumentException">Thrown when validation fails</exception>
-		private async Task ValidateSelectedTasksAsync(IEnumerable<Guid> taskIds, string jobType)
+		private async Task ValidateSelectedTasksAsync(IEnumerable<Guid> taskIds, string jobType, Guid? excludeJobId = null)
 		{
 			var taskIdsList = taskIds.ToList();
 
@@ -176,8 +267,11 @@ namespace WebBoard.API.Services.Jobs
 				}
 			}
 
-			// Check if any selected tasks are already assigned to another job
-			var tasksWithJobs = existingTasks.Where(t => t.JobId.HasValue).ToList();
+			// Check if any selected tasks are already assigned to another job (excluding current job when updating)
+			var tasksWithJobs = excludeJobId.HasValue
+				? existingTasks.Where(t => t.JobId.HasValue && t.JobId != excludeJobId).ToList()
+				: existingTasks.Where(t => t.JobId.HasValue).ToList();
+
 			if (tasksWithJobs.Count != 0)
 			{
 				var taskTitles = string.Join(", ", tasksWithJobs.Select(t => $"'{t.Title}'"));
@@ -199,6 +293,23 @@ namespace WebBoard.API.Services.Jobs
 			foreach (var task in tasks)
 			{
 				var updatedTask = task with { JobId = jobId };
+				db.Entry(task).CurrentValues.SetValues(updatedTask);
+			}
+		}
+
+		/// <summary>
+		/// Unassigns all tasks from the job
+		/// </summary>
+		/// <param name="jobId">Job ID</param>
+		private async Task UnassignTasksFromJobAsync(Guid jobId)
+		{
+			var tasks = await db.Tasks
+				.Where(t => t.JobId == jobId)
+				.ToListAsync();
+
+			foreach (var task in tasks)
+			{
+				var updatedTask = task with { JobId = null };
 				db.Entry(task).CurrentValues.SetValues(updatedTask);
 			}
 		}

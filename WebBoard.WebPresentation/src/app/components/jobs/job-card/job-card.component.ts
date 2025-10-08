@@ -13,12 +13,16 @@ import * as signalR from '@microsoft/signalr';
 })
 export class JobCardComponent {
   @Input() job!: JobDto;
+  @Output() edit = new EventEmitter<JobDto>();
   @Output() view = new EventEmitter<JobDto>();
+  @Output() delete = new EventEmitter<JobDto>();
   @Output() refresh = new EventEmitter<JobDto>();
 
   isRefreshing = false;
   isDownloading = false;
   isConnected$: Observable<boolean>;
+
+  JobStatus = JobStatus;
 
   constructor(
     private reportService: ReportService,
@@ -89,6 +93,31 @@ export class JobCardComponent {
     }
   }
 
+  /**
+   * Check if job is in a non-editable state (not queued)
+   */
+  isJobNonEditable(): boolean {
+    return this.job.status !== JobStatus.Queued;
+  }
+
+  /**
+   * Check if job can be edited (only queued jobs can be edited)
+   */
+  canEdit(): boolean {
+    return this.job.status === JobStatus.Queued;
+  }
+
+  /**
+   * Check if job can be deleted (only queued jobs can be deleted)
+   */
+  canDelete(): boolean {
+    return this.job.status === JobStatus.Queued;
+  }
+
+  onEdit(): void {
+    this.edit.emit(this.job);
+  }
+
   onView(): void {
     this.view.emit(this.job);
   }
@@ -101,6 +130,10 @@ export class JobCardComponent {
     setTimeout(() => {
       this.isRefreshing = false;
     }, TIMING.REFRESH_SPINNER_DURATION);
+  }
+
+  onDelete(): void {
+    this.delete.emit(this.job);
   }
 
   onDownloadReport(): void {

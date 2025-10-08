@@ -42,6 +42,42 @@ namespace WebBoard.API.Services.Jobs
 			}
 		}
 
+		public async Task RescheduleJobAsync(Job job)
+		{
+			try
+			{
+				var jobKey = new JobKey(job.Id.ToString());
+				var oldTriggerKey = new TriggerKey($"{job.Id}-trigger");
+
+				// Check if job exists in scheduler
+				var jobExists = await scheduler.CheckExists(jobKey);
+
+				if (jobExists)
+				{
+					// Remove existing job and its triggers (job type might have changed)
+					logger.LogInformation("Job {JobId} exists in scheduler, removing it before rescheduling", job.Id);
+					await scheduler.DeleteJob(jobKey);
+				}
+
+				// Recreate job detail (handles job type changes)
+				var jobDetail = CreateJobDetail(job.Id, job.JobType);
+
+				// Create new trigger with updated schedule
+				var newTrigger = CreateJobTrigger(job.Id, job.ScheduledAt);
+
+				// Schedule the job with the new job detail and trigger
+				await scheduler.ScheduleJob(jobDetail, newTrigger);
+
+				logger.LogInformation("Rescheduled job {JobId} of type {JobType} to run at {ScheduledTime}",
+					job.Id, job.JobType, job.ScheduledAt?.ToString() ?? "immediately");
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Error rescheduling job {JobId}", job.Id);
+				throw;
+			}
+		}
+
 		/// <summary>
 		/// Creates a Quartz JobDetail for the specified job
 		/// </summary>
@@ -73,18 +109,26 @@ namespace WebBoard.API.Services.Jobs
 		/// </summary>
 		/// <param name="jobId">The unique identifier for the job</param>
 		/// <param name="scheduledAt">The scheduled execution time, or null to run immediately</param>
+		/// <param name="jobKey">Optional job key to associate with the trigger (used for rescheduling)</param>
 		/// <returns>A configured ITrigger instance</returns>
-		private ITrigger CreateJobTrigger(Guid jobId, DateTimeOffset? scheduledAt)
+		private ITrigger CreateJobTrigger(Guid jobId, DateTimeOffset? scheduledAt, JobKey? jobKey = null)
 		{
 			var triggerKey = new TriggerKey($"{jobId}-trigger");
+
+			// Build trigger with optional job key association
+			var triggerBuilder = TriggerBuilder.Create()
+				.WithIdentity(triggerKey);
+
+			// If jobKey is provided, associate trigger with the job (for rescheduling)
+			if (jobKey != null)
+			{
+				triggerBuilder.ForJob(jobKey);
+			}
 
 			// Run immediately if no scheduled time
 			if (scheduledAt == null)
 			{
-				return TriggerBuilder.Create()
-					.WithIdentity(triggerKey)
-					.StartNow()
-					.Build();
+				return triggerBuilder.StartNow().Build();
 			}
 
 			// Check if scheduled time is in the past
@@ -93,17 +137,11 @@ namespace WebBoard.API.Services.Jobs
 				logger.LogWarning("Job {JobId} scheduled time {ScheduledTime} is in the past, scheduling to run immediately",
 					jobId, scheduledAt.Value);
 
-				return TriggerBuilder.Create()
-					.WithIdentity(triggerKey)
-					.StartNow()
-					.Build();
+				return triggerBuilder.StartNow().Build();
 			}
 
 			// Schedule for specific time
-			return TriggerBuilder.Create()
-				.WithIdentity(triggerKey)
-				.StartAt(scheduledAt.Value)
-				.Build();
+			return triggerBuilder.StartAt(scheduledAt.Value).Build();
 		}
 	}
 }

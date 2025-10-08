@@ -49,6 +49,13 @@ export interface CreateJobRequestDto {
   taskIds: string[]; // Required: selected task IDs
 }
 
+export interface UpdateJobRequestDto {
+  jobType: string;
+  runImmediately: boolean;
+  scheduledAt?: string; // ISO 8601 string with timezone info
+  taskIds: string[]; // Required: selected task IDs
+}
+
 /**
  * Available task for job creation selection
  */

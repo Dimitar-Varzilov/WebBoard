@@ -18,6 +18,8 @@ import { DateTimeUtils } from '../../../utils/datetime.utils';
 })
 export class JobDetailComponent implements OnDestroy {
   @Input() job?: JobDto | null;
+  @Output() edit = new EventEmitter<JobDto>();
+  @Output() delete = new EventEmitter<JobDto>();
   @Output() close = new EventEmitter<void>();
 
   JobStatus = JobStatus;
@@ -146,6 +148,44 @@ export class JobDetailComponent implements OnDestroy {
           this.isDownloading = false;
         },
       });
+  }
+
+  /**
+   * Check if job is in a non-editable state (not queued)
+   */
+  isJobNonEditable(): boolean {
+    return this.job?.status !== JobStatus.Queued;
+  }
+
+  /**
+   * Check if job can be edited (only queued jobs can be edited)
+   */
+  canEdit(): boolean {
+    if (!this.job) return false;
+    return this.job.status === JobStatus.Queued;
+  }
+
+  /**
+   * Check if job can be deleted (only queued jobs can be deleted)
+   */
+  canDelete(): boolean {
+    if (!this.job) return false;
+    return this.job.status === JobStatus.Queued;
+  }
+
+  onEdit(): void {
+    if (!this.job || !this.canEdit()) {
+      return;
+    }
+    this.close.emit(); // Close detail modal first
+    this.edit.emit(this.job); // Then emit edit event
+  }
+
+  onDelete(): void {
+    if (!this.job || !this.canDelete()) {
+      return;
+    }
+    this.delete.emit(this.job);
   }
 
   onClose(): void {

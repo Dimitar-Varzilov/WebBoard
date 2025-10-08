@@ -6,6 +6,7 @@ import {
   JobDto,
   JobDtoRaw,
   CreateJobRequestDto,
+  UpdateJobRequestDto,
   AvailableTaskDto,
   PagedResult,
   JobQueryParameters,
@@ -54,6 +55,16 @@ export class JobService {
   createJob(createJobRequest: CreateJobRequestDto): Observable<JobDto> {
     return this.http
       .post<JobDtoRaw>(JOBS_ENDPOINTS.CREATE, createJobRequest)
+      .pipe(map((rawJob) => JobModelFactory.fromApiResponse(rawJob)));
+  }
+
+  /**
+   * Update job (only queued jobs can be updated)
+   * Backend: PUT /api/jobs/{id}
+   */
+  updateJob(id: string, updateJobRequest: UpdateJobRequestDto): Observable<JobDto> {
+    return this.http
+      .put<JobDtoRaw>(JOBS_ENDPOINTS.UPDATE(id), updateJobRequest)
       .pipe(map((rawJob) => JobModelFactory.fromApiResponse(rawJob)));
   }
 
