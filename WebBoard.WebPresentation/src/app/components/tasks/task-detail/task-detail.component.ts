@@ -65,7 +65,8 @@ export class TaskDetailComponent {
     if (!this.task || !this.canEdit()) {
       return;
     }
-    this.edit.emit(this.task);
+    this.close.emit(); // Close detail modal first
+    this.edit.emit(this.task); // Then emit edit event
   }
 
   onDelete(): void {
