@@ -185,7 +185,8 @@ export class JobDetailComponent implements OnDestroy {
     if (!this.job || !this.canDelete()) {
       return;
     }
-    this.delete.emit(this.job);
+    this.close.emit(); // Close detail modal first
+    this.delete.emit(this.job); // Then emit delete event
   }
 
   onClose(): void {

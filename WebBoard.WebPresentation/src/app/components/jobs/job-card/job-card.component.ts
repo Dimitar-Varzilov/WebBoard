@@ -28,9 +28,9 @@ export class JobCardComponent {
     private reportService: ReportService,
     private signalRService: SignalRService
   ) {
-    this.isConnected$ = this.signalRService.getConnectionState().pipe(
-      map((state) => state === signalR.HubConnectionState.Connected)
-    );
+    this.isConnected$ = this.signalRService
+      .getConnectionState()
+      .pipe(map((state) => state === signalR.HubConnectionState.Connected));
   }
 
   getStatusClass(status: JobStatus): string {

@@ -9,5 +9,6 @@ namespace WebBoard.API.Services.Jobs
 		Task<JobDto?> GetJobByIdAsync(Guid id);
 		Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest);
 		Task<JobDto?> UpdateJobAsync(Guid id, UpdateJobRequestDto updateJobRequest);
+		Task<bool> DeleteJobAsync(Guid id);
 	}
 }

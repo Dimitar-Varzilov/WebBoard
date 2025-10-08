@@ -214,6 +214,37 @@ namespace WebBoard.API.Services.Jobs
 				updateJobRequest.TaskIds);
 		}
 
+		public async Task<bool> DeleteJobAsync(Guid id)
+		{
+			var job = await db.Jobs
+				.Include(j => j.Tasks)
+				.FirstOrDefaultAsync(j => j.Id == id);
+
+			if (job == null)
+			{
+				return false;
+			}
+
+			// ? Prevent deleting non-queued jobs (Running, Completed, Failed)
+			if (job.Status != JobStatus.Queued)
+			{
+				throw new InvalidOperationException($"Cannot delete a {job.Status.ToString().ToLower()} job. Only queued jobs can be deleted.");
+			}
+
+			// Unassign all tasks from this job
+			await UnassignTasksFromJobAsync(job.Id);
+
+			// Remove the job from database
+			db.Jobs.Remove(job);
+
+			await db.SaveChangesAsync();
+
+			// Remove the job from Quartz scheduler
+			await jobSchedulingService.UnscheduleJobAsync(job.Id);
+
+			return true;
+		}
+
 		public async Task<JobDto?> GetJobByIdAsync(Guid id)
 		{
 			var job = await db.Jobs

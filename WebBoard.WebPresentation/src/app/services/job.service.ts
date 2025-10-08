@@ -69,6 +69,14 @@ export class JobService {
   }
 
   /**
+   * Delete job (only queued jobs can be deleted)
+   * Backend: DELETE /api/jobs/{id}
+   */
+  deleteJob(id: string): Observable<void> {
+    return this.http.delete<void>(JOBS_ENDPOINTS.DELETE(id));
+  }
+
+  /**
    * Get pending tasks count
    * Backend: GET /api/jobs/validation/pending-tasks-count
    */

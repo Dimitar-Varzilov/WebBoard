@@ -158,6 +158,27 @@ namespace WebBoard.API.Controllers
 		}
 
 		/// <summary>
+		/// Delete a job (only queued jobs can be deleted)
+		/// </summary>
+		[HttpDelete("{id:guid}")]
+		[ProducesResponseType(204)]
+		[ProducesResponseType(404)]
+		[ProducesResponseType(409)]
+		public async Task<IActionResult> DeleteJob(Guid id)
+		{
+			try
+			{
+				var deleted = await jobService.DeleteJobAsync(id);
+				return deleted ? NoContent() : NotFound();
+			}
+			catch (InvalidOperationException ex)
+			{
+				// Return 409 Conflict for non-queued jobs
+				return Conflict(new { message = ex.Message });
+			}
+		}
+
+		/// <summary>
 		/// Helper method to check if a task is assigned to a job
 		/// Checks if the task has a JobId indicating it's already assigned
 		/// </summary>

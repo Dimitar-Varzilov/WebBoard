@@ -6,5 +6,6 @@ namespace WebBoard.API.Services.Jobs
 	{
 		Task ScheduleJobAsync(Job job);
 		Task RescheduleJobAsync(Job job);
+		Task UnscheduleJobAsync(Guid jobId);
 	}
 }

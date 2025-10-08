@@ -78,6 +78,33 @@ namespace WebBoard.API.Services.Jobs
 			}
 		}
 
+		public async Task UnscheduleJobAsync(Guid jobId)
+		{
+			try
+			{
+				var jobKey = new JobKey(jobId.ToString());
+
+				// Check if job exists in scheduler
+				var jobExists = await scheduler.CheckExists(jobKey);
+
+				if (jobExists)
+				{
+					// Delete the job (this also removes all associated triggers)
+					await scheduler.DeleteJob(jobKey);
+					logger.LogInformation("Unscheduled and removed job {JobId} from scheduler", jobId);
+				}
+				else
+				{
+					logger.LogWarning("Job {JobId} does not exist in scheduler, cannot unschedule", jobId);
+				}
+			}
+			catch (Exception ex)
+			{
+				logger.LogError(ex, "Error unscheduling job {JobId}", jobId);
+				throw;
+			}
+		}
+
 		/// <summary>
 		/// Creates a Quartz JobDetail for the specified job
 		/// </summary>

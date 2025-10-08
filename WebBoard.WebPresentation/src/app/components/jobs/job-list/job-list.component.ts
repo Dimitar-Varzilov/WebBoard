@@ -286,20 +286,25 @@ export class JobListComponent implements OnInit, OnDestroy {
     }
 
     if (confirm(`Are you sure you want to delete the job "${job.jobType}"?`)) {
-      // Note: Backend doesn't have delete endpoint yet
-      alert(
-        'Delete job functionality will be implemented when backend endpoint is available.'
-      );
-      // TODO: Implement when backend adds DELETE /api/jobs/{id} endpoint
-      // this.jobService.deleteJob(job.id).subscribe({
-      //   next: () => {
-      //     this.loadJobs();
-      //   },
-      //   error: (error) => {
-      //     console.error('Error deleting job:', error);
-      //     alert('Failed to delete job. Please try again.');
-      //   },
-      // });
+      this.jobService
+        .deleteJob(job.id)
+        .pipe(takeUntil(this.destroy$))
+        .subscribe({
+          next: () => {
+            this.loadJobs();
+          },
+          error: (error) => {
+            console.error('Error deleting job:', error);
+            if (error.status === 409 || error.status === 400) {
+              alert(
+                error.error?.message ||
+                  'Cannot delete a non-queued job. Only queued jobs can be deleted.'
+              );
+            } else {
+              alert('Failed to delete job. Please try again.');
+            }
+          },
+        });
     }
   }
 

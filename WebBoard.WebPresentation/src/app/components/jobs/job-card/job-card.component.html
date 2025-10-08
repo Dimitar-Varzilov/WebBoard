@@ -1,15 +1,23 @@
-<div class="card h-100 job-card" [class.border-warning]="job.status === 1" [class.border-success]="job.status === 2">
+<div
+  class="card h-100 job-card"
+  [class.border-warning]="job.status === 1"
+  [class.border-success]="job.status === 2"
+>
   <!-- SignalR Connection Indicator -->
   <div class="position-absolute top-0 end-0 p-2">
-    <i *ngIf="isConnected$ | async" 
-       class="fas fa-circle text-success pulse" 
-       title="Real-time updates active" 
-       style="font-size: 8px;">
+    <i
+      *ngIf="isConnected$ | async"
+      class="fas fa-circle text-success pulse"
+      title="Real-time updates active"
+      style="font-size: 8px"
+    >
     </i>
-    <i *ngIf="!(isConnected$ | async)" 
-       class="fas fa-circle text-muted" 
-       title="Real-time updates inactive" 
-       style="font-size: 8px;">
+    <i
+      *ngIf="!(isConnected$ | async)"
+      class="fas fa-circle text-muted"
+      title="Real-time updates inactive"
+      style="font-size: 8px"
+    >
     </i>
   </div>
 
@@ -84,7 +92,10 @@
           [disabled]="isDownloading"
           [title]="'Download report'"
         >
-          <i class="fas" [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'"></i>
+          <i
+            class="fas"
+            [ngClass]="isDownloading ? 'fa-spinner fa-spin' : 'fa-download'"
+          ></i>
         </button>
         <button
           class="btn btn-outline-info btn-sm"
@@ -96,7 +107,9 @@
         <button
           class="btn btn-outline-danger btn-sm"
           (click)="onDelete()"
-          [title]="canDelete() ? 'Delete job' : 'Only queued jobs can be deleted'"
+          [title]="
+            canDelete() ? 'Delete job' : 'Only queued jobs can be deleted'
+          "
           [disabled]="!canDelete()"
         >
           <i class="fas fa-trash"></i>
