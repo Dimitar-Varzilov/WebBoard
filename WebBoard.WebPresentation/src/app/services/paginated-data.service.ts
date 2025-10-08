@@ -272,11 +272,16 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
    * Clear search and filters
    */
   clearFilters(reload: boolean = false): void {
+    // Only keep pageSize, sortBy, and sortDirection from current params
+    // Reset everything else to defaults and clear all filters
     const clearedParams: TParams = {
-      ...this.currentState.parameters,
-      searchTerm: undefined,
+      ...this.defaultParams,
+      pageSize: this.currentState.parameters.pageSize,
+      sortBy: this.currentState.parameters.sortBy,
+      sortDirection: this.currentState.parameters.sortDirection,
       pageNumber: 1,
-    };
+      searchTerm: undefined,
+    } as TParams;
     this.setState({ parameters: clearedParams });
     if (reload) {
       this.load();
