@@ -40,6 +40,10 @@
         <i class="fas fa-unlock me-1"></i>
         Available for jobs
       </small>
+      <small *ngIf="isTaskCompleted()" class="text-success d-block">
+        <i class="fas fa-lock me-1"></i>
+        Read-only (Completed)
+      </small>
     </div>
 
     <div class="d-flex justify-content-between align-items-center">
@@ -52,8 +56,8 @@
         <button
           class="btn btn-outline-primary btn-sm"
           (click)="onEdit()"
-          [title]="'Edit task'"
-          [disabled]="task.isAssignedToJob"
+          [title]="canEdit() ? 'Edit task' : isTaskCompleted() ? 'Cannot edit completed task' : 'Cannot edit task assigned to job'"
+          [disabled]="!canEdit()"
         >
           <i class="fas fa-edit"></i>
         </button>
@@ -67,8 +71,8 @@
         <button
           class="btn btn-outline-danger btn-sm"
           (click)="onDelete()"
-          [title]="'Delete task'"
-          [disabled]="task.isAssignedToJob"
+          [title]="canDelete() ? 'Delete task' : isTaskCompleted() ? 'Cannot delete completed task' : 'Cannot delete task assigned to job'"
+          [disabled]="!canDelete()"
         >
           <i class="fas fa-trash"></i>
         </button>

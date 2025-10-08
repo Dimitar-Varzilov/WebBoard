@@ -35,6 +35,12 @@ namespace WebBoard.API.Services.Tasks
 				return false;
 			}
 
+			// Prevent deletion of completed tasks
+			if (task.Status == TaskItemStatus.Completed)
+			{
+				throw new InvalidOperationException("Cannot delete a completed task. Completed tasks are read-only.");
+			}
+
 			db.Tasks.Remove(task);
 			await db.SaveChangesAsync();
 			return true;
@@ -121,6 +127,12 @@ namespace WebBoard.API.Services.Tasks
 			if (task == null)
 			{
 				return null;
+			}
+
+			// Prevent editing completed tasks
+			if (task.Status == TaskItemStatus.Completed)
+			{
+				throw new InvalidOperationException("Cannot update a completed task. Completed tasks are read-only.");
 			}
 
 			var updatedTask = task with

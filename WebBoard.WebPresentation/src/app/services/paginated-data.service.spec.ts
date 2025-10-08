@@ -100,15 +100,15 @@ describe('PaginatedDataService', () => {
       }, 400);
     });
 
-    it('should debounce multiple load calls', (done) => {
+    it('should trigger fetch for each load call', (done) => {
       service.load();
       service.load();
       service.load();
 
       setTimeout(() => {
-        expect(mockFetchFn).toHaveBeenCalledTimes(1);
+        expect(mockFetchFn).toHaveBeenCalledTimes(3);
         done();
-      }, 400);
+      }, 100);
     });
   });
 

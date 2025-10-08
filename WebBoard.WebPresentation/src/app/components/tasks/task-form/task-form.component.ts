@@ -31,6 +31,14 @@ export class TaskFormComponent implements OnInit {
 
   private initializeForm(): void {
     if (this.isEdit && this.task) {
+      // Check if task is completed (read-only)
+      if (this.task.status === TaskItemStatus.Completed) {
+        // Show alert and emit cancel
+        alert('Cannot edit a completed task. Completed tasks are read-only.');
+        this.cancel.emit();
+        return;
+      }
+
       // Edit mode - include status field
       this.taskForm = this.fb.group({
         title: [
@@ -96,7 +104,13 @@ export class TaskFormComponent implements OnInit {
           error: (error) => {
             console.error('Error updating task:', error);
             this.saving = false;
-            this.handleError(error, 'update');
+            if (error.status === 409) {
+              // Conflict - task is completed or cannot be updated
+              alert(error.error?.message || 'Cannot update a completed task. Completed tasks are read-only.');
+              this.cancel.emit();
+            } else {
+              this.handleError(error, 'update');
+            }
           },
         });
       } else {

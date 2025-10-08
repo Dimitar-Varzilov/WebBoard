@@ -42,11 +42,16 @@
                   <code class="small">{{ task.id }}</code>
                 </div>
 
-                <div class="mb-0">
+                <div class="mb-3">
                   <small class="text-muted d-block">Created</small>
                   <span class="small">{{
                     task.createdAt | date : "medium"
                   }}</span>
+                </div>
+
+                <div *ngIf="isTaskCompleted()" class="alert alert-info mb-0">
+                  <i class="fas fa-lock me-1"></i>
+                  <small>This task is <strong>read-only</strong> and cannot be edited or deleted.</small>
                 </div>
               </div>
             </div>
@@ -58,10 +63,22 @@
         <button type="button" class="btn btn-secondary" (click)="onClose()">
           <i class="fas fa-times me-1"></i>Close
         </button>
-        <button type="button" class="btn btn-warning" (click)="onEdit()">
+        <button 
+          type="button" 
+          class="btn btn-warning" 
+          (click)="onEdit()"
+          [disabled]="!canEdit()"
+          [title]="canEdit() ? 'Edit task' : 'Cannot edit completed task'"
+        >
           <i class="fas fa-edit me-1"></i>Edit Task
         </button>
-        <button type="button" class="btn btn-danger" (click)="onDelete()">
+        <button 
+          type="button" 
+          class="btn btn-danger" 
+          (click)="onDelete()"
+          [disabled]="!canDelete()"
+          [title]="canDelete() ? 'Delete task' : 'Cannot delete completed task'"
+        >
           <i class="fas fa-trash me-1"></i>Delete Task
         </button>
       </div>

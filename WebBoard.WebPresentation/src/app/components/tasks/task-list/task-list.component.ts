@@ -191,6 +191,12 @@ export class TaskListComponent implements OnInit, OnDestroy {
   }
 
   editTask(task: TaskDto): void {
+    // Prevent editing completed tasks
+    if (task.status === TaskItemStatus.Completed) {
+      alert('Cannot edit a completed task. Completed tasks are read-only.');
+      return;
+    }
+
     this.selectedTask = task;
     this.isEditMode = true;
     this.showTaskForm = true;
@@ -202,6 +208,12 @@ export class TaskListComponent implements OnInit, OnDestroy {
   }
 
   deleteTask(task: TaskDto): void {
+    // Prevent deleting completed tasks
+    if (task.status === TaskItemStatus.Completed) {
+      alert('Cannot delete a completed task. Completed tasks are read-only.');
+      return;
+    }
+
     if (confirm(`Are you sure you want to delete the task "${task.title}"?`)) {
       this.taskService
         .deleteTask(task.id)
@@ -212,7 +224,15 @@ export class TaskListComponent implements OnInit, OnDestroy {
           },
           error: (error) => {
             console.error('Error deleting task:', error);
-            alert('Failed to delete task. Please try again.');
+            if (error.status === 409) {
+              // Conflict - task is completed
+              alert(
+                error.error?.message ||
+                  'Cannot delete a completed task. Completed tasks are read-only.'
+              );
+            } else {
+              alert('Failed to delete task. Please try again.');
+            }
           },
         });
     }

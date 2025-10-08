@@ -53,6 +53,27 @@ export class TaskCardComponent {
     }
   }
 
+  /**
+   * Check if task is completed (read-only)
+   */
+  isTaskCompleted(): boolean {
+    return this.task.status === TaskItemStatus.Completed;
+  }
+
+  /**
+   * Check if task can be edited
+   */
+  canEdit(): boolean {
+    return !this.task.isAssignedToJob && !this.isTaskCompleted();
+  }
+
+  /**
+   * Check if task can be deleted
+   */
+  canDelete(): boolean {
+    return !this.task.isAssignedToJob && !this.isTaskCompleted();
+  }
+
   onEdit(): void {
     this.edit.emit(this.task);
   }

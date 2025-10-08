@@ -85,6 +85,7 @@ describe('TaskListComponent', () => {
       'setPage',
       'setPageSize',
       'setSort',
+      'clearFilters',
       'destroy',
     ]);
 
@@ -228,10 +229,7 @@ describe('TaskListComponent', () => {
 
       expect(component.searchText).toBe('');
       expect(component.statusFilter).toBe('');
-      expect(mockPaginationService.updateParams).toHaveBeenCalledWith({
-        searchTerm: undefined,
-        status: undefined,
-      });
+      expect(mockPaginationService.clearFilters).toHaveBeenCalledWith(true);
     });
   });
 

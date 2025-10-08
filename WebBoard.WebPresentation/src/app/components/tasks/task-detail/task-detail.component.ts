@@ -38,15 +38,38 @@ export class TaskDetailComponent {
     }
   }
 
+  /**
+   * Check if task is completed (read-only)
+   */
+  isTaskCompleted(): boolean {
+    return this.task?.status === TaskItemStatus.Completed;
+  }
+
+  /**
+   * Check if task can be edited
+   */
+  canEdit(): boolean {
+    if (!this.task) return false;
+    return this.task.status !== TaskItemStatus.Completed;
+  }
+
+  /**
+   * Check if task can be deleted
+   */
+  canDelete(): boolean {
+    if (!this.task) return false;
+    return this.task.status !== TaskItemStatus.Completed;
+  }
+
   onEdit(): void {
-    if (!this.task) {
+    if (!this.task || !this.canEdit()) {
       return;
     }
     this.edit.emit(this.task);
   }
 
   onDelete(): void {
-    if (!this.task) {
+    if (!this.task || !this.canDelete()) {
       return;
     }
     this.delete.emit(this.task);

@@ -97,7 +97,7 @@ namespace WebBoard.API.Controllers
 		}
 
 		/// <summary>
-		/// Update an existing task
+		/// Update an existing task (cannot update completed tasks)
 		/// </summary>
 		/// <param name="id">The unique identifier of the task to update</param>
 		/// <param name="updateTaskRequest">The task update request</param>
@@ -106,6 +106,7 @@ namespace WebBoard.API.Controllers
 		[ProducesResponseType(typeof(TaskDto), 200)]
 		[ProducesResponseType(400)]
 		[ProducesResponseType(404)]
+		[ProducesResponseType(409)]
 		public async Task<IActionResult> UpdateTask(Guid id, [FromBody] UpdateTaskRequestDto updateTaskRequest)
 		{
 			if (!ModelState.IsValid)
@@ -113,22 +114,39 @@ namespace WebBoard.API.Controllers
 				return BadRequest(ModelState);
 			}
 
-			var task = await taskService.UpdateTaskAsync(id, updateTaskRequest);
-			return task == null ? NotFound() : Ok(task);
+			try
+			{
+				var task = await taskService.UpdateTaskAsync(id, updateTaskRequest);
+				return task == null ? NotFound() : Ok(task);
+			}
+			catch (InvalidOperationException ex)
+			{
+				// Return 409 Conflict for completed tasks
+				return Conflict(new { message = ex.Message });
+			}
 		}
 
 		/// <summary>
-		/// Delete a task
+		/// Delete a task (cannot delete completed tasks)
 		/// </summary>
 		/// <param name="id">The unique identifier of the task to delete</param>
 		/// <returns>No content if successful</returns>
 		[HttpDelete("{id:guid}")]
 		[ProducesResponseType(204)]
 		[ProducesResponseType(404)]
+		[ProducesResponseType(409)]
 		public async Task<IActionResult> DeleteTask(Guid id)
 		{
-			var success = await taskService.DeleteTaskAsync(id);
-			return !success ? NotFound() : NoContent();
+			try
+			{
+				var success = await taskService.DeleteTaskAsync(id);
+				return !success ? NotFound() : NoContent();
+			}
+			catch (InvalidOperationException ex)
+			{
+				// Return 409 Conflict for completed tasks
+				return Conflict(new { message = ex.Message });
+			}
 		}
 	}
 }
