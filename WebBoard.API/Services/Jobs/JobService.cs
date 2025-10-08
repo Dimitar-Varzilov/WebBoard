@@ -35,8 +35,16 @@ namespace WebBoard.API.Services.Jobs
 
 			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
 			{
-				var searchTerm = parameters.SearchTerm.ToLower();
-				query = query.Where(j => j.JobType.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
+				var searchTerm = parameters.SearchTerm;
+
+                // IMPORTANT: When adding new searchable string fields to the Job model,
+                // add them to this search query to ensure they're included in search results.
+                // Current searchable fields: JobType
+                // Example: For a new Description field, add: j => j.Description
+                query = query.SearchInNullableFields(searchTerm, [
+                    j => j.JobType
+                ]);
+				// Add new searchable fields here when Job model is extended
 			}
 
 			// Apply sorting

@@ -59,10 +59,12 @@ namespace WebBoard.API.Services.Tasks
 
 			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
 			{
-				var searchTerm = parameters.SearchTerm.ToLower();
+				var searchTerm = parameters.SearchTerm;
+				// Use EF.Functions.ILike for case-insensitive search in PostgreSQL
+				// OR use ToLower() on both sides (simpler but slightly less efficient)
 				query = query.Where(t =>
-					t.Title.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
-					t.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
+					EF.Functions.ILike(t.Title, $"%{searchTerm}%") ||
+					EF.Functions.ILike(t.Description, $"%{searchTerm}%"));
 			}
 
 			// Apply sorting

@@ -1,6 +1,5 @@
 import { BehaviorSubject, Observable, Subject, of, Subscription } from 'rxjs';
 import {
-  debounceTime,
   distinctUntilChanged,
   switchMap,
   tap,
@@ -99,11 +98,9 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
       return () => sub.unsubscribe();
     });
 
-    // Setup auto-refresh on parameter changes with debounce
+    // Setup auto-refresh on parameter changes
     const refreshSub = this.refreshSubject
       .pipe(
-        debounceTime(300), // Debounce search input
-        distinctUntilChanged(),
         tap(() => this.setLoading(true)),
         switchMap(() => this.fetchData())
       )
@@ -274,14 +271,16 @@ export class PaginatedDataService<T, TParams extends QueryParameters> {
   /**
    * Clear search and filters
    */
-  clearFilters(): void {
-    const clearedParams = {
+  clearFilters(reload: boolean = false): void {
+    const clearedParams: TParams = {
       ...this.currentState.parameters,
       searchTerm: undefined,
       pageNumber: 1,
     };
-    this.setState({ parameters: clearedParams as TParams });
-    this.load();
+    this.setState({ parameters: clearedParams });
+    if (reload) {
+      this.load();
+    }
   }
 
   /**

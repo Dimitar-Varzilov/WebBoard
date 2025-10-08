@@ -105,6 +105,10 @@ export class TaskListComponent implements OnInit, OnDestroy {
     this.paginationService.refresh();
   }
 
+  get hasActiveFilters(): boolean {
+    return !!(this.searchText || this.statusFilter);
+  }
+
   filterTasks(): void {
     this.paginationService.updateParams({
       searchTerm: this.searchText || undefined,
@@ -115,10 +119,7 @@ export class TaskListComponent implements OnInit, OnDestroy {
   clearFilters(): void {
     this.searchText = '';
     this.statusFilter = '';
-    this.paginationService.updateParams({
-      searchTerm: undefined,
-      status: undefined,
-    });
+    this.paginationService.clearFilters(true);
   }
 
   // Pagination methods

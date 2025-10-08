@@ -22,23 +22,37 @@
           class="form-control"
           placeholder="Search tasks..."
           [(ngModel)]="searchText"
-          (ngModelChange)="filterTasks()"
+          (keyup.enter)="filterTasks()"
         />
       </div>
     </div>
     <div class="col-md-3">
-      <select
-        class="form-select"
-        [(ngModel)]="statusFilter"
-        (ngModelChange)="filterTasks()"
-      >
+      <select class="form-select" [(ngModel)]="statusFilter">
         <option value="">All Statuses</option>
         <option *ngFor="let status of taskStatusOptions" [value]="status.value">
           {{ status.label }}
         </option>
       </select>
     </div>
-    <div class="col-md-5 text-end">
+    <div class="col-md-2">
+      <div class="d-flex gap-2">
+        <button
+          class="btn btn-primary"
+          (click)="filterTasks()"
+          [disabled]="loading"
+        >
+          <i class="fas fa-filter me-1"></i>Filter
+        </button>
+        <button
+          class="btn btn-outline-secondary"
+          (click)="clearFilters()"
+          [disabled]="loading || !hasActiveFilters"
+        >
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+    <div class="col-md-3 text-end">
       <small class="text-muted" *ngIf="paginationMetadata">
         Showing
         {{
