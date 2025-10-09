@@ -4,6 +4,7 @@ import {
   HttpTestingController,
 } from '@angular/common/http/testing';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { ReactiveFormsModule, FormsModule } from '@angular/forms';
 import { TaskCreateComponent } from '../components/tasks/task-create/task-create.component';
 import { TaskFormComponent } from '../components/tasks/task-form/task-form.component';
@@ -21,6 +22,7 @@ describe('Task E2E Integration Tests', () => {
   let httpMock: HttpTestingController;
   let taskService: TaskService;
   let router: Router;
+  let location: Location;
 
   const mockTask: TaskDto = {
     id: 'task-123',
@@ -47,8 +49,10 @@ describe('Task E2E Integration Tests', () => {
     httpMock = TestBed.inject(HttpTestingController);
     taskService = TestBed.inject(TaskService);
     router = TestBed.inject(Router);
+    location = TestBed.inject(Location);
 
     spyOn(router, 'navigate');
+    spyOn(location, 'back');
   });
 
   afterEach(() => {
@@ -88,8 +92,8 @@ describe('Task E2E Integration Tests', () => {
       // Step 4: API responds with created task
       req.flush(mockTask);
 
-      // Step 5: User is navigated to task list
-      expect(router.navigate).toHaveBeenCalledWith([ROUTES.TASKS]);
+      // Step 5: User navigates back in history
+      expect(location.back).toHaveBeenCalled();
     });
 
     it('should prevent submission with invalid form data', () => {
@@ -350,7 +354,7 @@ describe('Task E2E Integration Tests', () => {
       const createdTask = { ...mockTask, title: 'Lifecycle Task' };
       createReq.flush(createdTask);
 
-      expect(router.navigate).toHaveBeenCalledWith([ROUTES.TASKS]);
+      expect(location.back).toHaveBeenCalled();
     });
 
     it('should list and delete task', () => {

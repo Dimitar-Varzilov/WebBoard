@@ -1,10 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { TaskCreateComponent } from './task-create.component';
 import { TaskService } from '../../../services';
 import { TaskDto, TaskItemStatus } from '../../../models';
-import { ROUTES } from '../../../constants';
 import { of, throwError } from 'rxjs';
 
 describe('TaskCreateComponent', () => {
@@ -12,6 +12,7 @@ describe('TaskCreateComponent', () => {
   let fixture: ComponentFixture<TaskCreateComponent>;
   let mockTaskService: jasmine.SpyObj<TaskService>;
   let mockRouter: jasmine.SpyObj<Router>;
+  let mockLocation: jasmine.SpyObj<Location>;
 
   const mockTask: TaskDto = {
     id: 'task-123',
@@ -31,6 +32,7 @@ describe('TaskCreateComponent', () => {
   beforeEach(async () => {
     mockTaskService = jasmine.createSpyObj('TaskService', ['createTask']);
     mockRouter = jasmine.createSpyObj('Router', ['navigate']);
+    mockLocation = jasmine.createSpyObj('Location', ['back']);
 
     await TestBed.configureTestingModule({
       declarations: [TaskCreateComponent],
@@ -38,6 +40,7 @@ describe('TaskCreateComponent', () => {
       providers: [
         { provide: TaskService, useValue: mockTaskService },
         { provide: Router, useValue: mockRouter },
+        { provide: Location, useValue: mockLocation },
       ],
     }).compileComponents();
 
@@ -140,7 +143,7 @@ describe('TaskCreateComponent', () => {
         description: 'Task Description',
       });
       expect(component.submitting).toBe(false);
-      expect(mockRouter.navigate).toHaveBeenCalledWith([ROUTES.TASKS]);
+      expect(mockLocation.back).toHaveBeenCalled();
     });
 
     it('should not submit if form is invalid', () => {
@@ -293,10 +296,10 @@ describe('TaskCreateComponent', () => {
   });
 
   describe('Cancel Action', () => {
-    it('should navigate to tasks list on cancel', () => {
+    it('should navigate back in history on cancel', () => {
       component.onCancel();
 
-      expect(mockRouter.navigate).toHaveBeenCalledWith([ROUTES.TASKS]);
+      expect(mockLocation.back).toHaveBeenCalled();
     });
   });
 

@@ -1,11 +1,10 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
-import { Router } from '@angular/router';
+import { Location } from '@angular/common';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { TaskService } from '../../../services';
 import { CreateTaskRequestDto } from '../../../models';
-import { ROUTES } from '../../../constants';
 
 @Component({
   selector: 'app-task-create',
@@ -21,7 +20,7 @@ export class TaskCreateComponent implements OnInit, OnDestroy {
   constructor(
     private fb: FormBuilder,
     private taskService: TaskService,
-    private router: Router
+    private location: Location
   ) {
     this.taskForm = this.fb.group({
       title: ['', [Validators.required, Validators.minLength(3)]],
@@ -51,7 +50,7 @@ export class TaskCreateComponent implements OnInit, OnDestroy {
         .subscribe({
           next: (task) => {
             this.submitting = false;
-            this.router.navigate([ROUTES.TASKS]);
+            this.location.back();
           },
           error: (error) => {
             console.error('Error creating task:', error);
@@ -72,7 +71,7 @@ export class TaskCreateComponent implements OnInit, OnDestroy {
   }
 
   onCancel(): void {
-    this.router.navigate([ROUTES.TASKS]);
+    this.location.back();
   }
 
   isFieldInvalid(fieldName: string): boolean {
