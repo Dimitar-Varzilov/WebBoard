@@ -1,7 +1,15 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { Subject, takeUntil } from 'rxjs';
-import { JobDto, JobStatus, JobQueryParameters } from '../../../models';
+import {
+  JobDto,
+  JobStatus,
+  JobQueryParameters,
+  PAGE_SIZES,
+  DEFAULT_PAGE_SIZE,
+} from '../../../models';
 import { JobService, JobStatusUpdate, SignalRService } from '../../../services';
+import { PaginationFactory } from '../../../services/pagination-factory.service';
+import { PaginatedDataService } from '../../../services/paginated-data.service';
 import { JobModelFactory } from '../../../factories/model.factory';
 import { ROUTES } from '../../../constants';
 
@@ -11,27 +19,14 @@ import { ROUTES } from '../../../constants';
   styleUrls: ['./job-list.component.scss'],
 })
 export class JobListComponent implements OnInit, OnDestroy {
+  // Pagination service
+  paginationService!: PaginatedDataService<JobDto, JobQueryParameters>;
+
   jobs: JobDto[] = [];
-  filteredJobs: JobDto[] = [];
-  loading = false;
+  pageSizes = PAGE_SIZES;
 
-  private _searchText = '';
-  get searchText(): string {
-    return this._searchText;
-  }
-  set searchText(value: string) {
-    this._searchText = value;
-    this.filterJobs();
-  }
-
-  private _statusFilter = '';
-  get statusFilter(): string {
-    return this._statusFilter;
-  }
-  set statusFilter(value: string) {
-    this._statusFilter = value;
-    this.filterJobs();
-  }
+  // Expose Math for template
+  Math = Math;
 
   routes = ROUTES;
   JobStatus = JobStatus;
@@ -48,12 +43,33 @@ export class JobListComponent implements OnInit, OnDestroy {
 
   constructor(
     private jobService: JobService,
-    private signalRService: SignalRService
+    private signalRService: SignalRService,
+    private paginationFactory: PaginationFactory
   ) {}
 
   ngOnInit(): void {
-    this.loadJobs();
+    // Create pagination service with default params and page size of 10
+    this.paginationService = this.paginationFactory.create<
+      JobDto,
+      JobQueryParameters
+    >((params) => this.jobService.getJobs(params), {
+      pageSize: 10,
+      sortBy: 'createdAt',
+      sortDirection: 'desc',
+    });
+
+    // Subscribe to pagination state for job updates
+    this.paginationService.state$.pipe(takeUntil(this.destroy$)).subscribe({
+      next: (state) => {
+        // Update local jobs array for statistics and SignalR subscriptions
+        this.jobs = state.data;
+        this.subscribeToAllJobs();
+      },
+      error: (error) => console.error('Pagination error:', error),
+    });
+
     this.subscribeToJobUpdates();
+    this.loadJobs();
   }
 
   ngOnDestroy(): void {
@@ -61,6 +77,37 @@ export class JobListComponent implements OnInit, OnDestroy {
     this.unsubscribeFromAllJobs();
     this.destroy$.next();
     this.destroy$.complete();
+    // Cleanup pagination service to prevent memory leaks
+    if (this.paginationService) {
+      this.paginationService.destroy();
+    }
+  }
+
+  // Convenience getters for template
+  get filteredJobs() {
+    return this.paginationService.getData();
+  }
+
+  get loading() {
+    return this.paginationService.isLoading();
+  }
+
+  get paginationMetadata() {
+    return this.paginationService.getMetadata();
+  }
+
+  get currentPage() {
+    return this.paginationService.getCurrentParams().pageNumber || 1;
+  }
+
+  get pageSize() {
+    return (
+      this.paginationService.getCurrentParams().pageSize || DEFAULT_PAGE_SIZE
+    );
+  }
+
+  set pageSize(value: number) {
+    this.onPageSizeChange(value);
   }
 
   private subscribeToJobUpdates(): void {
@@ -98,7 +145,8 @@ export class JobListComponent implements OnInit, OnDestroy {
             console.log('📨 Updated selectedJob reference for modal display');
           }
 
-          this.filterJobs();
+          // Refresh pagination to update the display
+          this.paginationService.refresh();
 
           // Show notification
           this.showNotification(update);
@@ -182,63 +230,11 @@ export class JobListComponent implements OnInit, OnDestroy {
   }
 
   loadJobs(): void {
-    this.loading = true;
-
-    // Backend only supports paginated queries
-    const params: JobQueryParameters = {
-      pageNumber: 1,
-      pageSize: 1000, // Large page size to get all jobs
-      sortBy: 'createdAt',
-      sortDirection: 'desc',
-    };
-
-    this.jobService
-      .getJobs(params)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: async (result) => {
-          this.jobs = result.items;
-          this.filterJobs();
-          this.loading = false;
-
-          // Subscribe to all loaded jobs using batch operation
-          await this.subscribeToAllJobs();
-        },
-        error: (error: any) => {
-          console.error('Error loading jobs:', error);
-          this.loading = false;
-        },
-      });
+    this.paginationService.refresh();
   }
 
   refreshJobs(): void {
     this.loadJobs();
-  }
-
-  filterJobs(): void {
-    // Initialize filteredJobs to empty if jobs not loaded yet
-    if (!this.jobs) {
-      this.filteredJobs = [];
-      return;
-    }
-
-    this.filteredJobs = this.jobs.filter((job) => {
-      const matchesSearch =
-        !this.searchText ||
-        job.jobType.toLowerCase().includes(this.searchText.toLowerCase()) ||
-        job.id.toLowerCase().includes(this.searchText.toLowerCase());
-
-      const matchesStatus =
-        !this.statusFilter || job.status.toString() === this.statusFilter;
-
-      return matchesSearch && matchesStatus;
-    });
-  }
-
-  clearFilters(): void {
-    this._searchText = '';
-    this._statusFilter = '';
-    this.filterJobs();
   }
 
   viewJob(job: JobDto): void {
@@ -255,7 +251,7 @@ export class JobListComponent implements OnInit, OnDestroy {
           const index = this.jobs.findIndex((j) => j.id === job.id);
           if (index !== -1) {
             this.jobs[index] = updatedJob;
-            this.filterJobs();
+            this.paginationService.refresh();
           }
         },
         error: (error: any) => {
@@ -317,6 +313,55 @@ export class JobListComponent implements OnInit, OnDestroy {
   onJobFormCanceled(): void {
     this.showJobForm = false;
     this.selectedJob = null;
+  }
+
+  // Pagination methods
+  onPageChange(page: number): void {
+    this.paginationService.setPage(page);
+  }
+
+  onPageSizeChange(size: number): void {
+    this.paginationService.setPageSize(size);
+  }
+
+  get visiblePages(): number[] {
+    const metadata = this.paginationMetadata;
+    if (!metadata) return [];
+    const total = metadata.totalPages;
+    const current = metadata.currentPage;
+    const delta = 2; // Pages to show on each side of current page
+
+    const range: number[] = [];
+    for (
+      let i = Math.max(2, current - delta);
+      i <= Math.min(total - 1, current + delta);
+      i++
+    ) {
+      range.push(i);
+    }
+
+    const pages: number[] = [];
+    if (range.length > 0) {
+      if (range[0] > 2) {
+        pages.push(1, -1); // -1 represents ellipsis
+      } else {
+        pages.push(1);
+      }
+
+      pages.push(...range);
+
+      if (range[range.length - 1] < total - 1) {
+        pages.push(-1, total);
+      } else if (total > 1) {
+        pages.push(total);
+      }
+    } else {
+      for (let i = 1; i <= total; i++) {
+        pages.push(i);
+      }
+    }
+
+    return pages;
   }
 
   trackByJobId(index: number, job: JobDto): string {

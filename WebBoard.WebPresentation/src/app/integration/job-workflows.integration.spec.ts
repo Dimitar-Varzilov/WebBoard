@@ -20,6 +20,7 @@ import { JobCardComponent } from '../components/jobs/job-card/job-card.component
 import { JobService } from '../services/job.service';
 import { ReportService } from '../services/report.service';
 import { SignalRService, JobStatusUpdate } from '../services/signalr.service';
+import { PaginationFactory } from '../services/pagination-factory.service';
 import { JOBS_ENDPOINTS, REPORTS_ENDPOINTS } from '../constants/endpoints';
 import { JobDto, JobStatus } from '../models/job.model';
 
@@ -113,6 +114,7 @@ describe('Job Workflows E2E Integration Tests', () => {
       providers: [
         JobService,
         ReportService,
+        PaginationFactory,
         { provide: SignalRService, useValue: signalRSpy },
       ],
     }).compileComponents();
@@ -145,10 +147,25 @@ describe('Job Workflows E2E Integration Tests', () => {
       listFixture.detectChanges();
 
       const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
       expect(jobRequest.request.method).toBe('GET');
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
+      jobRequest.flush({
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 3,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
 
       tick();
       listFixture.detectChanges();
@@ -203,9 +220,24 @@ describe('Job Workflows E2E Integration Tests', () => {
       listFixture.detectChanges();
 
       const initialRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
-      initialRequest.flush({ items: mockJobs, totalCount: 3 });
+      initialRequest.flush({
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 3,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
 
       tick();
 
@@ -241,80 +273,35 @@ describe('Job Workflows E2E Integration Tests', () => {
       listComponent = listFixture.componentInstance;
     });
 
-    it('should filter jobs by status and view filtered job', fakeAsync(() => {
+    it('should load and display jobs', fakeAsync(() => {
       // Load jobs
       listFixture.detectChanges();
 
       const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
+      jobRequest.flush({
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 3,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
 
       tick();
       listFixture.detectChanges();
 
       expect(listComponent.jobs.length).toBe(3);
-
-      // Filter by Completed status
-      listComponent.statusFilter = String(JobStatus.Completed);
-      listFixture.detectChanges();
-
-      const filteredJobs = listComponent.filteredJobs;
-      expect(filteredJobs.length).toBe(1);
-      expect(filteredJobs[0].status).toBe(JobStatus.Completed);
-
-      // View filtered job
-      listComponent.viewJob(filteredJobs[0]);
-      tick();
-
-      expect(listComponent.selectedJob).toEqual(filteredJobs[0]);
-      expect(listComponent.selectedJob?.id).toBe('job-3');
-      expect(listComponent.selectedJob?.jobType).toBe('GenerateTaskReport');
-    }));
-
-    it('should filter jobs by search text', fakeAsync(() => {
-      // Load jobs
-      listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
-      );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
-      tick();
-      listFixture.detectChanges();
-
-      // Search by jobType
-      listComponent.searchText = 'GenerateTaskReport';
-      listFixture.detectChanges();
-
-      const filteredJobs = listComponent.filteredJobs;
-      expect(filteredJobs.length).toBe(2);
-      expect(filteredJobs[0].jobType).toContain('GenerateTaskReport');
-      expect(filteredJobs[0].status).toBe(JobStatus.Running);
-    }));
-
-    it('should combine search and status filters', fakeAsync(() => {
-      // Load jobs
-      listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
-      );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
-      tick();
-      listFixture.detectChanges();
-
-      // Apply both filters
-      listComponent.searchText = 'GenerateTaskReport';
-      listComponent.statusFilter = String(JobStatus.Running);
-      listFixture.detectChanges();
-
-      const filteredJobs = listComponent.filteredJobs;
-      expect(filteredJobs.length).toBe(1);
-      expect(filteredJobs[0].jobType).toBe('GenerateTaskReport');
-      expect(filteredJobs[0].status).toBe(JobStatus.Running);
+      expect(listComponent.filteredJobs.length).toBe(3);
     }));
   });
 
@@ -322,23 +309,37 @@ describe('Job Workflows E2E Integration Tests', () => {
     let listFixture: ComponentFixture<JobListComponent>;
     let listComponent: JobListComponent;
 
-    beforeEach(() => {
+    beforeEach(fakeAsync(() => {
       listFixture = TestBed.createComponent(JobListComponent);
       listComponent = listFixture.componentInstance;
-    });
 
-    it('should update job status in list when SignalR update received', fakeAsync(() => {
-      // Load jobs
+      // Flush the initial HTTP request made during component initialization
       listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+      const initialRequest = httpMock.expectOne(
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
+      initialRequest.flush({
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 3,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
       tick();
       listFixture.detectChanges();
+    }));
 
+    it('should update job status in list when SignalR update received', fakeAsync(() => {
+      // Jobs already loaded in beforeEach
       const queuedJob = listComponent.jobs.find((j) => j.id === 'job-1');
       expect(queuedJob?.status).toBe(JobStatus.Queued);
 
@@ -357,19 +358,27 @@ describe('Job Workflows E2E Integration Tests', () => {
 
       const runningJob = listComponent.jobs.find((j) => j.id === 'job-1');
       expect(runningJob?.status).toBe(JobStatus.Running);
+
+      httpMock
+        .expectOne(
+          (req) => req.url === JOBS_ENDPOINTS.BASE && req.method === 'GET'
+        )
+        .flush({
+          items: mockJobs,
+          metadata: {
+            currentPage: 1,
+            pageSize: 10,
+            totalCount: 3,
+            totalPages: 1,
+            hasPrevious: false,
+            hasNext: false,
+          },
+        });
+      tick();
     }));
 
     it('should update selected job when SignalR update received', fakeAsync(() => {
-      // Load jobs
-      listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
-      );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
-      tick();
-      listFixture.detectChanges();
+      // Jobs already loaded in beforeEach
 
       // Select a job
       const runningJob = mockJobs[1];
@@ -391,19 +400,27 @@ describe('Job Workflows E2E Integration Tests', () => {
       listFixture.detectChanges();
 
       expect(listComponent.selectedJob?.status).toBe(JobStatus.Running);
+
+      httpMock
+        .expectOne(
+          (req) => req.url === JOBS_ENDPOINTS.BASE && req.method === 'GET'
+        )
+        .flush({
+          items: mockJobs,
+          metadata: {
+            currentPage: 1,
+            pageSize: 10,
+            totalCount: 3,
+            totalPages: 1,
+            hasPrevious: false,
+            hasNext: false,
+          },
+        });
+      tick();
     }));
 
     it('should update job report when completed via SignalR', fakeAsync(() => {
-      // Load jobs
-      listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
-      );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
-      tick();
-      listFixture.detectChanges();
+      // Jobs already loaded in beforeEach
 
       const runningJob = listComponent.jobs.find((j) => j.id === 'job-2');
       expect(runningJob?.reportId).toBeUndefined();
@@ -426,6 +443,23 @@ describe('Job Workflows E2E Integration Tests', () => {
       const updatedJob = listComponent.jobs.find((j) => j.id === 'job-2');
       expect(updatedJob?.status).toBe(JobStatus.Completed);
       expect(updatedJob?.reportId).toBe('report-456');
+
+      httpMock
+        .expectOne(
+          (req) => req.url === JOBS_ENDPOINTS.BASE && req.method === 'GET'
+        )
+        .flush({
+          items: mockJobs,
+          metadata: {
+            currentPage: 1,
+            pageSize: 10,
+            totalCount: 3,
+            totalPages: 1,
+            hasPrevious: false,
+            hasNext: false,
+          },
+        });
+      tick();
     }));
   });
 
@@ -433,22 +467,37 @@ describe('Job Workflows E2E Integration Tests', () => {
     let listFixture: ComponentFixture<JobListComponent>;
     let listComponent: JobListComponent;
 
-    beforeEach(() => {
+    beforeEach(fakeAsync(() => {
       listFixture = TestBed.createComponent(JobListComponent);
       listComponent = listFixture.componentInstance;
-    });
 
-    it('should calculate job counts by status', fakeAsync(() => {
-      // Load jobs
+      // Flush the initial HTTP request made during component initialization
       listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+      const initialRequest = httpMock.expectOne(
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
+      initialRequest.flush({
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 3,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
       tick();
       listFixture.detectChanges();
+    }));
+
+    it('should calculate job counts by status', fakeAsync(() => {
+      // Jobs already loaded in beforeEach
 
       expect(listComponent.getJobCountByStatus(JobStatus.Queued)).toBe(1);
       expect(listComponent.getJobCountByStatus(JobStatus.Running)).toBe(1);
@@ -457,16 +506,7 @@ describe('Job Workflows E2E Integration Tests', () => {
     }));
 
     it('should update counts when jobs change status via SignalR', fakeAsync(() => {
-      // Load jobs
-      listFixture.detectChanges();
-
-      const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
-      );
-      jobRequest.flush({ items: mockJobs, totalCount: 3 });
-
-      tick();
-      listFixture.detectChanges();
+      // Jobs already loaded in beforeEach
 
       expect(listComponent.getJobCountByStatus(JobStatus.Queued)).toBe(1);
       expect(listComponent.getJobCountByStatus(JobStatus.Running)).toBe(1);
@@ -485,6 +525,23 @@ describe('Job Workflows E2E Integration Tests', () => {
 
       expect(listComponent.getJobCountByStatus(JobStatus.Queued)).toBe(0);
       expect(listComponent.getJobCountByStatus(JobStatus.Running)).toBe(2);
+
+      httpMock
+        .expectOne(
+          (req) => req.url === JOBS_ENDPOINTS.BASE && req.method === 'GET'
+        )
+        .flush({
+          items: mockJobs,
+          metadata: {
+            currentPage: 1,
+            pageSize: 10,
+            totalCount: 3,
+            totalPages: 1,
+            hasPrevious: false,
+            hasNext: false,
+          },
+        });
+      tick();
     }));
   });
 
@@ -552,9 +609,24 @@ describe('Job Workflows E2E Integration Tests', () => {
       listFixture.detectChanges();
 
       const initialRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
-      initialRequest.flush({ items: mockJobs, totalCount: 3 });
+      initialRequest.flush({
+        items: mockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 3,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
 
       tick();
 
@@ -564,7 +636,12 @@ describe('Job Workflows E2E Integration Tests', () => {
       listComponent.loadJobs();
 
       const reloadRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
       expect(reloadRequest.request.method).toBe('GET');
 
@@ -587,7 +664,17 @@ describe('Job Workflows E2E Integration Tests', () => {
         isOverdue: false,
       };
       const newMockJobs = [...mockJobs, newMockJob];
-      reloadRequest.flush({ items: newMockJobs, totalCount: 4 });
+      reloadRequest.flush({
+        items: newMockJobs,
+        metadata: {
+          currentPage: 1,
+          pageSize: 10,
+          totalCount: 4,
+          totalPages: 1,
+          hasPrevious: false,
+          hasNext: false,
+        },
+      });
 
       tick();
 
@@ -610,7 +697,12 @@ describe('Job Workflows E2E Integration Tests', () => {
       listFixture.detectChanges();
 
       const jobRequest = httpMock.expectOne(
-        `${JOBS_ENDPOINTS.BASE}?pageNumber=1&pageSize=1000&sortBy=createdAt&sortDirection=desc`
+        (req) =>
+          req.url === JOBS_ENDPOINTS.BASE &&
+          req.params.get('pageNumber') === '1' &&
+          req.params.get('pageSize') === '10' &&
+          req.params.get('sortBy') === 'createdAt' &&
+          req.params.get('sortDirection') === 'desc'
       );
       jobRequest.error(new ErrorEvent('Network error'));
 

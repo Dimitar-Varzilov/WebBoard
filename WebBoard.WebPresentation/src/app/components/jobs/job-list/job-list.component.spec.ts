@@ -7,6 +7,7 @@ import {
 import { of, throwError, Subject } from 'rxjs';
 import { JobListComponent } from './job-list.component';
 import { JobService, SignalRService, JobStatusUpdate } from '../../../services';
+import { PaginationFactory } from '../../../services/pagination-factory.service';
 import { JobDto, JobStatus, PagedResult } from '../../../models';
 import { ROUTES } from '../../../constants';
 import * as signalR from '@microsoft/signalr';
@@ -83,7 +84,7 @@ describe('JobListComponent', () => {
     items: jobs,
     metadata: {
       currentPage: 1,
-      pageSize: 1000,
+      pageSize: 10,
       totalCount: jobs.length,
       totalPages: 1,
       hasPrevious: false,
@@ -129,6 +130,7 @@ describe('JobListComponent', () => {
       providers: [
         { provide: JobService, useValue: mockJobService },
         { provide: SignalRService, useValue: mockSignalRService },
+        PaginationFactory,
       ],
       imports: [FormsModule],
     }).compileComponents();
@@ -139,10 +141,6 @@ describe('JobListComponent', () => {
 
   afterEach(() => {
     jobStatusUpdates$.complete();
-    // Clean up any filters that may have been set during tests
-    if (component) {
-      component.clearFilters();
-    }
   });
 
   it('should create', () => {
@@ -156,7 +154,7 @@ describe('JobListComponent', () => {
       expect(mockJobService.getJobs).toHaveBeenCalledWith(
         jasmine.objectContaining({
           pageNumber: 1,
-          pageSize: 1000,
+          pageSize: 10,
           sortBy: 'createdAt',
           sortDirection: 'desc',
         })
@@ -299,64 +297,6 @@ describe('JobListComponent', () => {
     }));
   });
 
-  describe('Filtering', () => {
-    beforeEach(() => {
-      fixture.detectChanges();
-    });
-
-    it('should filter jobs by search text', () => {
-      component['_searchText'] = 'MarkAllTasksAsDone';
-      component.filterJobs();
-
-      expect(component.filteredJobs.length).toBe(1);
-      expect(component.filteredJobs[0].id).toBe('job-1');
-    });
-
-    it('should filter jobs by job ID', () => {
-      component['_searchText'] = 'job-2';
-      component.filterJobs();
-
-      expect(component.filteredJobs.length).toBe(1);
-      expect(component.filteredJobs[0].id).toBe('job-2');
-    });
-
-    it('should filter jobs by status', () => {
-      component['_statusFilter'] = JobStatus.Completed.toString();
-      component.filterJobs();
-
-      expect(component.filteredJobs.length).toBe(1);
-      expect(component.filteredJobs[0].status).toBe(JobStatus.Completed);
-    });
-
-    it('should filter by both search text and status', () => {
-      component['_searchText'] = 'GenerateTaskReport';
-      component['_statusFilter'] = JobStatus.Running.toString();
-      component.filterJobs();
-
-      expect(component.filteredJobs.length).toBe(1);
-      expect(component.filteredJobs[0].id).toBe('job-2');
-    });
-
-    it('should be case-insensitive for search', () => {
-      component['_searchText'] = 'generatetaskreport';
-      component.filterJobs();
-
-      expect(component.filteredJobs.length).toBe(2);
-    });
-
-    it('should clear all filters', () => {
-      component['_searchText'] = 'test';
-      component['_statusFilter'] = JobStatus.Running.toString();
-      component.filterJobs();
-
-      component.clearFilters();
-
-      expect(component.searchText).toBe('');
-      expect(component.statusFilter).toBe('');
-      expect(component.filteredJobs.length).toBe(3);
-    });
-  });
-
   describe('Job Actions', () => {
     beforeEach(() => {
       fixture.detectChanges();
@@ -467,6 +407,51 @@ describe('JobListComponent', () => {
     });
   });
 
+  describe('Pagination', () => {
+    beforeEach(() => {
+      fixture.detectChanges();
+    });
+
+    it('should have pagination metadata', () => {
+      expect(component.paginationMetadata).toBeTruthy();
+      expect(component.paginationMetadata?.pageSize).toBe(10);
+    });
+
+    it('should change page when onPageChange is called', () => {
+      const newPagedResult = createMockPagedResult(mockJobs);
+      newPagedResult.metadata.currentPage = 2;
+      mockJobService.getJobs.and.returnValue(of(newPagedResult));
+
+      component.onPageChange(2);
+
+      expect(mockJobService.getJobs).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          pageNumber: 2,
+        })
+      );
+    });
+
+    it('should change page size when onPageSizeChange is called', () => {
+      const newPagedResult = createMockPagedResult(mockJobs);
+      newPagedResult.metadata.pageSize = 25;
+      mockJobService.getJobs.and.returnValue(of(newPagedResult));
+
+      component.onPageSizeChange(25);
+
+      expect(mockJobService.getJobs).toHaveBeenCalledWith(
+        jasmine.objectContaining({
+          pageSize: 25,
+          pageNumber: 1, // Should reset to page 1
+        })
+      );
+    });
+
+    it('should calculate visible pages correctly', () => {
+      const visiblePages = component.visiblePages;
+      expect(visiblePages).toEqual([1]);
+    });
+  });
+
   describe('TrackBy Function', () => {
     it('should return job id for trackBy', () => {
       const job = mockJobs[0];
@@ -515,6 +500,11 @@ describe('JobListComponent', () => {
         ...mockJobs[0],
         scheduledAt: '2025-01-20T10:00:00Z',
       };
+
+      // Initialize the component first
+      fixture.detectChanges();
+      tick();
+
       component.showJobForm = true;
       component.selectedJob = mockJobs[0];
 
@@ -539,9 +529,13 @@ describe('JobListComponent', () => {
 
   describe('Job deletion', () => {
     it('should delete a queued job when confirmed', fakeAsync(() => {
-      const queuedJob = mockJobs[0]; // job-1 is queued
+      const queuedJob = mockJobs[0];
       spyOn(window, 'confirm').and.returnValue(true);
       mockJobService.deleteJob.and.returnValue(of(undefined as void));
+
+      // Initialize the component first
+      fixture.detectChanges();
+      tick();
 
       component.deleteJob(queuedJob);
       tick();

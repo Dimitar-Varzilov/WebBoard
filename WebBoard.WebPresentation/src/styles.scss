@@ -76,3 +76,7 @@ body {
   background-color: #ffebe6;
   color: #de350b;
 }
+
+.pagination .page-item:not(.disabled) .page-link {
+  cursor: pointer;
+}
