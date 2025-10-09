@@ -5,6 +5,9 @@ namespace WebBoard.API
 {
 	public class Program
 	{
+		// Define a name for the CORS policy to make it easy to reference.
+		private static readonly string _myAllowSpecificOrigins = "_myAllowSpecificOrigins";
+
 		public static async Task Main(string[] args)
 		{
 			var builder = WebApplication.CreateBuilder(args);
@@ -14,6 +17,24 @@ namespace WebBoard.API
 
 			// Add SignalR services
 			builder.Services.AddSignalR();
+
+			// Add CORS services and define the policy.
+			builder.Services.AddCors(options =>
+			{
+				options.AddPolicy(name: _myAllowSpecificOrigins,
+					policy =>
+					{
+						// Read the allowed origins from appsettings.json
+						var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
+						if (allowedOrigins != null && allowedOrigins.Length > 0)
+						{
+							policy.WithOrigins(allowedOrigins)
+								.AllowAnyHeader()
+								.AllowAnyMethod()
+								.AllowCredentials(); // Required for SignalR
+						}
+					});
+			});
 
 			// Add framework services
 			builder.Services.AddControllers();
@@ -35,17 +56,11 @@ namespace WebBoard.API
 				app.UseSwaggerUI();
 			}
 
-			// Configure CORS for SignalR
-			app.UseCors(builder =>
-			{
-				builder
-					.WithOrigins(["http://localhost:4200"])
-					.AllowAnyHeader()
-					.AllowAnyMethod()
-					.AllowCredentials(); // Required for SignalR
-			});
-
 			app.UseHttpsRedirection();
+
+			// Apply the named CORS policy.
+			app.UseCors(_myAllowSpecificOrigins);
+
 			app.UseAuthorization();
 			app.MapControllers();
 

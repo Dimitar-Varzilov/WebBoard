@@ -1,5 +1,5 @@
 export const environment = {
   production: true,
-  apiUrl: 'https://your-production-api-url.com/api',
-  signalRUrl: 'https://your-production-api-url.com/hubs/job-status',
+  apiUrl: 'http://webboard.eu-central-1.elasticbeanstalk.com/api',
+  signalRUrl: 'http://webboard.eu-central-1.elasticbeanstalk.com/hubs/job-status',
 };
