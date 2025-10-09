@@ -342,5 +342,322 @@ namespace WebBoard.Tests.Controllers
 		}
 
 		#endregion
+
+		#region UpdateJob Tests
+
+		[Fact]
+		public async Task UpdateJob_WithValidRequest_ShouldReturnOk()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.GenerateTaskReport,
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			var updatedJob = new JobDto(
+				jobId,
+				Constants.JobTypes.GenerateTaskReport,
+				JobStatus.Queued,
+				DateTimeOffset.UtcNow,
+				null);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ReturnsAsync(updatedJob);
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+			okResult.Value.Should().BeEquivalentTo(updatedJob);
+		}
+
+		[Fact]
+		public async Task UpdateJob_WhenJobDoesNotExist_ShouldReturnNotFound()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.MarkAllTasksAsDone,
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ReturnsAsync((JobDto?)null);
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			result.Should().BeOfType<NotFoundResult>();
+		}
+
+		[Fact]
+		public async Task UpdateJob_WhenJobIsNotQueued_ShouldReturnConflict()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.MarkAllTasksAsDone,
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ThrowsAsync(new InvalidOperationException("Cannot update a running job. Only queued jobs can be edited."));
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			var conflictResult = result.Should().BeOfType<ConflictObjectResult>().Subject;
+			conflictResult.Value.Should().NotBeNull();
+		}
+
+		[Fact]
+		public async Task UpdateJob_WhenJobIsRunning_ShouldReturnConflict()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.MarkAllTasksAsDone,
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ThrowsAsync(new InvalidOperationException("Cannot update a running job"));
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			result.Should().BeOfType<ConflictObjectResult>();
+		}
+
+		[Fact]
+		public async Task UpdateJob_WhenJobIsCompleted_ShouldReturnConflict()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.MarkAllTasksAsDone,
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ThrowsAsync(new InvalidOperationException("Cannot update a completed job"));
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			result.Should().BeOfType<ConflictObjectResult>();
+		}
+
+		[Fact]
+		public async Task UpdateJob_WithInvalidJobType_ShouldReturnBadRequest()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				"InvalidJobType",
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ThrowsAsync(new ArgumentException("Invalid job type"));
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
+			badRequestResult.Value.Should().NotBeNull();
+		}
+
+		[Fact]
+		public async Task UpdateJob_WithNoTasksSelected_ShouldReturnBadRequest()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.MarkAllTasksAsDone,
+				true,
+				null,
+				[]);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ThrowsAsync(new ArgumentException("At least one task must be selected"));
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			result.Should().BeOfType<BadRequestObjectResult>();
+		}
+
+		[Fact]
+		public async Task UpdateJob_WithScheduledTime_ShouldUpdateScheduledAt()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var scheduledTime = DateTimeOffset.UtcNow.AddHours(2);
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.GenerateTaskReport,
+				false,
+				scheduledTime,
+				[Guid.NewGuid()]);
+
+			var updatedJob = new JobDto(
+				jobId,
+				Constants.JobTypes.GenerateTaskReport,
+				JobStatus.Queued,
+				DateTimeOffset.UtcNow,
+				scheduledTime);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ReturnsAsync(updatedJob);
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+			var returnedJob = okResult.Value.Should().BeAssignableTo<JobDto>().Subject;
+			returnedJob.ScheduledAt.Should().Be(scheduledTime);
+		}
+
+		[Fact]
+		public async Task UpdateJob_ChangingJobType_ShouldReturnUpdatedJob()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			var request = new UpdateJobRequestDto(
+				Constants.JobTypes.GenerateTaskReport,
+				true,
+				null,
+				[Guid.NewGuid()]);
+
+			var updatedJob = new JobDto(
+				jobId,
+				Constants.JobTypes.GenerateTaskReport,
+				JobStatus.Queued,
+				DateTimeOffset.UtcNow,
+				null);
+
+			_mockJobService.Setup(s => s.UpdateJobAsync(jobId, request))
+				.ReturnsAsync(updatedJob);
+
+			// Act
+			var result = await _controller.UpdateJob(jobId, request);
+
+			// Assert
+			var okResult = result.Should().BeOfType<OkObjectResult>().Subject;
+			var returnedJob = okResult.Value.Should().BeAssignableTo<JobDto>().Subject;
+			returnedJob.JobType.Should().Be(Constants.JobTypes.GenerateTaskReport);
+		}
+
+		#endregion
+
+		#region DeleteJob Tests
+
+		[Fact]
+		public async Task DeleteJob_WithValidQueuedJob_ShouldReturnNoContent()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			_mockJobService.Setup(s => s.DeleteJobAsync(jobId))
+				.ReturnsAsync(true);
+
+			// Act
+			var result = await _controller.DeleteJob(jobId);
+
+			// Assert
+			result.Should().BeOfType<NoContentResult>();
+		}
+
+		[Fact]
+		public async Task DeleteJob_WhenJobDoesNotExist_ShouldReturnNotFound()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			_mockJobService.Setup(s => s.DeleteJobAsync(jobId))
+				.ReturnsAsync(false);
+
+			// Act
+			var result = await _controller.DeleteJob(jobId);
+
+			// Assert
+			result.Should().BeOfType<NotFoundResult>();
+		}
+
+		[Fact]
+		public async Task DeleteJob_WhenJobIsRunning_ShouldReturnConflict()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			_mockJobService.Setup(s => s.DeleteJobAsync(jobId))
+				.ThrowsAsync(new InvalidOperationException("Cannot delete a running job. Only queued jobs can be deleted."));
+
+			// Act
+			var result = await _controller.DeleteJob(jobId);
+
+			// Assert
+			var conflictResult = result.Should().BeOfType<ConflictObjectResult>().Subject;
+			conflictResult.Value.Should().NotBeNull();
+		}
+
+		[Fact]
+		public async Task DeleteJob_WhenJobIsCompleted_ShouldReturnConflict()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			_mockJobService.Setup(s => s.DeleteJobAsync(jobId))
+				.ThrowsAsync(new InvalidOperationException("Cannot delete a completed job. Only queued jobs can be deleted."));
+
+			// Act
+			var result = await _controller.DeleteJob(jobId);
+
+			// Assert
+			result.Should().BeOfType<ConflictObjectResult>();
+		}
+
+		[Fact]
+		public async Task DeleteJob_WhenJobIsFailed_ShouldReturnConflict()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			_mockJobService.Setup(s => s.DeleteJobAsync(jobId))
+				.ThrowsAsync(new InvalidOperationException("Cannot delete a failed job"));
+
+			// Act
+			var result = await _controller.DeleteJob(jobId);
+
+			// Assert
+			result.Should().BeOfType<ConflictObjectResult>();
+		}
+
+		[Fact]
+		public async Task DeleteJob_ShouldCallDeleteJobAsync()
+		{
+			// Arrange
+			var jobId = Guid.NewGuid();
+			_mockJobService.Setup(s => s.DeleteJobAsync(jobId))
+				.ReturnsAsync(true);
+
+			// Act
+			await _controller.DeleteJob(jobId);
+
+			// Assert
+			_mockJobService.Verify(s => s.DeleteJobAsync(jobId), Times.Once);
+		}
+
+		#endregion
 	}
 }

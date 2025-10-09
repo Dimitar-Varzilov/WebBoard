@@ -585,6 +585,497 @@ namespace WebBoard.Tests
 
         #endregion
 
+        #region UpdateJobAsync Tests
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldReturnNull_WhenJobDoesNotExist()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [Guid.NewGuid()]);
+
+            // Act
+            var result = await _jobService.UpdateJobAsync(nonExistentId, request);
+
+            // Assert
+            result.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldThrowException_WhenJobIsNotQueued()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Running, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [Guid.NewGuid()]);
+
+            // Act
+            Func<Task> act = () => _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Only queued jobs can be edited*");
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldThrowException_WhenJobIsCompleted()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Completed, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [task.Id]);
+
+            // Act
+            Func<Task> act = () => _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Only queued jobs can be edited*");
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldThrowException_WhenJobIsFailed()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Failed, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [task.Id]);
+
+            // Act
+            Func<Task> act = () => _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Only queued jobs can be edited*");
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldThrowException_WhenJobTypeIsInvalid()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            _mockJobTypeRegistry.Setup(x => x.IsValidJobType("InvalidJobType")).Returns(false);
+
+            var request = new UpdateJobRequestDto("InvalidJobType", true, null, [Guid.NewGuid()]);
+
+            // Act
+            Func<Task> act = () => _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            await act.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("Invalid job type*");
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldThrowException_WhenNoTasksSelected()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, []);
+
+            // Act
+            Func<Task> act = () => _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            await act.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("At least one task must be selected*");
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldThrowException_WhenScheduledTimeIsInPast()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var pastTime = DateTimeOffset.UtcNow.AddHours(-1);
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, false, pastTime, [task.Id]);
+
+            // Act
+            Func<Task> act = () => _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            await act.Should().ThrowAsync<ArgumentException>()
+                .WithMessage("Scheduled time cannot be in the past*");
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldUpdateJob_WhenAllValidationsPass()
+        {
+            // Arrange
+            var oldTask = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Old Task", "Desc", TaskItemStatus.Pending, null);
+            var newTask = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "New Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddRangeAsync(oldTask, newTask);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Assign old task to job
+            oldTask = oldTask with { JobId = job.Id };
+            _dbContext.Entry(oldTask).CurrentValues.SetValues(oldTask);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.GenerateTaskReport, true, null, [newTask.Id]);
+
+            // Act
+            var result = await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            result.Should().NotBeNull();
+            result!.Id.Should().Be(job.Id);
+            result.JobType.Should().Be(Constants.JobTypes.GenerateTaskReport);
+            result.Status.Should().Be(JobStatus.Queued);
+            result.TaskIds.Should().Contain(newTask.Id);
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldUnassignPreviousTasks()
+        {
+            // Arrange
+            var oldTask = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Old Task", "Desc", TaskItemStatus.Pending, null);
+            var newTask = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "New Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddRangeAsync(oldTask, newTask);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Assign old task to job
+            oldTask = oldTask with { JobId = job.Id };
+            _dbContext.Entry(oldTask).CurrentValues.SetValues(oldTask);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [newTask.Id]);
+
+            // Act
+            await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            var updatedOldTask = await _dbContext.Tasks.FindAsync(oldTask.Id);
+            updatedOldTask!.JobId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldAssignNewTasks()
+        {
+            // Arrange
+            var task1 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task 1", "Desc", TaskItemStatus.Pending, null);
+            var task2 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task 2", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddRangeAsync(task1, task2);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [task1.Id, task2.Id]);
+
+            // Act
+            await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            var updatedTasks = await _dbContext.Tasks
+                .Where(t => t.Id == task1.Id || t.Id == task2.Id)
+                .ToListAsync();
+
+            updatedTasks.Should().HaveCount(2);
+            updatedTasks.Should().OnlyContain(t => t.JobId == job.Id);
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldRescheduleJob()
+        {
+            // Arrange
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [task.Id]);
+
+            // Act
+            await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            _mockJobSchedulingService.Verify(
+                x => x.RescheduleJobAsync(It.IsAny<Job>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldUpdateScheduledAt_WhenNotRunImmediately()
+        {
+            // Arrange
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var newScheduledTime = DateTimeOffset.UtcNow.AddHours(3);
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, false, newScheduledTime, [task.Id]);
+
+            // Act
+            var result = await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            result!.ScheduledAt.Should().Be(newScheduledTime);
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldAllowChangingJobType()
+        {
+            // Arrange
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.GenerateTaskReport, true, null, [task.Id]);
+
+            // Act
+            var result = await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            result!.JobType.Should().Be(Constants.JobTypes.GenerateTaskReport);
+        }
+
+        [Fact]
+        public async Task UpdateJobAsync_ShouldAllowKeepingSameTasksAssigned()
+        {
+            // Arrange
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Assign task to job
+            task = task with { JobId = job.Id };
+            _dbContext.Entry(task).CurrentValues.SetValues(task);
+            await _dbContext.SaveChangesAsync();
+
+            var request = new UpdateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, [task.Id]);
+
+            // Act
+            var result = await _jobService.UpdateJobAsync(job.Id, request);
+
+            // Assert
+            result.Should().NotBeNull();
+            result!.TaskIds.Should().Contain(task.Id);
+        }
+
+        #endregion
+
+        #region DeleteJobAsync Tests
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldReturnFalse_WhenJobDoesNotExist()
+        {
+            // Arrange
+            var nonExistentId = Guid.NewGuid();
+
+            // Act
+            var result = await _jobService.DeleteJobAsync(nonExistentId);
+
+            // Assert
+            result.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldThrowException_WhenJobIsRunning()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Running, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            Func<Task> act = () => _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Only queued jobs can be deleted*");
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldThrowException_WhenJobIsCompleted()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Completed, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            Func<Task> act = () => _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Only queued jobs can be deleted*");
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldThrowException_WhenJobIsFailed()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Failed, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            Func<Task> act = () => _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            await act.Should().ThrowAsync<InvalidOperationException>()
+                .WithMessage("*Only queued jobs can be deleted*");
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldDeleteJob_WhenJobIsQueued()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            result.Should().BeTrue();
+            var deletedJob = await _dbContext.Jobs.FindAsync(job.Id);
+            deletedJob.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldUnassignTasksBeforeDeletion()
+        {
+            // Arrange
+            var task1 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task 1", "Desc", TaskItemStatus.Pending, null);
+            var task2 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task 2", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddRangeAsync(task1, task2);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Assign tasks to job
+            task1 = task1 with { JobId = job.Id };
+            task2 = task2 with { JobId = job.Id };
+            _dbContext.Entry(task1).CurrentValues.SetValues(task1);
+            _dbContext.Entry(task2).CurrentValues.SetValues(task2);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            await _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            var updatedTask1 = await _dbContext.Tasks.FindAsync(task1.Id);
+            var updatedTask2 = await _dbContext.Tasks.FindAsync(task2.Id);
+
+            updatedTask1!.JobId.Should().BeNull();
+            updatedTask2!.JobId.Should().BeNull();
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldUnscheduleJob()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            await _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            _mockJobSchedulingService.Verify(
+                x => x.UnscheduleJobAsync(job.Id),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldReturnTrue_WhenJobWithoutTasksIsDeleted()
+        {
+            // Arrange
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            var result = await _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            result.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task DeleteJobAsync_ShouldNotDeleteTasks_OnlyUnassignThem()
+        {
+            // Arrange
+            var task = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Task", "Desc", TaskItemStatus.Pending, null);
+            await _dbContext.Tasks.AddAsync(task);
+            await _dbContext.SaveChangesAsync();
+
+            var job = new Job(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
+            await _dbContext.Jobs.AddAsync(job);
+            await _dbContext.SaveChangesAsync();
+
+            // Assign task to job
+            task = task with { JobId = job.Id };
+            _dbContext.Entry(task).CurrentValues.SetValues(task);
+            await _dbContext.SaveChangesAsync();
+
+            // Act
+            await _jobService.DeleteJobAsync(job.Id);
+
+            // Assert
+            var taskStillExists = await _dbContext.Tasks.FindAsync(task.Id);
+            taskStillExists.Should().NotBeNull();
+            taskStillExists!.JobId.Should().BeNull();
+        }
+
+        #endregion
+
         #region Integration Tests
 
         [Fact]

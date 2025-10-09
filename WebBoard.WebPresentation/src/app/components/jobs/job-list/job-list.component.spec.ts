@@ -101,6 +101,8 @@ describe('JobListComponent', () => {
     mockJobService = jasmine.createSpyObj('JobService', [
       'getJobs',
       'getJobById',
+      'updateJob',
+      'deleteJob',
     ]);
     mockSignalRService = jasmine.createSpyObj('SignalRService', [
       'getJobStatusUpdates',
@@ -495,5 +497,137 @@ describe('JobListComponent', () => {
     it('should expose JobStatus enum', () => {
       expect(component.JobStatus).toBe(JobStatus);
     });
+  });
+
+  describe('Job editing', () => {
+    it('should open job form modal when editJob is called', () => {
+      const queuedJob = mockJobs[0]; // job-1 is queued
+
+      component.editJob(queuedJob);
+
+      expect(component.selectedJob).toBe(queuedJob);
+      expect(component.isEditMode).toBe(true);
+      expect(component.showJobForm).toBe(true);
+    });
+
+    it('should close job form and refresh jobs on job saved', fakeAsync(() => {
+      const updatedJob = {
+        ...mockJobs[0],
+        scheduledAt: '2025-01-20T10:00:00Z',
+      };
+      component.showJobForm = true;
+      component.selectedJob = mockJobs[0];
+
+      component.onJobSaved(updatedJob);
+      tick();
+
+      expect(component.showJobForm).toBe(false);
+      expect(component.selectedJob).toBeNull();
+      expect(mockJobService.getJobs).toHaveBeenCalled();
+    }));
+
+    it('should close job form on cancel', () => {
+      component.showJobForm = true;
+      component.selectedJob = mockJobs[0];
+
+      component.onJobFormCanceled();
+
+      expect(component.showJobForm).toBe(false);
+      expect(component.selectedJob).toBeNull();
+    });
+  });
+
+  describe('Job deletion', () => {
+    it('should delete a queued job when confirmed', fakeAsync(() => {
+      const queuedJob = mockJobs[0]; // job-1 is queued
+      spyOn(window, 'confirm').and.returnValue(true);
+      mockJobService.deleteJob.and.returnValue(of(undefined as void));
+
+      component.deleteJob(queuedJob);
+      tick();
+
+      expect(window.confirm).toHaveBeenCalledWith(
+        `Are you sure you want to delete the job "${queuedJob.jobType}"?`
+      );
+      expect(mockJobService.deleteJob).toHaveBeenCalledWith(queuedJob.id);
+      expect(mockJobService.getJobs).toHaveBeenCalled();
+    }));
+
+    it('should not delete job when not confirmed', fakeAsync(() => {
+      const queuedJob = mockJobs[0];
+      spyOn(window, 'confirm').and.returnValue(false);
+
+      component.deleteJob(queuedJob);
+      tick();
+
+      expect(window.confirm).toHaveBeenCalled();
+      expect(mockJobService.deleteJob).not.toHaveBeenCalled();
+    }));
+
+    it('should not delete non-queued job', () => {
+      const runningJob = mockJobs[1]; // job-2 is running
+      spyOn(window, 'alert');
+      spyOn(window, 'confirm');
+
+      component.deleteJob(runningJob);
+
+      expect(window.alert).toHaveBeenCalledWith(
+        'Only queued jobs can be deleted.'
+      );
+      expect(window.confirm).not.toHaveBeenCalled();
+      expect(mockJobService.deleteJob).not.toHaveBeenCalled();
+    });
+
+    it('should handle delete error with 409 status', fakeAsync(() => {
+      const queuedJob = mockJobs[0];
+      const errorResponse = {
+        status: 409,
+        error: { message: 'Cannot delete a non-queued job' },
+      };
+      spyOn(window, 'confirm').and.returnValue(true);
+      spyOn(window, 'alert');
+      mockJobService.deleteJob.and.returnValue(throwError(() => errorResponse));
+
+      component.deleteJob(queuedJob);
+      tick();
+
+      expect(mockJobService.deleteJob).toHaveBeenCalledWith(queuedJob.id);
+      expect(window.alert).toHaveBeenCalledWith(
+        'Cannot delete a non-queued job'
+      );
+    }));
+
+    it('should handle delete error with 400 status', fakeAsync(() => {
+      const queuedJob = mockJobs[0];
+      const errorResponse = {
+        status: 400,
+        error: { message: 'Bad request' },
+      };
+      spyOn(window, 'confirm').and.returnValue(true);
+      spyOn(window, 'alert');
+      mockJobService.deleteJob.and.returnValue(throwError(() => errorResponse));
+
+      component.deleteJob(queuedJob);
+      tick();
+
+      expect(mockJobService.deleteJob).toHaveBeenCalledWith(queuedJob.id);
+      expect(window.alert).toHaveBeenCalledWith('Bad request');
+    }));
+
+    it('should handle generic delete error', fakeAsync(() => {
+      const queuedJob = mockJobs[0];
+      const errorResponse = { status: 500 };
+      spyOn(window, 'confirm').and.returnValue(true);
+      spyOn(window, 'alert');
+      mockJobService.deleteJob.and.returnValue(throwError(() => errorResponse));
+
+      component.deleteJob(queuedJob);
+      tick();
+
+      expect(mockJobService.deleteJob).toHaveBeenCalledWith(queuedJob.id);
+      expect(window.alert).toHaveBeenCalledWith(
+        'Failed to delete job. Please try again.'
+      );
+    }));
   });
 });
