@@ -1,7 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { RouterTestingModule } from '@angular/router/testing';
 
-import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { AppComponent } from './app.component';
 import { SignalRService } from './services';
 
@@ -18,7 +17,6 @@ describe('AppComponent', () => {
       imports: [RouterTestingModule],
       declarations: [AppComponent],
       providers: [{ provide: SignalRService, useValue: mockSignalRService }],
-      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements like app-navbar
     }).compileComponents();
   });
 

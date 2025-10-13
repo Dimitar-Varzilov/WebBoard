@@ -1,6 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
-import { Router, ActivatedRoute } from '@angular/router';
+import { Router, ActivatedRoute, RouterModule } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
 import { JobCreateComponent } from './job-create.component';
@@ -60,7 +60,7 @@ describe('JobCreateComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [JobCreateComponent],
-      imports: [ReactiveFormsModule, RouterTestingModule],
+      imports: [ReactiveFormsModule, RouterTestingModule, RouterModule],
       providers: [
         { provide: JobService, useValue: mockJobService },
         { provide: Router, useValue: mockRouter },
