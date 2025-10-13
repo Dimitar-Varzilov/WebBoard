@@ -34,7 +34,7 @@ jobs:
       - name: Install dependencies
         run: cd WebBoard.WebPresentation && npm ci
       - name: Run frontend tests
-        run: cd WebBoard.WebPresentation && npm test -- --watch=false --browsers=ChromeHeadless
+        run: cd WebBoard.WebPresentation && npm test -- --watch=false
 
   build:
     runs-on: windows-latest
