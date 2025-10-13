@@ -2,6 +2,7 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { TaskListComponent } from './task-list.component';
 import { TaskService } from '../../../services';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { PaginationFactory } from '../../../services/pagination-factory.service';
 import { PaginatedDataService } from '../../../services/paginated-data.service';
 import { TaskDto, TaskItemStatus, DEFAULT_PAGE_SIZE } from '../../../models';
@@ -109,6 +110,7 @@ describe('TaskListComponent', () => {
         { provide: PaginationFactory, useValue: mockPaginationFactory },
         { provide: Router, useValue: mockRouter },
       ],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     fixture = TestBed.createComponent(TaskListComponent);

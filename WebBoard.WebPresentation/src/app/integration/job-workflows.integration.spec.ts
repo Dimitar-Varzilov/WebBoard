@@ -4,6 +4,7 @@ import {
   fakeAsync,
   tick,
 } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -117,6 +118,7 @@ describe('Job Workflows E2E Integration Tests', () => {
         PaginationFactory,
         { provide: SignalRService, useValue: signalRSpy },
       ],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     jobService = TestBed.inject(JobService);

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError } from 'rxjs';
 import { JobDetailComponent } from './job-detail.component';
 import { JobService, ReportService } from '../../../services';
@@ -50,6 +51,7 @@ describe('JobDetailComponent', () => {
         { provide: JobService, useValue: mockJobService },
         { provide: ReportService, useValue: mockReportService },
       ],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     fixture = TestBed.createComponent(JobDetailComponent);

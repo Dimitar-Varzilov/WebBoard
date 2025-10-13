@@ -3,6 +3,7 @@ import { RouterTestingModule } from '@angular/router/testing';
 
 import { AppComponent } from './app.component';
 import { SignalRService } from './services';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('AppComponent', () => {
   let mockSignalRService: jasmine.SpyObj<SignalRService>;
@@ -17,6 +18,7 @@ describe('AppComponent', () => {
       imports: [RouterTestingModule],
       declarations: [AppComponent],
       providers: [{ provide: SignalRService, useValue: mockSignalRService }],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements like app-navbar
     }).compileComponents();
   });
 

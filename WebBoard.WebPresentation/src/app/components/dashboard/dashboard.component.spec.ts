@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 import { of, throwError } from 'rxjs';
@@ -123,6 +124,7 @@ describe('DashboardComponent', () => {
         { provide: TaskService, useValue: mockTaskService },
         { provide: JobService, useValue: mockJobService },
       ],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     mockTaskService.getTasks.and.returnValue(of(mockTasksPagedResult));

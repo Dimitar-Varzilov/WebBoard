@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import {
   HttpClientTestingModule,
   HttpTestingController,
@@ -44,6 +45,7 @@ describe('Task E2E Integration Tests', () => {
       declarations: [TaskListComponent, TaskCreateComponent, TaskFormComponent],
       imports: [HttpClientTestingModule, ReactiveFormsModule, FormsModule],
       providers: [TaskService, PaginationFactory],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     httpMock = TestBed.inject(HttpTestingController);

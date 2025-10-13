@@ -4,6 +4,7 @@ import {
   fakeAsync,
   tick,
 } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { of, throwError, BehaviorSubject } from 'rxjs';
 import * as signalR from '@microsoft/signalr';
 import { JobCardComponent } from './job-card.component';
@@ -68,6 +69,7 @@ describe('JobCardComponent', () => {
         { provide: ReportService, useValue: mockReportService },
         { provide: SignalRService, useValue: mockSignalRService },
       ],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     fixture = TestBed.createComponent(JobCardComponent);

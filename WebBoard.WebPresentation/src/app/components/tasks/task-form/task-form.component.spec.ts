@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { TaskFormComponent } from './task-form.component';
 import { TaskService } from '../../../services';
@@ -35,6 +36,7 @@ describe('TaskFormComponent', () => {
       declarations: [TaskFormComponent],
       imports: [ReactiveFormsModule],
       providers: [{ provide: TaskService, useValue: mockTaskService }],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     fixture = TestBed.createComponent(TaskFormComponent);

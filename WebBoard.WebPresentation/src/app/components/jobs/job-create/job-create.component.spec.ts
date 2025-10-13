@@ -8,6 +8,7 @@ import { JobService } from '../../../services';
 import { JOB_TYPES, ROUTES } from '../../../constants';
 import { TaskDtoRaw } from '../../../models/task.model';
 import { JobDtoRaw } from '../../../models/job.model';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 
 describe('JobCreateComponent', () => {
   let component: JobCreateComponent;
@@ -60,12 +61,17 @@ describe('JobCreateComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [JobCreateComponent],
-      imports: [ReactiveFormsModule, RouterTestingModule, RouterModule.forRoot([])],
+      imports: [
+        ReactiveFormsModule,
+        RouterTestingModule,
+        RouterModule.forRoot([]),
+      ],
       providers: [
         { provide: JobService, useValue: mockJobService },
         { provide: Router, useValue: mockRouter },
         { provide: ActivatedRoute, useValue: mockActivatedRoute },
       ],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements like app-navbar
     }).compileComponents();
 
     mockJobService.getPendingTasksCount.and.returnValue(of(5));

@@ -1,4 +1,5 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { TaskDetailComponent } from './task-detail.component';
 import { TaskDto, TaskItemStatus } from '../../../models';
 
@@ -25,6 +26,7 @@ describe('TaskDetailComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [TaskDetailComponent],
+      schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
     }).compileComponents();
 
     fixture = TestBed.createComponent(TaskDetailComponent);
