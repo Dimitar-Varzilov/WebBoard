@@ -10,25 +10,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  build:
+  test-api:
     runs-on: windows-latest
-    permissions:
-      contents: read #This is required for actions/checkout
-
     steps:
       - uses: actions/checkout@v4
-
       - name: Set up .NET Core
         uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '8.x'
+      - name: Restore dependencies
+        run: dotnet restore
+      - name: Run API tests
+        run: dotnet test WebBoard.Tests/WebBoard.Tests.csproj --configuration Release --no-build --verbosity normal
 
+  test-fe:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18.x'
+      - name: Install dependencies
+        run: cd WebBoard.WebPresentation && npm ci
+      - name: Run frontend tests
+        run: cd WebBoard.WebPresentation && npm test -- --watch=false --browsers=ChromeHeadless
+
+  build:
+    runs-on: windows-latest
+    needs: [test-api, test-fe]
+    permissions:
+      contents: read #This is required for actions/checkout
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
       - name: Build with dotnet
         run: dotnet build --configuration Release
-
       - name: dotnet publish
         run: dotnet publish -c Release -o "${{env.DOTNET_ROOT}}/myapp"
-
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4
         with:
@@ -41,20 +63,17 @@ jobs:
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
-
     steps:
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
           name: .net-app
-      
       - name: Login to Azure
         uses: azure/login@v2
         with:
           client-id: ${{ secrets.AZUREAPPSERVICE_CLIENTID_5077A352F16844C4BBE147AA8E65C351 }}
           tenant-id: ${{ secrets.AZUREAPPSERVICE_TENANTID_0EA773DB92CC4DF5BB47550D9A73CB63 }}
           subscription-id: ${{ secrets.AZUREAPPSERVICE_SUBSCRIPTIONID_1A0B26945C4E42DBA988F0D13B598CC9 }}
-
       - name: Deploy to Azure Web App
         id: deploy-to-webapp
         uses: azure/webapps-deploy@v3
@@ -62,4 +81,3 @@ jobs:
           app-name: 'webboard'
           slot-name: 'Production'
           package: .
-          
