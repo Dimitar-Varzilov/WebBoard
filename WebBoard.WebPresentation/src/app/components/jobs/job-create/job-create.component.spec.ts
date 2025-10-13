@@ -60,7 +60,7 @@ describe('JobCreateComponent', () => {
 
     await TestBed.configureTestingModule({
       declarations: [JobCreateComponent],
-      imports: [ReactiveFormsModule, RouterTestingModule, RouterModule],
+      imports: [ReactiveFormsModule, RouterTestingModule, RouterModule.forRoot([])],
       providers: [
         { provide: JobService, useValue: mockJobService },
         { provide: Router, useValue: mockRouter },
