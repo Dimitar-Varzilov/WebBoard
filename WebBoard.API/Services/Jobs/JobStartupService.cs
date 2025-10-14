@@ -11,7 +11,7 @@ namespace WebBoard.API.Services.Jobs
 		ILogger<JobStartupService> logger) : IHostedService
 	{
 		private static bool _hasRunOnce = false;
-		private static readonly object _lock = new();
+		private static readonly Lock _lock = new();
 
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
