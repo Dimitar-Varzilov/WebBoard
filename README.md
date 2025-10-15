@@ -1,3 +1,7 @@
+[![Azure Static Web Apps CI/CD](https://github.com/Dimitar-Varzilov/WebBoard/actions/workflows/azure-static-web-apps-lively-bush-0a2b9da03.yml/badge.svg)](https://github.com/Dimitar-Varzilov/WebBoard/actions/workflows/azure-static-web-apps-lively-bush-0a2b9da03.yml)
+
+[![Build and deploy ASP.Net Core app to Azure Web App - webboard](https://github.com/Dimitar-Varzilov/WebBoard/actions/workflows/master_webboard.yml/badge.svg?branch=master)](https://github.com/Dimitar-Varzilov/WebBoard/actions/workflows/master_webboard.yml)
+
 # WebBoard - Task and Job Management System
 
 ## Database Setup
