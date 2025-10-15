@@ -23,25 +23,9 @@ jobs:
       - name: Run API tests
         run: dotnet test WebBoard.Tests/WebBoard.Tests.csproj --configuration Release --verbosity normal
 
-  # test-fe:
-  #   runs-on: windows-latest
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         node-version: '16.x'
-  #     - name: Install dependencies
-  #       run: cd WebBoard.WebPresentation && npm ci
-  #     - name: Run frontend tests
-  #       run: cd WebBoard.WebPresentation && npm test -- --watch=false
-
   build:
     runs-on: windows-latest
-    needs: [
-      test-api, 
-      # test-fe
-    ]
+    needs: test-api
     permissions:
       contents: read #This is required for actions/checkout
     steps:

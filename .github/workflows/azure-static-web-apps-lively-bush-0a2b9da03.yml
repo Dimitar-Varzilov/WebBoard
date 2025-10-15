@@ -10,13 +10,41 @@ on:
       - master
 
 jobs:
-  build_and_deploy_job:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.x'
+      - name: Install dependencies
+        run: cd WebBoard.WebPresentation && npm ci
+      - name: Run frontend tests
+        run: cd WebBoard.WebPresentation && npm test -- --watch=false
+
+  build:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '16.x'
+      - name: Install dependencies
+        run: cd WebBoard.WebPresentation && npm ci
+      - name: Build frontend
+        run: cd WebBoard.WebPresentation && npm run build -- --output-path=dist/web-board.web-presentation
+
+  deploy:
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
-    name: Build and Deploy Job
+    needs: build
+    name: Deploy Job
     permissions:
-       id-token: write
-       contents: read
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v3
         with:
@@ -28,27 +56,25 @@ jobs:
         uses: actions/github-script@v6
         id: idtoken
         with:
-           script: |
-               const coredemo = require('@actions/core')
-               return await coredemo.getIDToken()
-           result-encoding: string
-      - name: Build And Deploy
+          script: |
+            const coredemo = require('@actions/core')
+            return await coredemo.getIDToken()
+          result-encoding: string
+      - name: Deploy to Azure Static Web Apps
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
         with:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LIVELY_BUSH_0A2B9DA03 }}
           action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "./WebBoard.WebPresentation" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist/web-board.web-presentation" # Built app content directory - optional
+          app_location: "./WebBoard.WebPresentation"
+          api_location: ""
+          output_location: "dist/web-board.web-presentation"
           github_id_token: ${{ steps.idtoken.outputs.result }}
-          ###### End of Repository/Build Configurations ######
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
     runs-on: ubuntu-latest
+    needs: [test, build, deploy]
     name: Close Pull Request Job
     steps:
       - name: Close Pull Request
