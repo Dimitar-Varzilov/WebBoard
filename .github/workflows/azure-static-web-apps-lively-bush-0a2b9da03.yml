@@ -5,13 +5,16 @@ on:
     branches:
       - master
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
     branches:
       - master
 
 jobs:
-  test:
-    runs-on: windows-latest
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Set up Node.js
@@ -22,34 +25,8 @@ jobs:
         run: cd WebBoard.WebPresentation && npm ci
       - name: Run frontend tests
         run: cd WebBoard.WebPresentation && npm test -- --watch=false --browsers=ChromeHeadlessCI
-
-  build:
-    runs-on: windows-latest
-    needs: test
-    steps:
-      - uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '16.x'
-      - name: Install dependencies
-        run: cd WebBoard.WebPresentation && npm ci
       - name: Build frontend
         run: cd WebBoard.WebPresentation && npm run build -- --output-path=dist/web-board.web-presentation
-
-  deploy:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    runs-on: ubuntu-latest
-    needs: build
-    name: Deploy Job
-    permissions:
-      id-token: write
-      contents: read
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-          lfs: false
       - name: Install OIDC Client from Core Package
         run: npm install @actions/core@1.6.0 @actions/http-client
       - name: Get Id Token
@@ -73,8 +50,7 @@ jobs:
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
-    runs-on: windows-latest
-    needs: [test, build, deploy]
+    runs-on: ubuntu-latest
     name: Close Pull Request Job
     steps:
       - name: Close Pull Request
