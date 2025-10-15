@@ -290,11 +290,12 @@ describe('DateTimeUtils', () => {
       expect(typeof result).toBe('string');
     });
 
-    it('should return IANA timezone identifier', () => {
+    it('should return IANA timezone identifier or UTC', () => {
       const result = DateTimeUtils.getCurrentTimezoneName();
 
-      // Common timezone patterns
-      expect(result).toMatch(/^[A-Za-z_]+\/[A-Za-z_]+$/);
+      // Accept either IANA format or 'UTC' for CI environments
+      const isIana = /^[A-Za-z_]+\/[A-Za-z_]+$/.test(result);
+      expect(isIana || result === 'UTC').toBeTrue();
     });
   });
 });
