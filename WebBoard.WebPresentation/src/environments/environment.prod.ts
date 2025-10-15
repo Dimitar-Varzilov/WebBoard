@@ -1,5 +1,7 @@
 export const environment = {
   production: true,
-  apiUrl: 'http://webboard.eu-central-1.elasticbeanstalk.com/api',
-  signalRUrl: 'http://webboard.eu-central-1.elasticbeanstalk.com/hubs/job-status',
+  apiUrl:
+    'https://webboard-h2fda5aqc7atdhc2.canadacentral-01.azurewebsites.net/api',
+  signalRUrl:
+    'https://webboard-h2fda5aqc7atdhc2.canadacentral-01.azurewebsites.net/hubs/job-status',
 };
