@@ -1,10 +1,15 @@
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
+using Moq;
+using Sieve.Models;
+using Sieve.Services;
 using WebBoard.API.Common.DTOs.Tasks;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Common.Models;
 using WebBoard.API.Data;
+using WebBoard.API.Services.Common;
 using WebBoard.API.Services.Tasks;
-using Microsoft.EntityFrameworkCore;
 
 namespace WebBoard.Tests
 {
@@ -23,7 +28,9 @@ namespace WebBoard.Tests
 				.Options;
 
 			_dbContext = new AppDbContext(options);
-			_taskService = new TaskService(_dbContext);
+            var sieveMock = new Mock<ISieveProcessor>();
+            var queryProcessor = new QueryProcessor(sieveMock.Object, Options.Create(new SieveOptions()));
+            _taskService = new TaskService(_dbContext, queryProcessor);
 		}
 
 		public void Dispose()

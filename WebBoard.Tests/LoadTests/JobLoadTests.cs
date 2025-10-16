@@ -1,10 +1,10 @@
-using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
 using Quartz;
+using System.Diagnostics;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Common.Models;
 using WebBoard.API.Data;
@@ -33,7 +33,7 @@ namespace WebBoard.Tests.LoadTests
 
 			_mockScheduler = new Mock<IScheduler>();
 			_mockCleanupLogger = new Mock<ILogger<JobCleanupService>>();
-			
+
 			_cleanupOptions = new JobCleanupOptions
 			{
 				RemoveFromScheduler = true,
@@ -79,7 +79,7 @@ namespace WebBoard.Tests.LoadTests
 			var stopwatch = Stopwatch.StartNew();
 
 			// Act
-			var tasks = jobs.Select(j => schedulingService.ScheduleJobAsync(j));
+			var tasks = jobs.Select(schedulingService.ScheduleJobAsync);
 			await Task.WhenAll(tasks);
 
 			// Assert
@@ -231,7 +231,7 @@ namespace WebBoard.Tests.LoadTests
 			// Verify ShouldRetryJobAsync returns false after reaching max
 			var retryInfo = await _dbContext.JobRetries.FirstAsync(r => r.JobId == job.Id);
 			retryInfo.RetryCount.Should().Be(3);
-			
+
 			// After 4th retry, count = 3, which equals MaxRetries, so should not retry
 			var shouldRetry = await retryService.ShouldRetryJobAsync(job.Id);
 			shouldRetry.Should().BeFalse();
@@ -259,7 +259,7 @@ namespace WebBoard.Tests.LoadTests
 			// Assert - All retries should have different NextRetryAt times (due to jitter)
 			var retryInfos = await _dbContext.JobRetries.ToListAsync();
 			var retryTimes = retryInfos.Select(r => r.NextRetryAt).Distinct().ToList();
-			
+
 			// Should have significant distribution (at least 80% unique times)
 			retryTimes.Count.Should().BeGreaterThan(40,
 				"jitter should cause at least 80% of retry times to be unique");

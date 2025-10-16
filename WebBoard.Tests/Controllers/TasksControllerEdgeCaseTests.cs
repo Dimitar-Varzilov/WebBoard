@@ -74,8 +74,8 @@ namespace WebBoard.Tests.Controllers
 
 			// Assert
 			var badRequestResult = result.Should().BeOfType<BadRequestObjectResult>().Subject;
-            var message = badRequestResult?.Value?.ToString();
-            message.Should().NotBeNullOrEmpty();
+			var message = badRequestResult?.Value?.ToString();
+			message.Should().NotBeNullOrEmpty();
 			message.Should().Contain("Pending");
 			message.Should().Contain("InProgress");
 			message.Should().Contain("Completed");
@@ -363,8 +363,8 @@ namespace WebBoard.Tests.Controllers
 			{
 				Status = (int)TaskItemStatus.Pending,
 				HasJob = false,
-				SearchTerm = "test",
-				PageNumber = 2,
+				Filters = "test",
+				Page = 2,
 				PageSize = 20
 			};
 
@@ -380,8 +380,8 @@ namespace WebBoard.Tests.Controllers
 				It.Is<TaskQueryParameters>(p =>
 					p.Status == parameters.Status &&
 					p.HasJob == parameters.HasJob &&
-					p.SearchTerm == parameters.SearchTerm &&
-					p.PageNumber == parameters.PageNumber &&
+					p.Filters == parameters.Filters &&
+					p.Page == parameters.Page &&
 					p.PageSize == parameters.PageSize)),
 				Times.Once);
 		}

@@ -156,7 +156,7 @@ namespace WebBoard.Tests.Attributes
 		{
 			// Arrange
 			var attribute = new NotInPastOffsetAttribute { MinimumMinutesInFuture = 1 };
-			
+
 			// Create a date in a different timezone but same instant
 			var utcNow = DateTimeOffset.UtcNow;
 			var easternTime = new DateTimeOffset(utcNow.DateTime, TimeSpan.FromHours(-5));

@@ -1,10 +1,13 @@
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
-using WebBoard.API.Common.DTOs.Common;
+using Microsoft.Extensions.Options;
+using Sieve.Models;
+using Sieve.Services;
 using WebBoard.API.Common.DTOs.Tasks;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Common.Models;
 using WebBoard.API.Data;
+using WebBoard.API.Services.Common;
 using WebBoard.API.Services.Tasks;
 
 namespace WebBoard.Tests
@@ -25,7 +28,10 @@ namespace WebBoard.Tests
 				.Options;
 
 			_dbContext = new AppDbContext(options);
-			_taskService = new TaskService(_dbContext);
+            var sieveOptions = Options.Create(new SieveOptions());
+            var sieveProcessor = new SieveProcessor(sieveOptions);
+            var queryProcessor = new QueryProcessor(sieveProcessor, Options.Create(new SieveOptions()));
+            _taskService = new TaskService(_dbContext, queryProcessor);
 		}
 
 		public void Dispose()
@@ -205,7 +211,7 @@ namespace WebBoard.Tests
 			result.Items.Should().OnlyContain(t => t.JobId == null);
 		}
 
-		[Fact(Skip = "Requires PostgreSQL - InMemoryDatabase doesn't support EF.Functions.ILike used in SimpleSearchExtensions")]
+		[Fact]
 		public async Task GetTasksAsync_ShouldFilterBySearchTerm_InTitle()
 		{
 			// Arrange
@@ -215,7 +221,7 @@ namespace WebBoard.Tests
 			await _dbContext.Tasks.AddRangeAsync(task1, task2);
 			await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters { SearchTerm = "important" };
+			var parameters = new TaskQueryParameters { Filters = "important" };
 
 			// Act
 			var result = await _taskService.GetTasksAsync(parameters);
@@ -226,7 +232,7 @@ namespace WebBoard.Tests
 			result.Items.First().Title.Should().Be("Important Task");
 		}
 
-		[Fact(Skip = "Requires PostgreSQL - InMemoryDatabase doesn't support EF.Functions.ILike used in SimpleSearchExtensions")]
+		[Fact]
 		public async Task GetTasksAsync_ShouldFilterBySearchTerm_InDescription()
 		{
 			// Arrange
@@ -236,7 +242,7 @@ namespace WebBoard.Tests
 			await _dbContext.Tasks.AddRangeAsync(task1, task2);
 			await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters { SearchTerm = "urgent" };
+			var parameters = new TaskQueryParameters { Filters = "urgent" };
 
 			// Act
 			var result = await _taskService.GetTasksAsync(parameters);
@@ -247,7 +253,7 @@ namespace WebBoard.Tests
 			result.Items.First().Description.Should().Be("Urgent description");
 		}
 
-		[Fact(Skip = "Requires PostgreSQL - InMemoryDatabase doesn't support EF.Functions.ILike used in SimpleSearchExtensions")]
+		[Fact]
 		public async Task GetTasksAsync_ShouldBeCaseInsensitive_ForSearchTerm()
 		{
 			// Arrange
@@ -256,7 +262,7 @@ namespace WebBoard.Tests
 			await _dbContext.Tasks.AddAsync(task);
 			await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters { SearchTerm = "IMPORTANT" };
+			var parameters = new TaskQueryParameters { Filters = "IMPORTANT" };
 
 			// Act
 			var result = await _taskService.GetTasksAsync(parameters);
@@ -276,7 +282,7 @@ namespace WebBoard.Tests
 			await _dbContext.Tasks.AddRangeAsync(task1, task2);
 			await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters { SearchTerm = null };
+			var parameters = new TaskQueryParameters { Filters = null };
 
 			// Act
 			var result = await _taskService.GetTasksAsync(parameters);
@@ -295,7 +301,7 @@ namespace WebBoard.Tests
 			await _dbContext.Tasks.AddRangeAsync(task1, task2);
 			await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters { SearchTerm = "" };
+			var parameters = new TaskQueryParameters { Filters = "" };
 
 			// Act
 			var result = await _taskService.GetTasksAsync(parameters);
@@ -315,7 +321,7 @@ namespace WebBoard.Tests
 			}
 			await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters { PageNumber = 2, PageSize = 5 };
+			var parameters = new TaskQueryParameters { Page = 2, PageSize = 5 };
 
 			// Act
 			var result = await _taskService.GetTasksAsync(parameters);
@@ -329,26 +335,29 @@ namespace WebBoard.Tests
 		}
 
 		[Fact]
-		public async Task GetTasksAsync_ShouldApplySorting_Descending()
-		{
-			// Arrange
-			var task1 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-2), "Oldest", "Desc", TaskItemStatus.Pending, null);
-			var task2 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-1), "Middle", "Desc", TaskItemStatus.Pending, null);
-			var task3 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Newest", "Desc", TaskItemStatus.Pending, null);
+        public async Task GetTasksAsync_ShouldApplySorting_Descending()
+        {
+            // Arrange
+            var task1 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-2), "Oldest", "Desc", TaskItemStatus.Pending, null);
+            var task2 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow.AddDays(-1), "Middle", "Desc", TaskItemStatus.Pending, null);
+            var task3 = new TaskItem(Guid.NewGuid(), DateTimeOffset.UtcNow, "Newest", "Desc", TaskItemStatus.Pending, null);
 
-			await _dbContext.Tasks.AddRangeAsync(task1, task2, task3);
-			await _dbContext.SaveChangesAsync();
+            await _dbContext.Tasks.AddRangeAsync(task1, task2, task3);
+            await _dbContext.SaveChangesAsync();
 
-			var parameters = new TaskQueryParameters(); // Default is descending by CreatedAt
+            var parameters = new TaskQueryParameters()
+            {
+                Sorts = "-CreatedAt"
+            };
 
-			// Act
-			var result = await _taskService.GetTasksAsync(parameters);
+            // Act
+            var result = await _taskService.GetTasksAsync(parameters);
 
-			// Assert
-			result.Items.Should().HaveCount(3);
-			result.Items.First().Title.Should().Be("Newest");
-			result.Items.Last().Title.Should().Be("Oldest");
-		}
+            // Assert
+            result.Items.Should().HaveCount(3);
+            result.Items.First().Title.Should().Be("Newest");
+            result.Items.Last().Title.Should().Be("Oldest");
+        }
 
 		[Fact]
 		public async Task GetTasksAsync_WithMultipleFilters_ShouldApplyAllFilters()
@@ -380,7 +389,7 @@ namespace WebBoard.Tests
 			result.Items.First().Title.Should().Be("Important Task");
 		}
 
-		[Fact(Skip = "Requires PostgreSQL - InMemoryDatabase doesn't support EF.Functions.ILike used in SimpleSearchExtensions")]
+		[Fact]
 		public async Task GetTasksAsync_WithMultipleFilters_IncludingSearch_ShouldApplyAllFilters()
 		{
 			// Arrange
@@ -396,7 +405,7 @@ namespace WebBoard.Tests
 			{
 				Status = (int)TaskItemStatus.Pending,
 				HasJob = false,
-				SearchTerm = "important" // Requires PostgreSQL ILIKE
+				Filters = "important" // Requires PostgreSQL ILIKE
 			};
 
 			// Act
@@ -867,7 +876,7 @@ namespace WebBoard.Tests
 			countCompleted.Should().Be(1);
 		}
 
-		[Fact(Skip = "Requires PostgreSQL - InMemoryDatabase doesn't support EF.Functions.ILike used in SimpleSearchExtensions")]
+		[Fact]
 		public async Task CompleteWorkflow_WithSearchFunctionality_ShouldWorkCorrectly()
 		{
 			// Arrange & Act
@@ -882,7 +891,7 @@ namespace WebBoard.Tests
 			var pendingTasks = await _taskService.GetTasksByStatusAsync(TaskItemStatus.Pending);
 
 			// Search for urgent tasks (requires PostgreSQL)
-			var urgentTasks = await _taskService.GetTasksAsync(new TaskQueryParameters { SearchTerm = "urgent" });
+			var urgentTasks = await _taskService.GetTasksAsync(new TaskQueryParameters { Filters = "urgent" });
 
 			// Assert
 			pendingTasks.Should().HaveCount(2);

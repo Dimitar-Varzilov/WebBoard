@@ -1,12 +1,12 @@
+using FluentAssertions;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Logging;
 using Moq;
-using FluentAssertions;
 using WebBoard.API.Common.Constants;
 using WebBoard.API.Common.DTOs.Jobs;
 using WebBoard.API.Common.Enums;
-using WebBoard.API.Services.Jobs;
 using WebBoard.API.Hubs;
+using WebBoard.API.Services.Jobs;
 
 namespace WebBoard.Tests
 {

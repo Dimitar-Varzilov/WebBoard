@@ -31,7 +31,7 @@ namespace WebBoard.Tests.Controllers
 		public async Task GetJobs_ShouldReturnOkWithPagedResult()
 		{
 			// Arrange
-			var parameters = new JobQueryParameters { PageNumber = 1, PageSize = 10 };
+			var parameters = new JobQueryParameters { Page = 1, PageSize = 10 };
 			var expectedResult = new PagedResult<JobDto>(
 				[
 					new(Guid.NewGuid(), Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Completed, DateTimeOffset.UtcNow, null)
@@ -55,13 +55,13 @@ namespace WebBoard.Tests.Controllers
 		public async Task GetJobs_ShouldApplyFiltersCorrectly()
 		{
 			// Arrange
-			var parameters = new JobQueryParameters 
-			{ 
+			var parameters = new JobQueryParameters
+			{
 				Status = (int)JobStatus.Running,
-				PageNumber = 1,
+				Page = 1,
 				PageSize = 20
 			};
-			
+
 			var expectedResult = new PagedResult<JobDto>(
 				[],
 				0, 1, 20
@@ -227,10 +227,9 @@ namespace WebBoard.Tests.Controllers
 			// Arrange
 			var jobType = Constants.JobTypes.GenerateTaskReport;
 			var pagedResult = new PagedResult<TaskDto>(
-				new List<TaskDto>
-				{
+				[
 					new(Guid.NewGuid(), "Task", "Description", TaskItemStatus.Pending, DateTimeOffset.UtcNow)
-				},
+				],
 				1, 1, 1000
 			);
 
@@ -257,7 +256,7 @@ namespace WebBoard.Tests.Controllers
 				Constants.JobTypes.MarkAllTasksAsDone,
 				true,
 				null,
-				new List<Guid> { Guid.NewGuid() });
+				[Guid.NewGuid()]);
 
 			var createdJob = new JobDto(
 				Guid.NewGuid(),
@@ -283,7 +282,7 @@ namespace WebBoard.Tests.Controllers
 		public async Task CreateJob_WithInvalidJobType_ShouldReturnBadRequest()
 		{
 			// Arrange
-			var request = new CreateJobRequestDto("InvalidJobType", true, null, new List<Guid> { Guid.NewGuid() });
+			var request = new CreateJobRequestDto("InvalidJobType", true, null, [Guid.NewGuid()]);
 			_mockJobService.Setup(s => s.CreateJobAsync(request))
 				.ThrowsAsync(new ArgumentException("Invalid job type"));
 
@@ -299,7 +298,7 @@ namespace WebBoard.Tests.Controllers
 		public async Task CreateJob_WithNoPendingTasks_ShouldReturnBadRequest()
 		{
 			// Arrange
-			var request = new CreateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, new List<Guid>());
+			var request = new CreateJobRequestDto(Constants.JobTypes.MarkAllTasksAsDone, true, null, []);
 			_mockJobService.Setup(s => s.CreateJobAsync(request))
 				.ThrowsAsync(new InvalidOperationException("No pending tasks available"));
 
@@ -320,7 +319,7 @@ namespace WebBoard.Tests.Controllers
 				Constants.JobTypes.GenerateTaskReport,
 				false,
 				scheduledTime,
-				new List<Guid> { Guid.NewGuid() });
+				[Guid.NewGuid()]);
 
 			var createdJob = new JobDto(
 				Guid.NewGuid(),

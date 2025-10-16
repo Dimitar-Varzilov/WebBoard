@@ -295,7 +295,7 @@ namespace WebBoard.Tests
 			// Assert
 			_mockScheduler.Verify(
 				s => s.ScheduleJob(
-					It.Is<IJobDetail>(d => 
+					It.Is<IJobDetail>(d =>
 						d.JobDataMap.ContainsKey(Constants.JobDataKeys.JobId) &&
 						(Guid)d.JobDataMap[Constants.JobDataKeys.JobId] == jobId),
 					It.IsAny<ITrigger>(),

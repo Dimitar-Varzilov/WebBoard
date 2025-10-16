@@ -255,7 +255,7 @@ namespace WebBoard.Tests
 			var queuedJob = new Job(Guid.NewGuid(), "Queued", JobStatus.Queued, DateTimeOffset.UtcNow.AddMinutes(-5), null);
 			var runningJob = new Job(Guid.NewGuid(), "Running", JobStatus.Running, DateTimeOffset.UtcNow.AddMinutes(-5), null);
 			var completedJob = new Job(Guid.NewGuid(), "Completed", JobStatus.Completed, DateTimeOffset.UtcNow.AddMinutes(-5), null);
-			
+
 			_dbContext.Jobs.AddRange(queuedJob, runningJob, completedJob);
 			await _dbContext.SaveChangesAsync();
 
@@ -282,12 +282,12 @@ namespace WebBoard.Tests
 		public async Task StartAsync_ShouldOrderJobsByScheduledTime()
 		{
 			// Arrange
-			var job1 = new Job(Guid.NewGuid(), "Job1", JobStatus.Queued, 
-				DateTimeOffset.UtcNow.AddMinutes(-5), 
+			var job1 = new Job(Guid.NewGuid(), "Job1", JobStatus.Queued,
+				DateTimeOffset.UtcNow.AddMinutes(-5),
 				DateTimeOffset.UtcNow.AddHours(2));
 
-			var job2 = new Job(Guid.NewGuid(), "Job2", JobStatus.Queued, 
-				DateTimeOffset.UtcNow.AddMinutes(-4), 
+			var job2 = new Job(Guid.NewGuid(), "Job2", JobStatus.Queued,
+				DateTimeOffset.UtcNow.AddMinutes(-4),
 				DateTimeOffset.UtcNow.AddHours(1));
 
 			_dbContext.Jobs.AddRange(job1, job2);

@@ -28,7 +28,7 @@ namespace WebBoard.Tests
 
 			_mockScheduler = new Mock<IScheduler>();
 			_mockLogger = new Mock<ILogger<JobCleanupService>>();
-			
+
 			_cleanupOptions = new JobCleanupOptions
 			{
 				RemoveFromScheduler = true,

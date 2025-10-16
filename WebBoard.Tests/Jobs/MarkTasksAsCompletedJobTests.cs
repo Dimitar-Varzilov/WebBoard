@@ -140,10 +140,10 @@ namespace WebBoard.Tests.Jobs
 			// Arrange
 			var jobId1 = Guid.NewGuid();
 			var jobId2 = Guid.NewGuid();
-			
+
 			var job1 = new Job(jobId1, Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
 			var job2 = new Job(jobId2, Constants.JobTypes.MarkAllTasksAsDone, JobStatus.Queued, DateTimeOffset.UtcNow, null);
-			
+
 			var tasksJob1 = new List<TaskItem>
 			{
 				new(Guid.NewGuid(), DateTimeOffset.UtcNow, "Job1 Task 1", "Description", TaskItemStatus.Pending, jobId1),
@@ -205,7 +205,7 @@ namespace WebBoard.Tests.Jobs
 
 			// Assert
 			var updatedTasks = await _dbContext.Tasks.Where(t => t.JobId == jobId).ToListAsync();
-			
+
 			// Only 1 pending task should be updated by the job logic
 			// The other tasks (InProgress, Completed) are updated by BaseJob's UpdateJobTasksOnCompletionAsync
 			updatedTasks.Where(t => t.Status == TaskItemStatus.Completed).Should().HaveCount(3);

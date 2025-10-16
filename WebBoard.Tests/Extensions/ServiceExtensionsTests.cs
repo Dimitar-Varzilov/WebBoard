@@ -1,5 +1,4 @@
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;
@@ -43,7 +42,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(ITaskService));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(TaskService));
+			descriptor.ImplementationType.Should().Be<TaskService>();
 		}
 
 		[Fact]
@@ -60,7 +59,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IJobService));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(JobService));
+			descriptor.ImplementationType.Should().Be<JobService>();
 		}
 
 		[Fact]
@@ -77,7 +76,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IJobSchedulingService));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(JobSchedulingService));
+			descriptor.ImplementationType.Should().Be<JobSchedulingService>();
 		}
 
 		[Fact]
@@ -94,7 +93,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IJobCleanupService));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(JobCleanupService));
+			descriptor.ImplementationType.Should().Be<JobCleanupService>();
 		}
 
 		[Fact]
@@ -111,7 +110,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IReportService));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(ReportService));
+			descriptor.ImplementationType.Should().Be<ReportService>();
 		}
 
 		[Fact]
@@ -128,7 +127,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IJobRetryService));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(JobRetryService));
+			descriptor.ImplementationType.Should().Be<JobRetryService>();
 		}
 
 		[Fact]
@@ -145,7 +144,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IJobStatusNotifier));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Scoped);
-			descriptor.ImplementationType.Should().Be(typeof(JobStatusNotifier));
+			descriptor.ImplementationType.Should().Be<JobStatusNotifier>();
 		}
 
 		[Fact]
@@ -162,7 +161,7 @@ namespace WebBoard.Tests.Extensions
 			var descriptor = services.FirstOrDefault(s => s.ServiceType == typeof(IJobTypeRegistry));
 			descriptor.Should().NotBeNull();
 			descriptor!.Lifetime.Should().Be(ServiceLifetime.Singleton);
-			descriptor.ImplementationType.Should().Be(typeof(JobTypeRegistry));
+			descriptor.ImplementationType.Should().Be<JobTypeRegistry>();
 		}
 
 		[Fact]
@@ -197,7 +196,7 @@ namespace WebBoard.Tests.Extensions
 			services.ConfigureServices(configuration);
 
 			// Assert
-			var descriptor = services.FirstOrDefault(s => 
+			var descriptor = services.FirstOrDefault(s =>
 				s.ServiceType == typeof(Microsoft.Extensions.Options.IConfigureOptions<JobCleanupOptions>));
 			descriptor.Should().NotBeNull();
 		}
@@ -296,7 +295,7 @@ namespace WebBoard.Tests.Extensions
 			result.Should().BeSameAs(services);
 		}
 
-		private IConfiguration CreateConfiguration(Dictionary<string, string?>? settings = null)
+		private static IConfiguration CreateConfiguration(Dictionary<string, string?>? settings = null)
 		{
 			var defaultSettings = new Dictionary<string, string?>
 			{

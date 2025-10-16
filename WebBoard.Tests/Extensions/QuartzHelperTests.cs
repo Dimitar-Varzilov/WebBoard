@@ -25,17 +25,17 @@ namespace WebBoard.Tests.Extensions
 
 			// Assert
 			exception.Should().BeNull();
-            called.Should().BeTrue();
-        }
+			called.Should().BeTrue();
+		}
 
 		[Fact]
 		public void ConfigureQuartzJobs_ShouldConfigureWithProvidedConfigurator()
 		{
 			// This test verifies that the method accepts a valid configurator
 			// The actual configuration is tested through integration tests
-			
+
 			// Arrange & Act
-			var exception = Record.Exception(() => 
+			var exception = Record.Exception(() =>
 			{
 				// The method should be callable with any valid IServiceCollectionQuartzConfigurator
 				// We can't easily mock this complex interface, so we verify it compiles and can be called

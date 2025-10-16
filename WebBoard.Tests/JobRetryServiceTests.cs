@@ -30,8 +30,8 @@ namespace WebBoard.Tests
 
 		public void Dispose()
 		{
-            GC.SuppressFinalize(this);
-            _dbContext.Database.EnsureDeleted();
+			GC.SuppressFinalize(this);
+			_dbContext.Database.EnsureDeleted();
 			_dbContext.Dispose();
 		}
 
@@ -248,25 +248,25 @@ namespace WebBoard.Tests
 
 			// Act & Assert - First retry
 			await _retryService.ScheduleRetryAsync(jobId, "Error 1");
-			_dbContext.ChangeTracker.Clear(); 
+			_dbContext.ChangeTracker.Clear();
 			var retry1 = await _dbContext.JobRetries.FirstAsync(r => r.JobId == jobId);
 			retry1.RetryCount.Should().Be(0);
 			retry1.LastErrorMessage.Should().Be("Error 1");
 
 			// Act & Assert - Second retry
 			await _retryService.ScheduleRetryAsync(jobId, "Error 2");
-			_dbContext.ChangeTracker.Clear(); 
+			_dbContext.ChangeTracker.Clear();
 			var retry2 = await _dbContext.JobRetries.FirstAsync(r => r.JobId == jobId);
 			retry2.RetryCount.Should().Be(1);
 			retry2.LastErrorMessage.Should().Be("Error 2");
 
 			// Act & Assert - Third retry
 			await _retryService.ScheduleRetryAsync(jobId, "Error 3");
-			_dbContext.ChangeTracker.Clear(); 
+			_dbContext.ChangeTracker.Clear();
 			var retry3 = await _dbContext.JobRetries.FirstAsync(r => r.JobId == jobId);
 			retry3.RetryCount.Should().Be(2);
 			retry3.LastErrorMessage.Should().Be("Error 3");
-			
+
 			// Verify MaxRetries is consistent
 			retry3.MaxRetries.Should().Be(3);
 		}

@@ -63,7 +63,7 @@ namespace WebBoard.Tests.Controllers
 			// Assert
 			var notFoundResult = result.Should().BeOfType<NotFoundObjectResult>().Subject;
 			notFoundResult.Value.Should().NotBeNull();
-			
+
 			_mockReportService.Verify(s => s.MarkReportAsDownloadedAsync(It.IsAny<Guid>()), Times.Never);
 		}
 

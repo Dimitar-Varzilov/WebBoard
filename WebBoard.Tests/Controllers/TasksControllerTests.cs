@@ -26,12 +26,11 @@ namespace WebBoard.Tests.Controllers
 		public async Task GetTasks_ShouldReturnOkWithPagedResult()
 		{
 			// Arrange
-			var parameters = new TaskQueryParameters { PageNumber = 1, PageSize = 10 };
+			var parameters = new TaskQueryParameters { Page = 1, PageSize = 10 };
 			var expectedResult = new PagedResult<TaskDto>(
-				new List<TaskDto>
-				{
+				[
 					new(Guid.NewGuid(), "Task 1", "Description", TaskItemStatus.Pending, DateTimeOffset.UtcNow, null)
-				},
+				],
 				1, 1, 10
 			);
 
@@ -50,16 +49,16 @@ namespace WebBoard.Tests.Controllers
 		public async Task GetTasks_WithFilters_ShouldApplyCorrectly()
 		{
 			// Arrange
-			var parameters = new TaskQueryParameters 
-			{ 
+			var parameters = new TaskQueryParameters
+			{
 				Status = (int)TaskItemStatus.Completed,
 				HasJob = true,
-				PageNumber = 1,
+				Page = 1,
 				PageSize = 20
 			};
 
 			var expectedResult = new PagedResult<TaskDto>(
-				new List<TaskDto>(),
+				[],
 				0, 1, 20
 			);
 

@@ -42,11 +42,11 @@ namespace WebBoard.Tests.Jobs
 			_mockServiceProvider = new Mock<IServiceProvider>();
 			_mockServiceProvider.Setup(sp => sp.GetService(typeof(IServiceScopeFactory)))
 				.Returns(_mockScopeFactory.Object);
-			
+
 			// Setup scope factory to return scope
 			_mockScopeFactory.Setup(f => f.CreateScope()).Returns(_mockScope.Object);
 			_mockScope.SetupGet(s => s.ServiceProvider).Returns(_mockScopedProvider.Object);
-			
+
 			_mockScopedProvider.Setup(sp => sp.GetService(typeof(AppDbContext))).Returns(_dbContext);
 			_mockScopedProvider.Setup(sp => sp.GetService(typeof(IJobCleanupService))).Returns(_mockCleanupService.Object);
 			_mockScopedProvider.Setup(sp => sp.GetService(typeof(IJobStatusNotifier))).Returns(_mockStatusNotifier.Object);
@@ -81,7 +81,7 @@ namespace WebBoard.Tests.Jobs
 			// Assert
 			var updatedJob = await _dbContext.Jobs.FindAsync(jobId);
 			updatedJob!.Status.Should().Be(JobStatus.Completed);
-			
+
 			_mockStatusNotifier.Verify(s => s.NotifyJobStatusAsync(
 				jobId, "TestJob", JobStatus.Running, null), Times.Once);
 			_mockStatusNotifier.Verify(s => s.NotifyJobStatusAsync(
@@ -155,7 +155,7 @@ namespace WebBoard.Tests.Jobs
 
 			// Act & Assert
 			await Assert.ThrowsAsync<InvalidOperationException>(() => testJob.Execute(context));
-			
+
 			var updatedJob = await _dbContext.Jobs.FindAsync(jobId);
 			updatedJob!.Status.Should().Be(JobStatus.Failed);
 			_mockRetryService.Verify(r => r.RemoveRetryInfoAsync(jobId), Times.Once);
@@ -226,7 +226,7 @@ namespace WebBoard.Tests.Jobs
 		{
 			// Arrange
 			var testJob = new TestJob(_mockServiceProvider.Object, _mockLogger.Object, isSuccess: true);
-			
+
 			// Act & Assert
 			testJob.TestShouldRetryOnError("Validation failed").Should().BeFalse();
 			testJob.TestShouldRetryOnError("validation error occurred").Should().BeFalse();
@@ -237,7 +237,7 @@ namespace WebBoard.Tests.Jobs
 		{
 			// Arrange
 			var testJob = new TestJob(_mockServiceProvider.Object, _mockLogger.Object, isSuccess: true);
-			
+
 			// Act & Assert
 			testJob.TestShouldRetryOnError("Resource not found").Should().BeFalse();
 			testJob.TestShouldRetryOnError("NOT FOUND").Should().BeFalse();
@@ -248,7 +248,7 @@ namespace WebBoard.Tests.Jobs
 		{
 			// Arrange
 			var testJob = new TestJob(_mockServiceProvider.Object, _mockLogger.Object, isSuccess: true);
-			
+
 			// Act & Assert
 			testJob.TestShouldRetryOnError("Network timeout").Should().BeTrue();
 			testJob.TestShouldRetryOnError("Database connection failed").Should().BeTrue();
@@ -279,7 +279,7 @@ namespace WebBoard.Tests.Jobs
 
 			// Assert
 			count.Should().Be(2); // Only pending and in-progress should be updated
-			
+
 			var updatedTasks = await _dbContext.Tasks.Where(t => t.JobId == jobId).ToListAsync();
 			updatedTasks.Where(t => t.Status == TaskItemStatus.Completed).Should().HaveCount(3);
 		}
@@ -289,10 +289,10 @@ namespace WebBoard.Tests.Jobs
 			var mockContext = new Mock<IJobExecutionContext>();
 			var jobDataMap = new JobDataMap();
 			jobDataMap.Put("JobId", jobId);
-			
+
 			mockContext.Setup(c => c.MergedJobDataMap).Returns(jobDataMap);
 			mockContext.Setup(c => c.CancellationToken).Returns(CancellationToken.None);
-			
+
 			return mockContext.Object;
 		}
 
@@ -312,19 +312,19 @@ namespace WebBoard.Tests.Jobs
 			{
 				await Task.CompletedTask;
 
-				if (throwException)
-				{
-					throw new InvalidOperationException("Test exception");
-				}
-
-				return new JobExecutionResult(isSuccess, 5, errorMessage);
+				return throwException ? throw new InvalidOperationException("Test exception") : new JobExecutionResult(isSuccess, 5, errorMessage);
 			}
 
 			// Expose protected methods for testing
-			public bool TestShouldRetryOnError(string? errorMessage) => ShouldRetryOnError(errorMessage);
+			public bool TestShouldRetryOnError(string? errorMessage)
+			{
+				return ShouldRetryOnError(errorMessage);
+			}
 
-			public Task<int> TestUpdateJobTasksOnCompletion(AppDbContext dbContext, Guid jobId, CancellationToken ct) =>
-				UpdateJobTasksOnCompletionAsync(dbContext, jobId, ct);
+			public Task<int> TestUpdateJobTasksOnCompletion(AppDbContext dbContext, Guid jobId, CancellationToken ct)
+			{
+				return UpdateJobTasksOnCompletionAsync(dbContext, jobId, ct);
+			}
 		}
 	}
 }
