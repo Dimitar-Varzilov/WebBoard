@@ -1,14 +1,15 @@
 using Microsoft.EntityFrameworkCore;
+using Sieve.Services;
 using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Services.Common;
 using WebBoard.API.Common.DTOs.Tasks;
 using WebBoard.API.Common.Enums;
-using WebBoard.API.Common.Extensions;
 using WebBoard.API.Common.Models;
 using WebBoard.API.Data;
 
 namespace WebBoard.API.Services.Tasks
 {
-	public class TaskService(AppDbContext db) : ITaskService
+       public class TaskService(AppDbContext db, IQueryProcessor queryProcessor) : ITaskService
 	{
 		public async Task<TaskDto> CreateTaskAsync(CreateTaskRequestDto createTaskRequest)
 		{
@@ -48,46 +49,43 @@ namespace WebBoard.API.Services.Tasks
 
 		public async Task<PagedResult<TaskDto>> GetTasksAsync(TaskQueryParameters parameters)
 		{
-			var query = db.Tasks.AsNoTracking();
+            var baseQuery = db.Tasks.AsNoTracking();
 
-			// Apply filtering
-			if (parameters.Status.HasValue)
-			{
-				query = query.Where(t => (int)t.Status == parameters.Status.Value);
-			}
+            // Custom filtering for Status and HasJob
+            if (parameters.Status.HasValue)
+            {
+                baseQuery = baseQuery.Where(t => (int)t.Status == parameters.Status.Value);
+            }
+            if (parameters.HasJob.HasValue)
+            {
+                baseQuery = parameters.HasJob.Value
+                    ? baseQuery.Where(t => t.JobId != null)
+                    : baseQuery.Where(t => t.JobId == null);
+            }
 
-			if (parameters.HasJob.HasValue)
-			{
-				query = parameters.HasJob.Value
-					? query.Where(t => t.JobId != null)
-					: query.Where(t => t.JobId == null);
-			}
+            // Apply case-insensitive search on Title and Description if SearchTerm is provided
+            if (!string.IsNullOrWhiteSpace(parameters.Filters))
+            {
+                var searchTerm = parameters.Filters.ToLower();
+                baseQuery = baseQuery.Where(t =>
+                    t.Title.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase) ||
+                    t.Description.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
+            }
 
-			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-			{
-				var searchTerm = parameters.SearchTerm;
-				// Use EF.Functions.ILike for case-insensitive search in PostgreSQL
-				// OR use ToLower() on both sides (simpler but slightly less efficient)
-				query = query.Where(t =>
-					EF.Functions.ILike(t.Title, $"%{searchTerm}%") ||
-					EF.Functions.ILike(t.Description, $"%{searchTerm}%"));
-			}
-
-			// Apply sorting
-			query = query.ApplySort(parameters.SortBy ?? "CreatedAt", parameters.IsAscending);
-
-			// Project to DTO
-			var dtoQuery = query.Select(task => new TaskDto(
-				task.Id,
-				task.Title,
-				task.Description,
-				task.Status,
-				task.CreatedAt,
-				task.JobId));
-
-			// Apply pagination and return result
-			return await dtoQuery.ToPagedResultAsync(parameters);
+            // Use QueryProcessor for sorting and pagination
+            return await queryProcessor.ApplyAsync(
+                baseQuery,
+                parameters,
+                task => new TaskDto(
+                    task.Id,
+                    task.Title,
+                    task.Description,
+                    task.Status,
+                    task.CreatedAt,
+                    task.JobId)
+            );
 		}
+
 		public async Task<IEnumerable<TaskDto>> GetTasksByStatusAsync(TaskItemStatus status)
 		{
 			return await db.Tasks
@@ -98,12 +96,6 @@ namespace WebBoard.API.Services.Tasks
 				.ToListAsync();
 		}
 
-		/// <summary>
-		/// Gets the count of tasks by status without materializing objects - highly efficient
-		/// Uses EF Core CountAsync() which generates SELECT COUNT(*) query
-		/// </summary>
-		/// <param name="status">The task status to count</param>
-		/// <returns>Count of tasks with the specified status</returns>
 		public async Task<int> GetTaskCountByStatusAsync(TaskItemStatus status)
 		{
 			return await db.Tasks

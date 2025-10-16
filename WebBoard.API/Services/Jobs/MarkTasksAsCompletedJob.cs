@@ -32,7 +32,7 @@ namespace WebBoard.API.Services.Jobs
 			catch (Exception ex)
 			{
 				Logger.LogError(ex, "Error marking tasks as completed for job {JobId}", jobId);
-				
+
 				// Return failure with error message
 				return new JobExecutionResult(
 					IsSuccess: false,

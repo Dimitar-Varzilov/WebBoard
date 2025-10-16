@@ -109,10 +109,10 @@ namespace WebBoard.API.Services.Jobs
 		{
 			// Exponential backoff: 1min, 2min, 4min
 			var baseDelayMinutes = Math.Pow(2, retryCount - 1);
-			
+
 			// Add jitter (0-30 seconds) to prevent thundering herd
 			var jitterSeconds = Random.Shared.Next(0, 30);
-			
+
 			return TimeSpan.FromMinutes(baseDelayMinutes) + TimeSpan.FromSeconds(jitterSeconds);
 		}
 	}

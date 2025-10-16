@@ -50,7 +50,7 @@ namespace WebBoard.API.Services.Jobs
 			catch (Exception ex)
 			{
 				Logger.LogError(ex, "Error generating task list for job {JobId}", jobId);
-				
+
 				// Return failure with error message
 				return new JobExecutionResult(
 					IsSuccess: false,

@@ -1,76 +1,57 @@
 using Microsoft.EntityFrameworkCore;
+using Sieve.Services;
 using WebBoard.API.Common.Constants;
 using WebBoard.API.Common.DTOs.Common;
+using WebBoard.API.Services.Common;
 using WebBoard.API.Common.DTOs.Jobs;
 using WebBoard.API.Common.Enums;
-using WebBoard.API.Common.Extensions;
 using WebBoard.API.Common.Models;
 using WebBoard.API.Data;
 
 namespace WebBoard.API.Services.Jobs
 {
-	public class JobService(
-		AppDbContext db,
-		IJobSchedulingService jobSchedulingService,
-		IJobTypeRegistry jobTypeRegistry) : IJobService
+       public class JobService(AppDbContext db, IJobSchedulingService jobSchedulingService, IJobTypeRegistry jobTypeRegistry, QueryProcessor queryProcessor) : IJobService
 	{
 		public async Task<PagedResult<JobDto>> GetJobsAsync(JobQueryParameters parameters)
 		{
-			var query = db.Jobs
-				.AsNoTracking()
-				.Include(j => j.Report)
-				.Include(j => j.Tasks)
-				.AsQueryable();
+               var baseQuery = db.Jobs
+                       .AsNoTracking()
+                       .Include(j => j.Report)
+                       .Include(j => j.Tasks)
+                       .AsQueryable();
 
-			// Apply filtering
-			if (parameters.Status.HasValue)
-			{
-				query = query.Where(j => (int)j.Status == parameters.Status.Value);
-			}
+               // Custom filtering for Status and JobType
+               if (parameters.Status.HasValue)
+               {
+                       baseQuery = baseQuery.Where(j => (int)j.Status == parameters.Status.Value);
+               }
+               if (!string.IsNullOrWhiteSpace(parameters.JobType))
+               {
+                       baseQuery = baseQuery.Where(j => j.JobType == parameters.JobType);
+               }
 
-			if (!string.IsNullOrWhiteSpace(parameters.JobType))
-			{
-				query = query.Where(j => j.JobType == parameters.JobType);
-			}
+               // Apply case-insensitive search on JobType if SearchTerm is provided
+               if (!string.IsNullOrWhiteSpace(parameters.Filters))
+               {
+                       var searchTerm = parameters.Filters.ToLower();
+                       baseQuery = baseQuery.Where(j => j.JobType.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
+               }
 
-			if (!string.IsNullOrWhiteSpace(parameters.SearchTerm))
-			{
-				var searchTerm = parameters.SearchTerm;
-
-                // IMPORTANT: When adding new searchable string fields to the Job model,
-                // add them to this search query to ensure they're included in search results.
-                // Current searchable fields: JobType
-                // Example: For a new Description field, add: j => j.Description
-                query = query.SearchInNullableFields(searchTerm, [
-                    j => j.JobType
-                ]);
-				// Add new searchable fields here when Job model is extended
-			}
-
-			// Apply sorting
-			query = query.ApplySort(parameters.SortBy ?? "CreatedAt", parameters.IsAscending);
-
-			// Get total count before pagination
-			var totalCount = await query.CountAsync();
-
-			// Apply pagination
-			var jobs = await query
-				.ApplyPagination(parameters)
-				.ToListAsync();
-
-			// Project to DTOs
-			var jobDtos = jobs.Select(job => new JobDto(
-				job.Id,
-				job.JobType,
-				job.Status,
-				job.CreatedAt,
-				job.ScheduledAt,
-				job.Report != null,
-				job.Report?.Id,
-				job.Report?.FileName,
-				job.Tasks.Select(t => t.Id)));
-
-			return new PagedResult<JobDto>(jobDtos, totalCount, parameters.PageNumber, parameters.PageSize);
+               // Use QueryProcessor for sorting and pagination
+               return await queryProcessor.ApplyAsync(
+                       baseQuery,
+                       parameters,
+                       job => new JobDto(
+                               job.Id,
+                               job.JobType,
+                               job.Status,
+                               job.CreatedAt,
+                               job.ScheduledAt,
+                               job.Report != null,
+                               job.Report?.Id,
+                               job.Report?.FileName,
+                               job.Tasks.Select(t => t.Id))
+               );
 		}
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
 		{
@@ -105,8 +86,8 @@ namespace WebBoard.API.Services.Jobs
 
 			// ? FIX: Convert ScheduledAt to UTC to prevent PostgreSQL timezone error
 			// PostgreSQL only accepts DateTimeOffset with UTC offset (00:00:00)
-			var scheduledAt = createJobRequest.RunImmediately 
-				? null 
+			var scheduledAt = createJobRequest.RunImmediately
+				? null
 				: createJobRequest.ScheduledAt?.ToUniversalTime();
 
 			var job = new Job(
@@ -178,8 +159,8 @@ namespace WebBoard.API.Services.Jobs
 
 			// ? FIX: Convert ScheduledAt to UTC to prevent PostgreSQL timezone error
 			// PostgreSQL only accepts DateTimeOffset with UTC offset (00:00:00)
-			var scheduledAt = updateJobRequest.RunImmediately 
-				? null 
+			var scheduledAt = updateJobRequest.RunImmediately
+				? null
 				: updateJobRequest.ScheduledAt?.ToUniversalTime();
 
 			// Unassign previous tasks from this job
@@ -301,7 +282,7 @@ namespace WebBoard.API.Services.Jobs
 			// Check if any selected tasks are already assigned to another job (excluding current job when updating)
 			var tasksWithJobs = excludeJobId.HasValue
 				? existingTasks.Where(t => t.JobId.HasValue && t.JobId != excludeJobId).ToList()
-				: existingTasks.Where(t => t.JobId.HasValue).ToList();
+				: [.. existingTasks.Where(t => t.JobId.HasValue)];
 
 			if (tasksWithJobs.Count != 0)
 			{

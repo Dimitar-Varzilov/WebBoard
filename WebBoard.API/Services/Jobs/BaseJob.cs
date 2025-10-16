@@ -89,7 +89,7 @@ namespace WebBoard.API.Services.Jobs
 				{
 					// Update status to Running and broadcast via SignalR
 					await UpdateJobStatusAsync(dbContext, job, JobStatus.Running, statusNotifier, ct);
-					
+
 					Logger.LogInformation(
 						"Job execution started - JobId: {JobId}, Type: {JobType}, Attempt: {Attempt}/{Max}, IsRetry: {IsRetry}",
 						jobId, job.JobType, attemptNumber, MaxRetryAttempts, retryInfo != null);
@@ -106,11 +106,11 @@ namespace WebBoard.API.Services.Jobs
 
 						// Update status to Completed and broadcast via SignalR
 						await UpdateJobStatusAsync(dbContext, job, JobStatus.Completed, statusNotifier, ct);
-						
+
 						Logger.LogInformation(
 							"Job completed successfully - JobId: {JobId}, Type: {JobType}, Attempt: {Attempt}/{Max}, " +
 							"TasksProcessed: {TaskCount}, Duration: {Duration}ms, TotalAttempts: {TotalAttempts}",
-							jobId, job.JobType, attemptNumber, MaxRetryAttempts, 
+							jobId, job.JobType, attemptNumber, MaxRetryAttempts,
 							result.TasksProcessed, executionDuration.TotalMilliseconds, attemptNumber);
 
 						// Update tasks to completed status if job completed successfully
@@ -122,18 +122,18 @@ namespace WebBoard.API.Services.Jobs
 						Logger.LogWarning(
 							"Job execution failed - JobId: {JobId}, Type: {JobType}, Attempt: {Attempt}/{Max}, " +
 							"Error: {Error}, Duration: {Duration}ms, WillRetry: {WillRetry}",
-							jobId, job.JobType, attemptNumber, MaxRetryAttempts, 
+							jobId, job.JobType, attemptNumber, MaxRetryAttempts,
 							result.ErrorMessage, executionDuration.TotalMilliseconds,
 							await retryService.ShouldRetryJobAsync(jobId));
 
-						await HandleJobFailureAsync(job, retryService, dbContext, statusNotifier, 
+						await HandleJobFailureAsync(job, retryService, dbContext, statusNotifier,
 							result.ErrorMessage, ct);
 					}
 				}
 				catch (Exception ex)
 				{
 					var executionDuration = DateTimeOffset.UtcNow - executionStartTime;
-					
+
 					Logger.LogError(ex,
 						"Job execution exception - JobId: {JobId}, Type: {JobType}, Attempt: {Attempt}/{Max}, " +
 						"Duration: {Duration}ms, ExceptionType: {ExceptionType}",
@@ -141,7 +141,7 @@ namespace WebBoard.API.Services.Jobs
 						executionDuration.TotalMilliseconds, ex.GetType().Name);
 
 					// Handle exception with retry logic
-					await HandleJobFailureAsync(job, retryService, dbContext, statusNotifier, 
+					await HandleJobFailureAsync(job, retryService, dbContext, statusNotifier,
 						ex.Message, ct);
 
 					// Check if we should retry
@@ -152,7 +152,7 @@ namespace WebBoard.API.Services.Jobs
 							"Job failed permanently - JobId: {JobId}, Type: {JobType}, TotalAttempts: {TotalAttempts}, " +
 							"FinalError: {Error}",
 							jobId, job.JobType, attemptNumber, ex.Message);
-						
+
 						// Final failure - rethrow
 						throw;
 					}
@@ -181,7 +181,7 @@ namespace WebBoard.API.Services.Jobs
 			string? errorMessage,
 			CancellationToken ct)
 		{
-			var shouldRetry = ShouldRetryOnError(errorMessage) && 
+			var shouldRetry = ShouldRetryOnError(errorMessage) &&
 				await retryService.ShouldRetryJobAsync(job.Id);
 
 			if (shouldRetry)
@@ -260,7 +260,7 @@ namespace WebBoard.API.Services.Jobs
 		{
 			// Get all pending or in-progress tasks assigned to this job
 			var tasksToUpdate = await dbContext.Tasks
-				.Where(t => t.JobId == jobId && 
+				.Where(t => t.JobId == jobId &&
 					(t.Status == TaskItemStatus.Pending || t.Status == TaskItemStatus.InProgress))
 				.ToListAsync(ct);
 
@@ -279,7 +279,7 @@ namespace WebBoard.API.Services.Jobs
 
 			await dbContext.SaveChangesAsync(ct);
 
-			Logger.LogInformation("Updated {TaskCount} tasks to Completed status for job {JobId}", 
+			Logger.LogInformation("Updated {TaskCount} tasks to Completed status for job {JobId}",
 				tasksToUpdate.Count, jobId);
 
 			return tasksToUpdate.Count;
