@@ -42,7 +42,10 @@ namespace WebBoard.API.Common.Constants
 			/// </summary>
 			/// <param name="jobId">The job ID</param>
 			/// <returns>The group name</returns>
-			public static string GetJobGroup(Guid jobId) => $"{JobPrefix}{jobId}";
+			public static string GetJobGroup(Guid jobId)
+			{
+				return $"{JobPrefix}{jobId}";
+			}
 		}
 	}
 }

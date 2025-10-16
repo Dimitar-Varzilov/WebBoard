@@ -80,8 +80,7 @@ namespace WebBoard.API.Controllers
 				{
 					PageSize = 1000, // Large page size for available tasks
 					HasJob = false, // Only tasks without job assignment
-					SortBy = "CreatedAt",
-					SortDirection = "desc"
+					Sorts = "-CreatedAt",
 				};
 				var result = await taskService.GetTasksAsync(parameters);
 				availableTasks = result.Items;
