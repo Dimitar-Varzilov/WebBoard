@@ -10,29 +10,29 @@ namespace WebBoard.API.Services.Jobs
 		IScheduler scheduler,
 		ILogger<JobStartupService> logger) : IHostedService
 	{
-		private static bool _hasRunOnce = false;
-		private static readonly Lock _lock = new();
+		private bool _hasRunOnce = false;
+		private readonly Lock _lock = new();
 
 		public async Task StartAsync(CancellationToken cancellationToken)
 		{
-			// Ensure this only runs once per application lifetime
-			lock (_lock)
-			{
-				if (_hasRunOnce)
-				{
-					logger.LogInformation("Job Startup Service has already run, skipping");
-					return;
-				}
-				_hasRunOnce = true;
-			}
-
-			logger.LogInformation("Job Startup Service is starting - checking for pending jobs");
-
-			// Wait a moment to ensure Quartz scheduler is fully initialized
-			await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
-
 			try
 			{
+				// Ensure this only runs once per application lifetime
+				lock (_lock)
+				{
+					if (_hasRunOnce)
+					{
+						logger.LogInformation("Job Startup Service has already run, skipping");
+						return;
+					}
+					_hasRunOnce = true;
+				}
+
+				logger.LogInformation("Job Startup Service is starting - checking for pending jobs");
+
+				// Wait a moment to ensure Quartz scheduler is fully initialized
+				await Task.Delay(TimeSpan.FromSeconds(2), cancellationToken);
+
 				// Ensure scheduler is started
 				if (!scheduler.IsStarted)
 				{
@@ -107,6 +107,11 @@ namespace WebBoard.API.Services.Jobs
 
 				logger.LogInformation("Completed scheduling pending jobs on startup: {ScheduledCount} successful, {FailedCount} failed",
 					scheduledCount, failedCount);
+			}
+			catch (OperationCanceledException)
+			{
+				logger.LogInformation("Job Startup Service start was canceled.");
+				// Swallow cancellation to handle gracefully
 			}
 			catch (Exception ex)
 			{
