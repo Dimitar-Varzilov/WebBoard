@@ -1,57 +1,56 @@
 using Microsoft.EntityFrameworkCore;
-using Sieve.Services;
 using WebBoard.API.Common.Constants;
 using WebBoard.API.Common.DTOs.Common;
-using WebBoard.API.Services.Common;
 using WebBoard.API.Common.DTOs.Jobs;
 using WebBoard.API.Common.Enums;
 using WebBoard.API.Common.Models;
 using WebBoard.API.Data;
+using WebBoard.API.Services.Common;
 
 namespace WebBoard.API.Services.Jobs
 {
-       public class JobService(AppDbContext db, IJobSchedulingService jobSchedulingService, IJobTypeRegistry jobTypeRegistry, QueryProcessor queryProcessor) : IJobService
+	public class JobService(AppDbContext db, IJobSchedulingService jobSchedulingService, IJobTypeRegistry jobTypeRegistry, IQueryProcessor queryProcessor) : IJobService
 	{
 		public async Task<PagedResult<JobDto>> GetJobsAsync(JobQueryParameters parameters)
 		{
-               var baseQuery = db.Jobs
-                       .AsNoTracking()
-                       .Include(j => j.Report)
-                       .Include(j => j.Tasks)
-                       .AsQueryable();
+			var baseQuery = db.Jobs
+					.AsNoTracking()
+					.Include(j => j.Report)
+					.Include(j => j.Tasks)
+					.AsQueryable();
 
-               // Custom filtering for Status and JobType
-               if (parameters.Status.HasValue)
-               {
-                       baseQuery = baseQuery.Where(j => (int)j.Status == parameters.Status.Value);
-               }
-               if (!string.IsNullOrWhiteSpace(parameters.JobType))
-               {
-                       baseQuery = baseQuery.Where(j => j.JobType == parameters.JobType);
-               }
+			// Custom filtering for Status and JobType
+			if (parameters.Status.HasValue)
+			{
+				baseQuery = baseQuery.Where(j => (int)j.Status == parameters.Status.Value);
+			}
+			if (!string.IsNullOrWhiteSpace(parameters.JobType))
+			{
+				baseQuery = baseQuery.Where(j => j.JobType == parameters.JobType);
+			}
 
-               // Apply case-insensitive search on JobType if SearchTerm is provided
-               if (!string.IsNullOrWhiteSpace(parameters.Filters))
-               {
-                       var searchTerm = parameters.Filters.ToLower();
-                       baseQuery = baseQuery.Where(j => j.JobType.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
-               }
+			// Apply case-insensitive search on JobType if SearchTerm is provided
+			if (!string.IsNullOrWhiteSpace(parameters.Filters))
+			{
+				var searchTerm = parameters.Filters.ToLower();
+				baseQuery = baseQuery.Where(j => j.JobType.Contains(searchTerm, StringComparison.CurrentCultureIgnoreCase));
+			}
 
-               // Use QueryProcessor for sorting and pagination
-               return await queryProcessor.ApplyAsync(
-                       baseQuery,
-                       parameters,
-                       job => new JobDto(
-                               job.Id,
-                               job.JobType,
-                               job.Status,
-                               job.CreatedAt,
-                               job.ScheduledAt,
-                               job.Report != null,
-                               job.Report?.Id,
-                               job.Report?.FileName,
-                               job.Tasks.Select(t => t.Id))
-               );
+			// Use QueryProcessor for sorting and pagination
+			return await queryProcessor.ApplyAsync(
+					baseQuery,
+					parameters,
+					job => new JobDto(
+							job.Id,
+							job.JobType,
+							job.Status,
+							job.CreatedAt,
+							job.ScheduledAt,
+							job.Report != null,
+							job.Report?.Id,
+							job.Report?.FileName,
+							job.Tasks.Select(t => t.Id))
+			);
 		}
 		public async Task<JobDto> CreateJobAsync(CreateJobRequestDto createJobRequest)
 		{

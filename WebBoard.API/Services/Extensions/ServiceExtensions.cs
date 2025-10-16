@@ -29,7 +29,6 @@ namespace WebBoard.API.Services.Extensions
 
             // Register QueryProcessor for generic filtering/sorting/pagination
             services.AddScoped<IQueryProcessor, QueryProcessor>();
-            services.AddScoped<QueryProcessor>(); // Register concrete type for DI
 
             // Register SignalR job status notifier
             services.AddScoped<IJobStatusNotifier, JobStatusNotifier>();
