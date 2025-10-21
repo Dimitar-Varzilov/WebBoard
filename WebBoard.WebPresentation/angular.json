@@ -75,7 +75,10 @@
             },
             "development": {
               "browserTarget": "web-board.web-presentation:build:development",
-              "open": true
+              "open": true,
+              "ssl": true,
+              "sslKey": ".certs/localhost.key",
+              "sslCert": ".certs/localhost.crt"
             }
           },
           "defaultConfiguration": "development"

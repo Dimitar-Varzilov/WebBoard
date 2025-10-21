@@ -3,10 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
-    "start": "ng serve --open",
+    "start": "ng serve",
     "build": "ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test"
+    "test": "ng test",
+    "generate-dev-cert": "openssl req -new -x509 -newkey rsa:2048 -sha256 -nodes -keyout .certs/localhost.key -days 3560 -out .certs/localhost.crt -config .certs/certificate.config"
   },
   "private": true,
   "dependencies": {
