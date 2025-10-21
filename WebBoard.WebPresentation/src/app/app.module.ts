@@ -1,6 +1,7 @@
-import { NgModule } from '@angular/core';
+import { NgModule, APP_INITIALIZER } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { HttpClientModule } from '@angular/common/http';
+import { HTTP_INTERCEPTORS } from '@angular/common/http';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NgbModule } from '@ng-bootstrap/ng-bootstrap';
 
@@ -18,6 +19,15 @@ import { NavbarComponent } from './components/shared/navbar/navbar.component';
 import { TaskCardComponent } from './components/tasks/task-card/task-card.component';
 import { JobCardComponent } from './components/jobs/job-card/job-card.component';
 import { JobCreateComponent } from './components/jobs/job-create/job-create.component';
+import { AuthCallbackComponent } from './components/auth-callback/auth-callback.component';
+import { SigninComponent } from './components/signin/signin.component';
+import { CredentialsInterceptor } from './interceptors/credentials.interceptor';
+import { AuthInterceptor } from './interceptors/auth.interceptor';
+import { AuthService } from './services/auth.service';
+
+export function initializeAuthFactory(auth: AuthService) {
+  return () => auth.initializeAuth();
+}
 
 @NgModule({
   declarations: [
@@ -34,6 +44,8 @@ import { JobCreateComponent } from './components/jobs/job-create/job-create.comp
     TaskCardComponent,
     JobCardComponent,
     JobCreateComponent,
+    AuthCallbackComponent,
+    SigninComponent,
   ],
   imports: [
     BrowserModule,
@@ -43,7 +55,24 @@ import { JobCreateComponent } from './components/jobs/job-create/job-create.comp
     ReactiveFormsModule,
     NgbModule,
   ],
-  providers: [],
+  providers: [
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: CredentialsInterceptor,
+      multi: true,
+    },
+    {
+      provide: HTTP_INTERCEPTORS,
+      useClass: AuthInterceptor,
+      multi: true,
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: initializeAuthFactory,
+      deps: [AuthService],
+      multi: true,
+    },
+  ],
   bootstrap: [AppComponent],
 })
 export class AppModule {}

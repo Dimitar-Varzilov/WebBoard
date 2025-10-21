@@ -1,18 +1,22 @@
 export const ROUTES = {
   // Main pages
-  DASHBOARD: '/dashboard',
-  TASKS: '/tasks',
-  JOBS: '/jobs',
+  DASHBOARD: 'dashboard',
+  TASKS: 'tasks',
+  JOBS: 'jobs',
 
   // Task routes
-  TASK_CREATE: '/tasks/create',
+  TASKS_CREATE: 'tasks/create',
+  TASK_CREATE: 'tasks/create',
 
   // Job routes
-  JOB_CREATE: '/jobs/create',
+  JOBS_CREATE: 'jobs/create',
+  JOB_CREATE: 'jobs/create',
 
   // Special routes
   ROOT: '',
   WILDCARD: '**',
+  SIGNIN: 'signin',
+  AUTH_CALLBACK: 'auth-callback',
 } as const;
 
 export const ROUTE_PARAMS = {
