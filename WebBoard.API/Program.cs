@@ -61,6 +61,8 @@ namespace WebBoard.API
 			// Apply the named CORS policy.
 			app.UseCors(_myAllowSpecificOrigins);
 
+			// Enable authentication middleware (must come before Authorization)
+			app.UseAuthentication();
 			app.UseAuthorization();
 			app.MapControllers();
 
