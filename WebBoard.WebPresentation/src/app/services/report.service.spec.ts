@@ -125,7 +125,7 @@ describe('ReportService', () => {
       appendChildSpy = spyOn(document.body, 'appendChild');
       removeChildSpy = spyOn(document.body, 'removeChild');
       createObjectURLSpy = spyOn(window.URL, 'createObjectURL').and.returnValue(
-        'blob:http://localhost/test'
+        'blob:https://localhost/test'
       );
       revokeObjectURLSpy = spyOn(window.URL, 'revokeObjectURL');
     });
@@ -138,13 +138,13 @@ describe('ReportService', () => {
 
       expect(createObjectURLSpy).toHaveBeenCalledWith(blob);
       expect(createElementSpy).toHaveBeenCalledWith('a');
-      expect(mockLink.href).toBe('blob:http://localhost/test');
+      expect(mockLink.href).toBe('blob:https://localhost/test');
       expect(mockLink.download).toBe(fileName);
       expect(appendChildSpy).toHaveBeenCalledWith(mockLink);
       expect(mockLink.click).toHaveBeenCalled();
       expect(removeChildSpy).toHaveBeenCalledWith(mockLink);
       expect(revokeObjectURLSpy).toHaveBeenCalledWith(
-        'blob:http://localhost/test'
+        'blob:https://localhost/test'
       );
     });
 

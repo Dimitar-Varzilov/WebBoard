@@ -8,6 +8,7 @@ export const CONTROLLERS = {
   JOBS: 'jobs',
   TASKS: 'tasks',
   REPORTS: 'reports',
+  AUTH: 'auth',
 } as const;
 
 // Helper function to build endpoint URLs
@@ -52,3 +53,12 @@ export const REPORTS_ENDPOINTS = {
   GET_BY_JOB_ID: (jobId: string) =>
     buildEndpoint(CONTROLLERS.REPORTS, `/by-job/${jobId}`),
 } as const;
+
+// Auth Controller Endpoints
+export const AUTH_ENDPOINTS = {
+  BASE: buildEndpoint(CONTROLLERS.AUTH),
+  CHECK: buildEndpoint(CONTROLLERS.AUTH, '/check'),
+  REFRESH: buildEndpoint(CONTROLLERS.AUTH, '/refresh'),
+  LOGOUT: buildEndpoint(CONTROLLERS.AUTH, '/logout'),
+  PKCE_EXCHANGE: buildEndpoint(CONTROLLERS.AUTH, '/pkce/exchange'),
+};
