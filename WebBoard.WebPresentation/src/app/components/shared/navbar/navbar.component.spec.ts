@@ -3,19 +3,32 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { RouterTestingModule } from '@angular/router/testing';
 import { NavbarComponent } from './navbar.component';
 import { ROUTES } from '../../../constants';
+import { of } from 'rxjs';
 
 describe('NavbarComponent', () => {
   let component: NavbarComponent;
   let fixture: ComponentFixture<NavbarComponent>;
   let compiled: HTMLElement;
 
+  class MockAuthService {
+    startPkceAuthWithGoogle = jasmine.createSpy('startPkceAuthWithGoogle');
+    logout = jasmine
+      .createSpy('logout')
+      .and.returnValue({ subscribe: jasmine.createSpy('subscribe') });
+    isAuthenticated$ = () => of(true); // default, can be overridden in tests
+  }
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       declarations: [NavbarComponent],
       imports: [RouterTestingModule],
       schemas: [NO_ERRORS_SCHEMA], // Ignore unknown elements
+      providers: [
+        {
+          provide: require('../../../services/auth.service').AuthService,
+          useClass: MockAuthService,
+        },
+      ],
     }).compileComponents();
-
     fixture = TestBed.createComponent(NavbarComponent);
     component = fixture.componentInstance;
     compiled = fixture.nativeElement;
@@ -26,15 +39,9 @@ describe('NavbarComponent', () => {
     expect(component).toBeTruthy();
   });
 
-  describe('Initialization', () => {
-    it('should call ngOnInit', () => {
-      expect(component).toBeDefined();
-    });
-
-    it('should expose ROUTES constant', () => {
-      expect(component.routes).toBe(ROUTES);
-      expect(component.routes).toBeDefined();
-    });
+  it('should expose ROUTES constant', () => {
+    expect(component.routes).toBe(ROUTES);
+    expect(component.routes).toBeDefined();
   });
 
   describe('Routes Configuration', () => {
@@ -64,21 +71,38 @@ describe('NavbarComponent', () => {
       const navbar = compiled.querySelector('nav');
       expect(navbar).toBeTruthy();
     });
-  });
 
-  describe('Component Lifecycle', () => {
-    it('should initialize without errors', () => {
-      expect(() => component.ngOnInit()).not.toThrow();
+    it('should show logout button when authenticated', () => {
+      (component.auth as any).isAuthenticated$ = () => of(true);
+      fixture.detectChanges();
+      const logoutBtn = compiled.querySelector('button.btn-outline-light');
+      expect(logoutBtn).toBeTruthy();
+      expect(logoutBtn?.textContent).toContain('Logout');
+    });
+
+    it('should not show logout button when not authenticated', () => {
+      (component.auth as any).isAuthenticated$ = () => of(false);
+      fixture.detectChanges();
+      const logoutBtn = compiled.querySelector('button.btn-outline-light');
+      expect(logoutBtn).toBeFalsy();
     });
   });
 
-  describe('Constants', () => {
-    it('should have immutable routes reference', () => {
-      const routesBefore = component.routes;
-      component.ngOnInit();
-      const routesAfter = component.routes;
+  describe('Methods', () => {
+    it('should call startPkceAuthWithGoogle with correct redirectUri when signInWithGoogle is called', () => {
+      const authService = component.auth as any;
+      const expectedRedirectUri = window.location.origin + '/auth-callback';
+      component.signInWithGoogle();
+      expect(authService.startPkceAuthWithGoogle).toHaveBeenCalledWith(
+        expectedRedirectUri
+      );
+    });
 
-      expect(routesBefore).toBe(routesAfter);
+    it('should call logout and subscribe when logout is called', () => {
+      const authService = component.auth as any;
+      component.logout();
+      expect(authService.logout).toHaveBeenCalled();
+      expect(authService.logout().subscribe).toHaveBeenCalled();
     });
   });
 });
