@@ -1,8 +1,15 @@
 using FluentAssertions;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Quartz;
+using Sieve.Models;
+using Sieve.Services;
+using WebBoard.API.Common.Options;
 using WebBoard.API.Data;
+using WebBoard.API.Services.Auth;
+using WebBoard.API.Services.Common;
 using WebBoard.API.Services.Extensions;
 using WebBoard.API.Services.Jobs;
 using WebBoard.API.Services.Reports;
@@ -197,7 +204,7 @@ namespace WebBoard.Tests.Extensions
 
 			// Assert
 			var descriptor = services.FirstOrDefault(s =>
-				s.ServiceType == typeof(Microsoft.Extensions.Options.IConfigureOptions<JobCleanupOptions>));
+				s.ServiceType == typeof(IConfigureOptions<JobCleanupOptions>));
 			descriptor.Should().NotBeNull();
 		}
 
@@ -220,7 +227,11 @@ namespace WebBoard.Tests.Extensions
 				typeof(IJobCleanupService),
 				typeof(IReportService),
 				typeof(IJobRetryService),
-				typeof(IJobStatusNotifier)
+				typeof(IJobStatusNotifier),
+				typeof(ISieveProcessor),
+				typeof(IQueryProcessor),
+				typeof(IExternalUserLinker),
+				typeof(IAuthService)
 			};
 
 			foreach (var serviceType in scopedServices)
@@ -295,6 +306,40 @@ namespace WebBoard.Tests.Extensions
 			result.Should().BeSameAs(services);
 		}
 
+		[Fact]
+		public void ConfigureServices_ShouldConfigureAllOptions()
+		{
+			// Arrange
+			var services = new ServiceCollection();
+			var configuration = CreateConfiguration();
+
+			// Act
+			services.ConfigureServices(configuration);
+
+			// Assert
+			services.Should().Contain(s => s.ServiceType == typeof(IConfigureOptions<JobCleanupOptions>));
+			services.Should().Contain(s => s.ServiceType == typeof(IConfigureOptions<SieveOptions>));
+			services.Should().Contain(s => s.ServiceType == typeof(IConfigureOptions<GoogleOptions>));
+			services.Should().Contain(s => s.ServiceType == typeof(IConfigureOptions<FacebookOptions>));
+			services.Should().Contain(s => s.ServiceType == typeof(IConfigureOptions<JwtOptions>));
+			services.Should().Contain(s => s.ServiceType == typeof(IConfigureOptions<RefreshTokenOptions>));
+		}
+
+		[Fact]
+		public void ConfigureServices_ShouldRegisterIdentityCore()
+		{
+			// Arrange
+			var services = new ServiceCollection();
+			var configuration = CreateConfiguration();
+
+			// Act
+			services.ConfigureServices(configuration);
+
+			// Assert
+			var identityDescriptor = services.FirstOrDefault(s => s.ServiceType == typeof(SignInManager<IdentityUser>));
+			identityDescriptor.Should().NotBeNull();
+		}
+
 		private static IConfiguration CreateConfiguration(Dictionary<string, string?>? settings = null)
 		{
 			var defaultSettings = new Dictionary<string, string?>
@@ -303,7 +348,18 @@ namespace WebBoard.Tests.Extensions
 				{ "JobCleanup:AutoCleanupCompletedJobs", "false" },
 				{ "JobCleanup:RemoveFromDatabase", "false" },
 				{ "JobCleanup:RemoveFromScheduler", "true" },
-				{ "JobCleanup:RetentionPeriod", "00:00:00" }
+				{ "JobCleanup:RetentionPeriod", "00:00:00" },
+				{ "Authentication:Google:ClientId", "test-google-client-id" },
+				{ "Authentication:Google:ClientSecret", "test-google-client-secret" },
+				{ "Authentication:Google:Authority", "https://accounts.google.com" },
+				{ "Authentication:Google:Tokenendpoint", "https://oauth2.googleapis.com/token" },
+				{ "Authentication:Google:OpenIdConfiguration", "https://accounts.google.com/.well-known/openid-configuration" },
+				{ "Authentication:Facebook:AppId", "test-facebook-app-id" },
+				{ "Authentication:Facebook:AppSecret", "test-facebook-app-secret" },
+				{ "Authentication:Jwt:Key", "test-jwt-key" },
+				{ "Authentication:Jwt:Issuer", "test-jwt-issuer" },
+				{ "Authentication:Jwt:Audience", "test-jwt-audience" },
+				{ "Authentication:RefreshToken:TTLDays", "2" }
 			};
 
 			if (settings != null)
